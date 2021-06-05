@@ -1,0 +1,31 @@
+syntax = "proto3";
+
+package competition;
+
+option go_package = "/proto;proto";
+
+service Competition {
+	rpc GetSolutions(GetSolutionsRequest) returns (stream GetSolutionsResponse) {}
+	rpc SetSolutions(SetSolutionsRequest) returns (SetSolutionsResponse) {}
+}
+
+message GetSolutionsRequest {
+}
+
+message GetSolutionsResponse {
+	enum Modification {
+		k_CHANGE = 0;
+		k_DELETE = 1;
+	}
+
+	Modification type = 1;
+	int64 value = 2;
+}
+
+message SetSolutionsRequest {
+	int32 id = 1;
+	int64 value = 2;
+}
+
+message SetSolutionsResponse {
+}
