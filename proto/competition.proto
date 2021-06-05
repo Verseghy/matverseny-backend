@@ -1,12 +1,21 @@
 syntax = "proto3";
 
+import "shared.proto";
+
 package competition;
 
-option go_package = "/proto;proto";
+option go_package = "/;proto";
 
 service Competition {
+	rpc GetProblems(GetProblemsRequest) returns (stream shared.ProblemStream) {}
+
 	rpc GetSolutions(GetSolutionsRequest) returns (stream GetSolutionsResponse) {}
 	rpc SetSolutions(SetSolutionsRequest) returns (SetSolutionsResponse) {}
+
+	rpc GetTimes(GetTimesRequest) returns (stream GetTimesResponse) {}
+}
+
+message GetProblemsRequest {
 }
 
 message GetSolutionsRequest {
@@ -18,14 +27,23 @@ message GetSolutionsResponse {
 		k_DELETE = 1;
 	}
 
-	Modification type = 1;
-	int64 value = 2;
+	string id = 1;
+	Modification type = 2;
+	int64 value = 3;
 }
 
 message SetSolutionsRequest {
-	int32 id = 1;
+	string id = 1;
 	int64 value = 2;
 }
 
 message SetSolutionsResponse {
+}
+
+message GetTimesRequest {
+}
+
+message GetTimesResponse {
+	string start = 1; //RFC3339
+	string end = 2; //RFC3339
 }

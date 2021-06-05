@@ -14,7 +14,7 @@ type authHandler struct {
 }
 
 func (h *authHandler) Login(ctx context.Context, req *pb.LoginRequest) (*pb.LoginResponse, error) {
-	return nil, errors.New("not implemented")
+	return &pb.LoginResponse{Token: "valami"}, nil
 }
 
 func (h *authHandler) Register(ctx context.Context, req *pb.RegisterRequest) (*pb.RegisterResponse, error) {

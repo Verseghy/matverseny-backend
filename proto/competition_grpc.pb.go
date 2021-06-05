@@ -161,5 +161,5 @@ var Competition_ServiceDesc = grpc.ServiceDesc{
 			ServerStreams: true,
 		},
 	},
-	Metadata: "proto/competition.proto",
+	Metadata: "competition.proto",
 }

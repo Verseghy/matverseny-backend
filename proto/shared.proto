@@ -1,0 +1,45 @@
+syntax = "proto3";
+
+package shared;
+
+option go_package = "/;proto";
+
+message Problem {
+  string id = 1;
+  string body = 2;
+  string image = 3;
+  int64 solution = 4;
+}
+
+message ProblemStream {
+  enum Type {
+    k_INITIAL = 0;
+    k_UPDATE = 1;
+    k_DELETE = 2;
+    k_SWAP = 3;
+  }
+
+  message Initial {
+    Problem problem = 1;
+    uint32 at = 2;
+  }
+
+  message Update {
+    Problem problem = 1;
+  }
+
+  message Delete {
+    string id = 1;
+  }
+
+  message Swap {
+    string a = 1;
+    string b = 2;
+  }
+
+  Type type = 1;
+  Initial initial = 2;
+  Update update = 3;
+  Delete delete = 4;
+  Swap swap = 5;
+}
