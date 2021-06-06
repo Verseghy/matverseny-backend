@@ -4,8 +4,11 @@ import (
 	"errors"
 	"github.com/dgrijalva/jwt-go"
 	"go.uber.org/zap"
+	"google.golang.org/grpc/metadata"
 	"matverseny-backend/entity"
+	"matverseny-backend/errs"
 	"matverseny-backend/log"
+	"strings"
 	"time"
 )
 
@@ -82,7 +85,14 @@ func ValidateRefreshToken(token string, key []byte) (*RefreshClaims, error) {
 	return c, nil
 }
 
-func ValidateAccessToken(token string, key []byte) (*AccessClaims, error) {
+func ValidateAccessToken(md metadata.MD, key []byte) (*AccessClaims, error) {
+	s := md.Get("Authorization")
+	if len(s) != 1 {
+		return nil, errs.ErrUnauthorized
+	}
+	strings.HasPrefix(s[0], "Bearer ")
+	token := s[0][7:]
+
 	t, err := jwt.ParseWithClaims(token, &AccessClaims{}, func(token *jwt.Token) (interface{}, error) {
 		return key, nil
 	})

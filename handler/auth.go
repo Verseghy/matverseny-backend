@@ -2,7 +2,6 @@ package handler
 
 import (
 	"context"
-	"errors"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -11,25 +10,11 @@ import (
 	"go.uber.org/zap"
 	"golang.org/x/crypto/bcrypt"
 	"matverseny-backend/entity"
+	"matverseny-backend/errs"
 	"matverseny-backend/jwt"
 	"matverseny-backend/log"
 	pb "matverseny-backend/proto"
 	"net/mail"
-)
-
-var (
-	ErrNotImplemented         = errors.New("E0000: not implemented")
-	ErrEmailRequired          = errors.New("E0001: email is required")
-	ErrPasswordRequired       = errors.New("E0002: password is required")
-	ErrInvalidEmailOrPassword = errors.New("E0003: invalid email or password")
-	ErrDatabase               = errors.New("E0004: database error")
-	ErrCryptographic          = errors.New("E0005: cryptographic failure")
-	ErrJWT                    = errors.New("E0006: JWT failure")
-	ErrNameRequired           = errors.New("E0007: name is required")
-	ErrEmailAddressFormat     = errors.New("E0008: email address format incorrect")
-	ErrSchoolRequired         = errors.New("E0009: school is required")
-	ErrAlreadyExists          = errors.New("E0010: user already registered")
-	ErrTokenExpired           = errors.New("E0011: token expired")
 )
 
 type authHandler struct {
@@ -43,22 +28,22 @@ func (h *authHandler) Login(ctx context.Context, req *pb.LoginRequest) (*pb.Logi
 	res := &pb.LoginResponse{}
 
 	if req.Email == "" {
-		return nil, ErrEmailRequired
+		return nil, errs.ErrEmailRequired
 	}
 
 	if req.Password == "" {
-		return nil, ErrPasswordRequired
+		return nil, errs.ErrPasswordRequired
 	}
 
 	u := &entity.User{}
 	err := h.c.FindOne(ctx, bson.M{"email": req.Email}).Decode(u)
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
-			return nil, ErrInvalidEmailOrPassword
+			return nil, errs.ErrInvalidEmailOrPassword
 		}
 
 		log.Logger.Error("database error", zap.Error(err), zap.String("email", req.Email))
-		return nil, ErrDatabase
+		return nil, errs.ErrDatabase
 	}
 
 	err = bcrypt.CompareHashAndPassword([]byte(u.Password), []byte(req.Password))
@@ -67,19 +52,19 @@ func (h *authHandler) Login(ctx context.Context, req *pb.LoginRequest) (*pb.Logi
 			log.Logger.Debug("invalid password", zap.Error(err))
 		}
 
-		return nil, ErrCryptographic
+		return nil, errs.ErrCryptographic
 	}
 
 	res.RefreshToken, err = jwt.NewRefreshToken(u, h.key)
 	if err != nil {
 		log.Logger.Error("jwt failure", zap.Error(err))
-		return nil, ErrJWT
+		return nil, errs.ErrJWT
 	}
 
 	res.AccessToken, err = jwt.NewAccessToken(u, h.key)
 	if err != nil {
 		log.Logger.Error("jwt failure", zap.Error(err))
-		return nil, ErrJWT
+		return nil, errs.ErrJWT
 	}
 
 	return res, nil
@@ -89,25 +74,25 @@ func (h *authHandler) Register(ctx context.Context, req *pb.RegisterRequest) (*p
 	res := &pb.RegisterResponse{}
 
 	if req.Name == "" {
-		return nil, ErrNameRequired
+		return nil, errs.ErrNameRequired
 	}
 
 	if _, err := mail.ParseAddress(req.Email); err != nil {
-		return nil, ErrEmailAddressFormat
+		return nil, errs.ErrEmailAddressFormat
 	}
 
 	if req.Password == "" {
-		return nil, ErrPasswordRequired
+		return nil, errs.ErrPasswordRequired
 	}
 
 	if req.School == "" {
-		return nil, ErrSchoolRequired
+		return nil, errs.ErrSchoolRequired
 	}
 
 	hash, err := bcrypt.GenerateFromPassword([]byte(req.Password), 10)
 	if err != nil {
 		log.Logger.Error("failed to generate bcrypt hash", zap.Error(err))
-		return nil, ErrCryptographic
+		return nil, errs.ErrCryptographic
 	}
 
 	u := &entity.User{
@@ -123,30 +108,30 @@ func (h *authHandler) Register(ctx context.Context, req *pb.RegisterRequest) (*p
 	if err != nil {
 		if mongo.IsDuplicateKeyError(err) {
 			log.Logger.Debug("already has account", zap.String("email", req.Email), zap.Error(err))
-			return nil, ErrAlreadyExists
+			return nil, errs.ErrAlreadyExists
 		}
 
 		log.Logger.Error("failed inserting new user", zap.Error(err))
-		return nil, ErrDatabase
+		return nil, errs.ErrDatabase
 	}
 
 	res.RefreshToken, err = jwt.NewRefreshToken(u, h.key)
 	if err != nil {
 		log.Logger.Error("jwt failure", zap.Error(err))
-		return nil, ErrJWT
+		return nil, errs.ErrJWT
 	}
 
 	res.AccessToken, err = jwt.NewAccessToken(u, h.key)
 	if err != nil {
 		log.Logger.Error("jwt failure", zap.Error(err))
-		return nil, ErrJWT
+		return nil, errs.ErrJWT
 	}
 
 	return res, nil
 }
 
 func (h *authHandler) ForgotPassword(context.Context, *pb.ForgotPasswordRequest) (*pb.ForgotPasswordResponse, error) {
-	return nil, ErrNotImplemented
+	return nil, errs.ErrNotImplemented
 }
 
 func (h *authHandler) RefreshToken(ctx context.Context, req *pb.RefreshTokenRequest) (*pb.RefreshTokenResponse, error) {
@@ -155,27 +140,27 @@ func (h *authHandler) RefreshToken(ctx context.Context, req *pb.RefreshTokenRequ
 	claims, err := jwt.ValidateRefreshToken(req.Token, h.key)
 	if err != nil {
 		if err == jwt.ErrExpired {
-			return nil, ErrTokenExpired
+			return nil, errs.ErrTokenExpired
 		}
 
-		return nil, ErrJWT
+		return nil, errs.ErrJWT
 	}
 
 	u := &entity.User{}
 	err = h.c.FindOne(ctx, bson.M{"_id": primitive.ObjectIDFromHex(claims.UserID)}).Decode(u)
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
-			return nil, ErrJWT
+			return nil, errs.ErrJWT
 		}
 
 		log.Logger.Error("database error", zap.Error(err), zap.String("id", claims.UserID))
-		return nil, ErrDatabase
+		return nil, errs.ErrDatabase
 	}
 
 	res.Token, err = jwt.NewAccessToken(u, h.key)
 	if err != nil {
 		log.Logger.Error("jwt failure", zap.Error(err))
-		return nil, ErrJWT
+		return nil, errs.ErrJWT
 	}
 
 	return res, nil
