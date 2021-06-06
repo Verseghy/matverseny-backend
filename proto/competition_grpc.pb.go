@@ -18,8 +18,10 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type CompetitionClient interface {
+	GetProblems(ctx context.Context, in *GetProblemsRequest, opts ...grpc.CallOption) (Competition_GetProblemsClient, error)
 	GetSolutions(ctx context.Context, in *GetSolutionsRequest, opts ...grpc.CallOption) (Competition_GetSolutionsClient, error)
 	SetSolutions(ctx context.Context, in *SetSolutionsRequest, opts ...grpc.CallOption) (*SetSolutionsResponse, error)
+	GetTimes(ctx context.Context, in *GetTimesRequest, opts ...grpc.CallOption) (Competition_GetTimesClient, error)
 }
 
 type competitionClient struct {
@@ -30,8 +32,40 @@ func NewCompetitionClient(cc grpc.ClientConnInterface) CompetitionClient {
 	return &competitionClient{cc}
 }
 
+func (c *competitionClient) GetProblems(ctx context.Context, in *GetProblemsRequest, opts ...grpc.CallOption) (Competition_GetProblemsClient, error) {
+	stream, err := c.cc.NewStream(ctx, &Competition_ServiceDesc.Streams[0], "/competition.Competition/GetProblems", opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &competitionGetProblemsClient{stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+type Competition_GetProblemsClient interface {
+	Recv() (*ProblemStream, error)
+	grpc.ClientStream
+}
+
+type competitionGetProblemsClient struct {
+	grpc.ClientStream
+}
+
+func (x *competitionGetProblemsClient) Recv() (*ProblemStream, error) {
+	m := new(ProblemStream)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
 func (c *competitionClient) GetSolutions(ctx context.Context, in *GetSolutionsRequest, opts ...grpc.CallOption) (Competition_GetSolutionsClient, error) {
-	stream, err := c.cc.NewStream(ctx, &Competition_ServiceDesc.Streams[0], "/competition.Competition/GetSolutions", opts...)
+	stream, err := c.cc.NewStream(ctx, &Competition_ServiceDesc.Streams[1], "/competition.Competition/GetSolutions", opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -71,12 +105,46 @@ func (c *competitionClient) SetSolutions(ctx context.Context, in *SetSolutionsRe
 	return out, nil
 }
 
+func (c *competitionClient) GetTimes(ctx context.Context, in *GetTimesRequest, opts ...grpc.CallOption) (Competition_GetTimesClient, error) {
+	stream, err := c.cc.NewStream(ctx, &Competition_ServiceDesc.Streams[2], "/competition.Competition/GetTimes", opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &competitionGetTimesClient{stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+type Competition_GetTimesClient interface {
+	Recv() (*GetTimesResponse, error)
+	grpc.ClientStream
+}
+
+type competitionGetTimesClient struct {
+	grpc.ClientStream
+}
+
+func (x *competitionGetTimesClient) Recv() (*GetTimesResponse, error) {
+	m := new(GetTimesResponse)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
 // CompetitionServer is the server API for Competition service.
 // All implementations must embed UnimplementedCompetitionServer
 // for forward compatibility
 type CompetitionServer interface {
+	GetProblems(*GetProblemsRequest, Competition_GetProblemsServer) error
 	GetSolutions(*GetSolutionsRequest, Competition_GetSolutionsServer) error
 	SetSolutions(context.Context, *SetSolutionsRequest) (*SetSolutionsResponse, error)
+	GetTimes(*GetTimesRequest, Competition_GetTimesServer) error
 	mustEmbedUnimplementedCompetitionServer()
 }
 
@@ -84,11 +152,17 @@ type CompetitionServer interface {
 type UnimplementedCompetitionServer struct {
 }
 
+func (UnimplementedCompetitionServer) GetProblems(*GetProblemsRequest, Competition_GetProblemsServer) error {
+	return status.Errorf(codes.Unimplemented, "method GetProblems not implemented")
+}
 func (UnimplementedCompetitionServer) GetSolutions(*GetSolutionsRequest, Competition_GetSolutionsServer) error {
 	return status.Errorf(codes.Unimplemented, "method GetSolutions not implemented")
 }
 func (UnimplementedCompetitionServer) SetSolutions(context.Context, *SetSolutionsRequest) (*SetSolutionsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SetSolutions not implemented")
+}
+func (UnimplementedCompetitionServer) GetTimes(*GetTimesRequest, Competition_GetTimesServer) error {
+	return status.Errorf(codes.Unimplemented, "method GetTimes not implemented")
 }
 func (UnimplementedCompetitionServer) mustEmbedUnimplementedCompetitionServer() {}
 
@@ -101,6 +175,27 @@ type UnsafeCompetitionServer interface {
 
 func RegisterCompetitionServer(s grpc.ServiceRegistrar, srv CompetitionServer) {
 	s.RegisterService(&Competition_ServiceDesc, srv)
+}
+
+func _Competition_GetProblems_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(GetProblemsRequest)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(CompetitionServer).GetProblems(m, &competitionGetProblemsServer{stream})
+}
+
+type Competition_GetProblemsServer interface {
+	Send(*ProblemStream) error
+	grpc.ServerStream
+}
+
+type competitionGetProblemsServer struct {
+	grpc.ServerStream
+}
+
+func (x *competitionGetProblemsServer) Send(m *ProblemStream) error {
+	return x.ServerStream.SendMsg(m)
 }
 
 func _Competition_GetSolutions_Handler(srv interface{}, stream grpc.ServerStream) error {
@@ -142,6 +237,27 @@ func _Competition_SetSolutions_Handler(srv interface{}, ctx context.Context, dec
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Competition_GetTimes_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(GetTimesRequest)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(CompetitionServer).GetTimes(m, &competitionGetTimesServer{stream})
+}
+
+type Competition_GetTimesServer interface {
+	Send(*GetTimesResponse) error
+	grpc.ServerStream
+}
+
+type competitionGetTimesServer struct {
+	grpc.ServerStream
+}
+
+func (x *competitionGetTimesServer) Send(m *GetTimesResponse) error {
+	return x.ServerStream.SendMsg(m)
+}
+
 // Competition_ServiceDesc is the grpc.ServiceDesc for Competition service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -156,8 +272,18 @@ var Competition_ServiceDesc = grpc.ServiceDesc{
 	},
 	Streams: []grpc.StreamDesc{
 		{
+			StreamName:    "GetProblems",
+			Handler:       _Competition_GetProblems_Handler,
+			ServerStreams: true,
+		},
+		{
 			StreamName:    "GetSolutions",
 			Handler:       _Competition_GetSolutions_Handler,
+			ServerStreams: true,
+		},
+		{
+			StreamName:    "GetTimes",
+			Handler:       _Competition_GetTimes_Handler,
 			ServerStreams: true,
 		},
 	},

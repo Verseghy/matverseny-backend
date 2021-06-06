@@ -18,7 +18,8 @@ message LoginRequest {
 }
 
 message LoginResponse {
-	string token = 1;
+	string refresh_token = 1;
+	string access_token = 2;
 }
 
 message RegisterRequest {
@@ -38,7 +39,8 @@ message RegisterRequest {
 }
 
 message RegisterResponse {
-	string token = 1;
+	string refresh_token = 1;
+	string access_token = 2;
 }
 
 message ForgotPasswordRequest {
