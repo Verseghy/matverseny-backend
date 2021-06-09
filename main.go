@@ -29,7 +29,7 @@ func main() {
 	log.EnsureLogger()
 
 	grpcListenAddr := envOrDefaultString("PORT", "6969")
-	mongoAddr := envOrDefaultString("MONGO_URI", "mongodb://localhost:27017")
+	mongoAddr := envOrDefaultString("MONGO_URI", "mongodb://mongo1:27017,mongo2:27018,mongo3:27019/?replicaSet=rs0")
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()

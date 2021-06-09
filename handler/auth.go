@@ -147,7 +147,13 @@ func (h *authHandler) RefreshToken(ctx context.Context, req *pb.RefreshTokenRequ
 	}
 
 	u := &entity.User{}
-	err = h.c.FindOne(ctx, bson.M{"_id": primitive.ObjectIDFromHex(claims.UserID)}).Decode(u)
+	id, err := primitive.ObjectIDFromHex(claims.UserID)
+	if err != nil {
+		log.Logger.Error("failed mongo id", zap.Error(err))
+		return nil, errs.ErrJWT
+	}
+
+	err = h.c.FindOne(ctx, bson.M{"_id": id}).Decode(u)
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
 			return nil, errs.ErrJWT
@@ -168,7 +174,7 @@ func (h *authHandler) RefreshToken(ctx context.Context, req *pb.RefreshTokenRequ
 
 func NewAuthHandler(client *mongo.Client) *authHandler {
 	_, err := client.Database("comp").Collection("auth").Indexes().CreateMany(context.Background(), []mongo.IndexModel{
-		{Keys: bsonx.Doc{{Key: "email"}}, Options: options.Index().SetUnique(true)},
+		{Keys: bsonx.Doc{{Key: "email", Value: bsonx.Int32(1)}}, Options: options.Index().SetUnique(true)},
 	})
 	if err != nil {
 		log.Logger.Fatal("unable to create index", zap.Error(err))

@@ -4,6 +4,7 @@ import (
 	"context"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.uber.org/zap"
 	"google.golang.org/grpc/metadata"
 	"matverseny-backend/entity"
@@ -77,7 +78,7 @@ func (h *competitionHandler) GetProblems(req *pb.GetProblemsRequest, stream pb.C
 		return errs.ErrDatabase
 	}
 
-	cs, err := h.cProblems.Watch(stream.Context(), mongo.Pipeline{})
+	cs, err := h.cProblems.Watch(stream.Context(), mongo.Pipeline{}, options.ChangeStream().SetFullDocument(options.UpdateLookup))
 	if err != nil {
 		logger.Error("failed to watch database", zap.Error(err))
 		return errs.ErrDatabase

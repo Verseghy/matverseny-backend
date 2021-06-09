@@ -4,17 +4,45 @@ services:
     build: .
     restart: on-failure
     depends_on:
-      - mongo
+      - mongo1
+      - mongo2
+      - mongo3
+      - mongosetup
     environment:
-      - "MONGO_URI=mongodb://mongo:27017"
-  mongo:
-    image: mongo:4.4
-    restart: on-failure
-    environment:
-      MONGO_INITDB_ROOT_USERNAME: root
-      MONGO_INITDB_ROOT_PASSWORD: example
+      - "MONGO_URI=mongodb://mongo1:27017,mongo2:27018,mongo3:27019/?replicaSet=rs0"
     ports:
-    - "27017:27017"
+      - "6969:6969"
+  mongo1:
+    hostname: mongo1
+    image: mongo:4.4-bionic
+    ports:
+      - 27017:27017
+    restart: on-failure
+    entrypoint: [ "/usr/bin/mongod", "--bind_ip_all", "--replSet", "rs0" ]
+  mongo2:
+    hostname: mongo2
+    image: mongo:4.4-bionic
+    ports:
+      - 27018:27018
+    restart: on-failure
+    entrypoint: [ "/usr/bin/mongod", "--bind_ip_all", "--replSet", "rs0", "--port", "27018"]
+  mongo3:
+    hostname: mongo3
+    image: mongo:4.4-bionic
+    ports:
+      - 27019:27019
+    restart: on-failure
+    entrypoint: [ "/usr/bin/mongod", "--bind_ip_all", "--replSet", "rs0",  "--port", "27019"]
+  mongosetup:
+    image: mongo:4.4-bionic
+    depends_on:
+      - mongo1
+      - mongo2
+      - mongo3
+    volumes:
+      - .:/scripts
+    restart: "no"
+    entrypoint: [ "bash", "/scripts/mongo_setup.sh"]
   proxy:
     image: envoyproxy/envoy-dev:436946bb9df0acda0e4e709592205f0d199dfb79
     restart: on-failure
