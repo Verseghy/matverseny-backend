@@ -50,7 +50,7 @@ func (h *authHandler) Login(ctx context.Context, req *pb.LoginRequest) (*pb.Logi
 	if err != nil {
 		if err == bcrypt.ErrMismatchedHashAndPassword {
 			log.Logger.Debug("invalid password", zap.Error(err))
-			return nil, err
+			return nil, errs.ErrInvalidEmailOrPassword
 		}
 
 		return nil, errs.ErrCryptographic
