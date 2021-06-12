@@ -7,7 +7,7 @@ package competition;
 option go_package = "/;proto";
 
 service Competition {
-	rpc GetProblems(GetProblemsRequest) returns (stream shared.ProblemStream) {}
+	rpc GetProblems(shared.ProblemStreamRequest) returns (stream shared.ProblemStream) {}
 
 	rpc GetSolutions(GetSolutionsRequest) returns (stream GetSolutionsResponse) {}
 	rpc SetSolutions(SetSolutionsRequest) returns (SetSolutionsResponse) {}

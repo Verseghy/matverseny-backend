@@ -19,7 +19,7 @@ const _ = grpc.SupportPackageIsVersion7
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type AdminClient interface {
 	CreateProblem(ctx context.Context, in *CreateRequest, opts ...grpc.CallOption) (*CreateResponse, error)
-	ReadProblems(ctx context.Context, in *ReadRequest, opts ...grpc.CallOption) (Admin_ReadProblemsClient, error)
+	GetProblems(ctx context.Context, in *ProblemStreamRequest, opts ...grpc.CallOption) (Admin_GetProblemsClient, error)
 	UpdateProblem(ctx context.Context, in *UpdateRequest, opts ...grpc.CallOption) (*UpdateResponse, error)
 	DeleteProblem(ctx context.Context, in *DeleteRequest, opts ...grpc.CallOption) (*DeleteResponse, error)
 	SwapProblem(ctx context.Context, in *SwapRequest, opts ...grpc.CallOption) (*SwapResponse, error)
@@ -42,12 +42,12 @@ func (c *adminClient) CreateProblem(ctx context.Context, in *CreateRequest, opts
 	return out, nil
 }
 
-func (c *adminClient) ReadProblems(ctx context.Context, in *ReadRequest, opts ...grpc.CallOption) (Admin_ReadProblemsClient, error) {
-	stream, err := c.cc.NewStream(ctx, &Admin_ServiceDesc.Streams[0], "/auth.Admin/ReadProblems", opts...)
+func (c *adminClient) GetProblems(ctx context.Context, in *ProblemStreamRequest, opts ...grpc.CallOption) (Admin_GetProblemsClient, error) {
+	stream, err := c.cc.NewStream(ctx, &Admin_ServiceDesc.Streams[0], "/auth.Admin/GetProblems", opts...)
 	if err != nil {
 		return nil, err
 	}
-	x := &adminReadProblemsClient{stream}
+	x := &adminGetProblemsClient{stream}
 	if err := x.ClientStream.SendMsg(in); err != nil {
 		return nil, err
 	}
@@ -57,16 +57,16 @@ func (c *adminClient) ReadProblems(ctx context.Context, in *ReadRequest, opts ..
 	return x, nil
 }
 
-type Admin_ReadProblemsClient interface {
+type Admin_GetProblemsClient interface {
 	Recv() (*ProblemStream, error)
 	grpc.ClientStream
 }
 
-type adminReadProblemsClient struct {
+type adminGetProblemsClient struct {
 	grpc.ClientStream
 }
 
-func (x *adminReadProblemsClient) Recv() (*ProblemStream, error) {
+func (x *adminGetProblemsClient) Recv() (*ProblemStream, error) {
 	m := new(ProblemStream)
 	if err := x.ClientStream.RecvMsg(m); err != nil {
 		return nil, err
@@ -106,7 +106,7 @@ func (c *adminClient) SwapProblem(ctx context.Context, in *SwapRequest, opts ...
 // for forward compatibility
 type AdminServer interface {
 	CreateProblem(context.Context, *CreateRequest) (*CreateResponse, error)
-	ReadProblems(*ReadRequest, Admin_ReadProblemsServer) error
+	GetProblems(*ProblemStreamRequest, Admin_GetProblemsServer) error
 	UpdateProblem(context.Context, *UpdateRequest) (*UpdateResponse, error)
 	DeleteProblem(context.Context, *DeleteRequest) (*DeleteResponse, error)
 	SwapProblem(context.Context, *SwapRequest) (*SwapResponse, error)
@@ -120,8 +120,8 @@ type UnimplementedAdminServer struct {
 func (UnimplementedAdminServer) CreateProblem(context.Context, *CreateRequest) (*CreateResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateProblem not implemented")
 }
-func (UnimplementedAdminServer) ReadProblems(*ReadRequest, Admin_ReadProblemsServer) error {
-	return status.Errorf(codes.Unimplemented, "method ReadProblems not implemented")
+func (UnimplementedAdminServer) GetProblems(*ProblemStreamRequest, Admin_GetProblemsServer) error {
+	return status.Errorf(codes.Unimplemented, "method GetProblems not implemented")
 }
 func (UnimplementedAdminServer) UpdateProblem(context.Context, *UpdateRequest) (*UpdateResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UpdateProblem not implemented")
@@ -163,24 +163,24 @@ func _Admin_CreateProblem_Handler(srv interface{}, ctx context.Context, dec func
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Admin_ReadProblems_Handler(srv interface{}, stream grpc.ServerStream) error {
-	m := new(ReadRequest)
+func _Admin_GetProblems_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(ProblemStreamRequest)
 	if err := stream.RecvMsg(m); err != nil {
 		return err
 	}
-	return srv.(AdminServer).ReadProblems(m, &adminReadProblemsServer{stream})
+	return srv.(AdminServer).GetProblems(m, &adminGetProblemsServer{stream})
 }
 
-type Admin_ReadProblemsServer interface {
+type Admin_GetProblemsServer interface {
 	Send(*ProblemStream) error
 	grpc.ServerStream
 }
 
-type adminReadProblemsServer struct {
+type adminGetProblemsServer struct {
 	grpc.ServerStream
 }
 
-func (x *adminReadProblemsServer) Send(m *ProblemStream) error {
+func (x *adminGetProblemsServer) Send(m *ProblemStream) error {
 	return x.ServerStream.SendMsg(m)
 }
 
@@ -264,8 +264,8 @@ var Admin_ServiceDesc = grpc.ServiceDesc{
 	},
 	Streams: []grpc.StreamDesc{
 		{
-			StreamName:    "ReadProblems",
-			Handler:       _Admin_ReadProblems_Handler,
+			StreamName:    "GetProblems",
+			Handler:       _Admin_GetProblems_Handler,
 			ServerStreams: true,
 		},
 	},

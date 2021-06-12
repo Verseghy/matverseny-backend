@@ -55,7 +55,7 @@ func (h *competitionHandler) AuthFuncOverride(ctx context.Context, fullMethodNam
 	return ctx, nil
 }
 
-func (h *competitionHandler) GetProblems(req *pb.GetProblemsRequest, stream pb.Competition_GetProblemsServer) error {
+func (h *competitionHandler) GetProblems(req *pb.ProblemStreamRequest, stream pb.Competition_GetProblemsServer) error {
 	claims, ok := jwt.GetClaimsFromCtx(stream.Context())
 	if !ok {
 		log.Logger.Error("jwt had no data")

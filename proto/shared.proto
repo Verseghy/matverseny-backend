@@ -11,6 +11,9 @@ message Problem {
   int64 solution = 4;
 }
 
+message ProblemStreamRequest {
+}
+
 message ProblemStream {
   enum Type {
     k_INITIAL = 0;

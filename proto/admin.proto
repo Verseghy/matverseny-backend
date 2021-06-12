@@ -8,7 +8,7 @@ option go_package = "/;proto";
 
 service Admin {
 	rpc CreateProblem(CreateRequest) returns (CreateResponse) {}
-	rpc ReadProblems(ReadRequest) returns (stream shared.ProblemStream) {}
+	rpc GetProblems(shared.ProblemStreamRequest) returns (stream shared.ProblemStream) {}
 	rpc UpdateProblem(UpdateRequest) returns (UpdateResponse) {}
 	rpc DeleteProblem(DeleteRequest) returns (DeleteResponse) {}
 	rpc SwapProblem(SwapRequest) returns (SwapResponse) {}

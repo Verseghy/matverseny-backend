@@ -77,7 +77,7 @@ func (h *adminHandler) CreateProblem(ctx context.Context, req *pb.CreateRequest)
 	return res, nil
 }
 
-func (h *adminHandler) ReadProblems(req *pb.ReadRequest, stream pb.Admin_ReadProblemsServer) error {
+func (h *adminHandler) GetProblems(req *pb.ProblemStreamRequest, stream pb.Admin_GetProblemsServer) error {
 	claims, ok := jwt.GetClaimsFromCtx(stream.Context())
 	if !ok {
 		log.Logger.Error("jwt had no data")

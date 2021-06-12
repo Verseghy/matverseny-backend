@@ -18,7 +18,7 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type CompetitionClient interface {
-	GetProblems(ctx context.Context, in *GetProblemsRequest, opts ...grpc.CallOption) (Competition_GetProblemsClient, error)
+	GetProblems(ctx context.Context, in *ProblemStreamRequest, opts ...grpc.CallOption) (Competition_GetProblemsClient, error)
 	GetSolutions(ctx context.Context, in *GetSolutionsRequest, opts ...grpc.CallOption) (Competition_GetSolutionsClient, error)
 	SetSolutions(ctx context.Context, in *SetSolutionsRequest, opts ...grpc.CallOption) (*SetSolutionsResponse, error)
 	GetTimes(ctx context.Context, in *GetTimesRequest, opts ...grpc.CallOption) (Competition_GetTimesClient, error)
@@ -32,7 +32,7 @@ func NewCompetitionClient(cc grpc.ClientConnInterface) CompetitionClient {
 	return &competitionClient{cc}
 }
 
-func (c *competitionClient) GetProblems(ctx context.Context, in *GetProblemsRequest, opts ...grpc.CallOption) (Competition_GetProblemsClient, error) {
+func (c *competitionClient) GetProblems(ctx context.Context, in *ProblemStreamRequest, opts ...grpc.CallOption) (Competition_GetProblemsClient, error) {
 	stream, err := c.cc.NewStream(ctx, &Competition_ServiceDesc.Streams[0], "/competition.Competition/GetProblems", opts...)
 	if err != nil {
 		return nil, err
@@ -141,7 +141,7 @@ func (x *competitionGetTimesClient) Recv() (*GetTimesResponse, error) {
 // All implementations must embed UnimplementedCompetitionServer
 // for forward compatibility
 type CompetitionServer interface {
-	GetProblems(*GetProblemsRequest, Competition_GetProblemsServer) error
+	GetProblems(*ProblemStreamRequest, Competition_GetProblemsServer) error
 	GetSolutions(*GetSolutionsRequest, Competition_GetSolutionsServer) error
 	SetSolutions(context.Context, *SetSolutionsRequest) (*SetSolutionsResponse, error)
 	GetTimes(*GetTimesRequest, Competition_GetTimesServer) error
@@ -152,7 +152,7 @@ type CompetitionServer interface {
 type UnimplementedCompetitionServer struct {
 }
 
-func (UnimplementedCompetitionServer) GetProblems(*GetProblemsRequest, Competition_GetProblemsServer) error {
+func (UnimplementedCompetitionServer) GetProblems(*ProblemStreamRequest, Competition_GetProblemsServer) error {
 	return status.Errorf(codes.Unimplemented, "method GetProblems not implemented")
 }
 func (UnimplementedCompetitionServer) GetSolutions(*GetSolutionsRequest, Competition_GetSolutionsServer) error {
@@ -178,7 +178,7 @@ func RegisterCompetitionServer(s grpc.ServiceRegistrar, srv CompetitionServer) {
 }
 
 func _Competition_GetProblems_Handler(srv interface{}, stream grpc.ServerStream) error {
-	m := new(GetProblemsRequest)
+	m := new(ProblemStreamRequest)
 	if err := stream.RecvMsg(m); err != nil {
 		return err
 	}
