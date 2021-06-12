@@ -16,4 +16,8 @@ var (
 	ErrAlreadyExists          = errors.New("E0010: user already registered")
 	ErrTokenExpired           = errors.New("E0011: token expired")
 	ErrUnauthorized           = errors.New("E0012: unauthorized")
+	ErrInvalidPosition        = errors.New("E0013: invalid position")
+	ErrNotFound               = errors.New("E0014: not found")
+	ErrInvalidID              = errors.New("E0015: invalid ID")
+	ErrNotAdmin               = errors.New("E0016: not admin")
 )

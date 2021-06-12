@@ -3,6 +3,7 @@ package events
 import (
 	"context"
 	"github.com/google/uuid"
+	"matverseny-backend/entity"
 )
 
 type ProblemSubscriber struct {
@@ -16,16 +17,18 @@ const (
 	PChange ProblemType = iota
 	PDelete
 	PSwap
+	PCreate
 )
 
 type ProblemEvent struct {
-	Type      ProblemType
-	ProblemID string
-	Team      string
-	Value     int64
+	Type    ProblemType
+	Problem *entity.Problem
+	A       *entity.Problem
+	B       *entity.Problem
+	At      uint32
 }
 
-func ConsumeProblem(ctx context.Context, team string) <-chan *ProblemEvent {
+func ConsumeProblem(ctx context.Context) <-chan *ProblemEvent {
 	ensureEvents()
 
 	ch := make(chan *ProblemEvent)

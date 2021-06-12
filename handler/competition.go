@@ -5,10 +5,11 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
+	"go.mongodb.org/mongo-driver/x/bsonx"
 	"go.uber.org/zap"
-	"google.golang.org/grpc/metadata"
 	"matverseny-backend/entity"
 	"matverseny-backend/errs"
+	"matverseny-backend/events"
 	"matverseny-backend/jwt"
 	"matverseny-backend/log"
 	pb "matverseny-backend/proto"
@@ -24,20 +25,9 @@ type competitionHandler struct {
 }
 
 func (h *competitionHandler) GetProblems(req *pb.GetProblemsRequest, stream pb.Competition_GetProblemsServer) error {
-	md, ok := metadata.FromIncomingContext(stream.Context())
+	claims, ok := jwt.GetClaimsFromCtx(stream.Context())
 	if !ok {
-		return errs.ErrUnauthorized
-	}
-
-	claims, err := jwt.ValidateAccessToken(md, h.key)
-	if err != nil {
-		if err == jwt.ErrExpired {
-			return errs.ErrTokenExpired
-		}
-		if err == errs.ErrUnauthorized {
-			return err
-		}
-
+		log.Logger.Error("jwt had no data")
 		return errs.ErrJWT
 	}
 	logger := log.Logger.With(zap.String("userID", claims.UserID))
@@ -78,21 +68,66 @@ func (h *competitionHandler) GetProblems(req *pb.GetProblemsRequest, stream pb.C
 		return errs.ErrDatabase
 	}
 
-	cs, err := h.cProblems.Watch(stream.Context(), mongo.Pipeline{}, options.ChangeStream().SetFullDocument(options.UpdateLookup))
-	if err != nil {
-		logger.Error("failed to watch database", zap.Error(err))
-		return errs.ErrDatabase
-	}
-	defer cs.Close(context.Background())
+	ch := events.ConsumeProblem(stream.Context())
 
-	for cs.Next(stream.Context()) {
-		data := &bson.M{}
-		err := cs.Decode(data)
-		if err != nil {
-			logger.Error("decode error", zap.Error(err))
-			return errs.ErrDatabase
+L1:
+	for {
+		select {
+		case <-stream.Context().Done():
+			break L1
+		case p := <-ch:
+			err = stream.Send(&pb.ProblemStream{
+				Type: func() pb.ProblemStream_Type {
+					if p.Type == events.PChange {
+						return pb.ProblemStream_k_UPDATE
+					}
+					if p.Type == events.PDelete {
+						return pb.ProblemStream_k_DELETE
+					}
+					if p.Type == events.PSwap {
+						return pb.ProblemStream_k_SWAP
+					}
+					if p.Type == events.PCreate {
+						return pb.ProblemStream_k_CREATE
+					}
+
+					panic("encountered unknown problem type")
+				}(),
+				Initial: nil,
+				Update: func() *pb.ProblemStream_Update {
+					if p.Type != events.PChange {
+						return nil
+					}
+
+					return &pb.ProblemStream_Update{Problem: p.Problem.ToProto()}
+				}(),
+				Delete: func() *pb.ProblemStream_Delete {
+					if p.Type != events.PDelete {
+						return nil
+					}
+
+					return &pb.ProblemStream_Delete{Id: p.Problem.ID.Hex()}
+				}(),
+				Swap: func() *pb.ProblemStream_Swap {
+					if p.Type != events.PSwap {
+						return nil
+					}
+
+					return &pb.ProblemStream_Swap{A: p.A.ID.Hex(), B: p.B.ID.Hex()}
+				}(),
+				Create: func() *pb.ProblemStream_Create {
+					if p.Type != events.PSwap {
+						return nil
+					}
+
+					return &pb.ProblemStream_Create{At: p.At}
+				}(),
+			})
+			if err != nil {
+				logger.Debug("sending failed", zap.Error(err))
+				return err
+			}
 		}
-		logger.Debug("", zap.Any("data", data))
 	}
 
 	return nil
@@ -108,6 +143,13 @@ func (h *competitionHandler) GetTimes(*pb.GetTimesRequest, pb.Competition_GetTim
 }
 
 func NewCompetitionHandler(client *mongo.Client) *competitionHandler {
+	_, err := client.Database("comp").Collection("problems").Indexes().CreateMany(context.Background(), []mongo.IndexModel{
+		{Keys: bsonx.Doc{{Key: "position", Value: bsonx.Int32(1)}}, Options: options.Index().SetUnique(true)},
+	})
+	if err != nil {
+		log.Logger.Fatal("unable to create index", zap.Error(err))
+	}
+
 	return &competitionHandler{
 		cSolutions: client.Database("comp").Collection("solutions"),
 		cProblems:  client.Database("comp").Collection("problems"),

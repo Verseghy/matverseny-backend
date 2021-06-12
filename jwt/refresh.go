@@ -1,8 +1,10 @@
 package jwt
 
 import (
+	"context"
 	"errors"
 	"github.com/dgrijalva/jwt-go"
+	grpc_auth "github.com/grpc-ecosystem/go-grpc-middleware/auth"
 	"go.uber.org/zap"
 	"google.golang.org/grpc/metadata"
 	"matverseny-backend/entity"
@@ -20,6 +22,8 @@ type RefreshClaims struct {
 	UserID string `json:"user_id"`
 	*jwt.StandardClaims
 }
+
+type ctxAccessClaims struct{}
 
 type AccessClaims struct {
 	UserID  string `json:"user_id"`
@@ -85,26 +89,39 @@ func ValidateRefreshToken(token string, key []byte) (*RefreshClaims, error) {
 	return c, nil
 }
 
-func ValidateAccessToken(md metadata.MD, key []byte) (*AccessClaims, error) {
-	s := md.Get("Authorization")
-	if len(s) != 1 {
-		return nil, errs.ErrUnauthorized
-	}
-	strings.HasPrefix(s[0], "Bearer ")
-	token := s[0][7:]
+func GetClaimsFromCtx(ctx context.Context) (*AccessClaims, bool) {
+	val, ok := ctx.Value(ctxAccessClaims{}).(*AccessClaims)
+	return val, ok
+}
 
-	t, err := jwt.ParseWithClaims(token, &AccessClaims{}, func(token *jwt.Token) (interface{}, error) {
-		return key, nil
-	})
-	if err != nil {
-		log.Logger.Debug("parse failure", zap.Error(err))
-		return nil, err
-	}
+func ValidateAccessToken(key []byte) grpc_auth.AuthFunc {
+	return func(ctx context.Context) (context.Context, error) {
+		md, ok := metadata.FromIncomingContext(ctx)
+		if !ok {
+			return ctx, errs.ErrUnauthorized
+		}
 
-	c := t.Claims.(*AccessClaims)
-	if c.ExpiresAt < time.Now().Unix() {
-		return nil, ErrExpired
-	}
+		s := md.Get("Authorization")
+		if len(s) != 1 {
+			return nil, errs.ErrUnauthorized
+		}
+		token := strings.TrimPrefix(s[0], "Bearer ")
 
-	return c, nil
+		t, err := jwt.ParseWithClaims(token, &AccessClaims{}, func(token *jwt.Token) (interface{}, error) {
+			return key, nil
+		})
+		if err != nil {
+			log.Logger.Debug("parse failure", zap.Error(err))
+			return nil, err
+		}
+
+		c := t.Claims.(*AccessClaims)
+		if c.ExpiresAt < time.Now().Unix() {
+			return nil, ErrExpired
+		}
+
+		ctx = context.WithValue(ctx, ctxAccessClaims{}, c)
+
+		return ctx, nil
+	}
 }
