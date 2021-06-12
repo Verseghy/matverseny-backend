@@ -6,7 +6,6 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
-	"go.mongodb.org/mongo-driver/x/bsonx"
 	"go.uber.org/zap"
 	"matverseny-backend/entity"
 	"matverseny-backend/errs"
@@ -301,13 +300,6 @@ func (h *competitionHandler) GetTimes(*pb.GetTimesRequest, pb.Competition_GetTim
 }
 
 func NewCompetitionHandler(client *mongo.Client) *competitionHandler {
-	_, err := client.Database("comp").Collection("problems").Indexes().CreateMany(context.Background(), []mongo.IndexModel{
-		{Keys: bsonx.Doc{{Key: "position", Value: bsonx.Int32(1)}}, Options: options.Index().SetUnique(true)},
-	})
-	if err != nil {
-		log.Logger.Fatal("unable to create index", zap.Error(err))
-	}
-
 	return &competitionHandler{
 		cSolutions: client.Database("comp").Collection("solutions"),
 		cProblems:  client.Database("comp").Collection("problems"),
