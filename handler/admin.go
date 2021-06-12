@@ -61,6 +61,7 @@ func (h *adminHandler) CreateProblem(ctx context.Context, req *pb.CreateRequest)
 	}
 
 	_, err = h.cProblems.InsertOne(ctx, &entity.Problem{
+		ID:       primitive.NewObjectID(),
 		Position: req.At,
 	})
 	if err != nil {
