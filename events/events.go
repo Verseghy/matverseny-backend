@@ -5,8 +5,10 @@ import (
 )
 
 type Events struct {
-	lock            sync.Mutex
-	timeSubscribers []*TimeSubscriber
+	lock                sync.Mutex
+	timeSubscribers     []*TimeSubscriber
+	solutionSubscribers []*SolutionSubscriber
+	problemSubscribers  []*ProblemSubscriber
 }
 
 var e *Events
@@ -15,14 +17,4 @@ func ensureEvents() {
 	if e == nil {
 		e = &Events{}
 	}
-}
-
-func ConsumeProblems(isAdmin bool) {
-	ensureEvents()
-
-}
-
-func ConsumeSolutions(team string) {
-	ensureEvents()
-
 }

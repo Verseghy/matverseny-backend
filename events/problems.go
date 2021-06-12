@@ -1,41 +1,50 @@
-// +build ignore
-
 package events
 
 import (
 	"context"
 	"github.com/google/uuid"
-	"time"
 )
 
-type TimeSubscriber struct {
+type ProblemSubscriber struct {
 	ID uuid.UUID
-	Ch chan<- *TimeEvent
+	Ch chan<- *ProblemEvent
 }
 
-type TimeEvent struct {
-	Start *time.Time
-	End   *time.Time
+type ProblemType uint32
+
+const (
+	PChange ProblemType = iota
+	PDelete
+	PSwap
+)
+
+type ProblemEvent struct {
+	Type      ProblemType
+	ProblemID string
+	Team      string
+	Value     int64
 }
 
-func ConsumeTime(ctx context.Context) <-chan *TimeEvent {
+func ConsumeProblem(ctx context.Context, team string) <-chan *ProblemEvent {
 	ensureEvents()
 
-	ch := make(chan *TimeEvent)
+	ch := make(chan *ProblemEvent)
 	e.lock.Lock()
+	defer e.lock.Unlock()
+
 	ID, err := uuid.NewUUID()
 	if err != nil {
 		panic(err)
 	}
-	e.timeSubscribers = append(e.timeSubscribers, &TimeSubscriber{ID: ID, Ch: ch})
+	e.problemSubscribers = append(e.problemSubscribers, &ProblemSubscriber{ID: ID, Ch: ch})
 	go func() {
 		<-ctx.Done()
 		e.lock.Lock()
 		defer e.lock.Unlock()
 
-		for k, v := range e.timeSubscribers {
+		for k, v := range e.problemSubscribers {
 			if v.ID == ID {
-				a := e.timeSubscribers
+				a := e.problemSubscribers
 				a[k] = a[len(a)-1]
 				a[len(a)-1] = nil
 				a = a[:len(a)-1]
@@ -43,18 +52,17 @@ func ConsumeTime(ctx context.Context) <-chan *TimeEvent {
 			}
 		}
 	}()
-	e.lock.Unlock()
 
 	return ch
 }
 
-func PublishTime(event *TimeEvent) {
+func PublishProblem(event *ProblemEvent) {
 	ensureEvents()
 
 	e.lock.Lock()
 	defer e.lock.Unlock()
 
-	for _, v := range e.timeSubscribers {
+	for _, v := range e.problemSubscribers {
 		v.Ch <- event
 	}
 }
