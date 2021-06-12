@@ -20,4 +20,5 @@ var (
 	ErrNotFound               = errors.New("E0014: not found")
 	ErrInvalidID              = errors.New("E0015: invalid ID")
 	ErrNotAdmin               = errors.New("E0016: not admin")
+	ErrNoTeam                 = errors.New("E0017: no team")
 )

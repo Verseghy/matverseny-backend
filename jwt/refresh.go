@@ -55,7 +55,7 @@ func NewAccessToken(user *entity.User, key []byte) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS512, &AccessClaims{
 		UserID:  user.ID.Hex(),
 		IsAdmin: user.IsAdmin,
-		Team:    user.Team,
+		Team:    user.Team.Hex(),
 		StandardClaims: &jwt.StandardClaims{
 			ExpiresAt: time.Now().Add(time.Hour * 24).Unix(),
 			IssuedAt:  time.Now().Unix(),

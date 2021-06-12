@@ -3,6 +3,7 @@ package handler
 import (
 	"context"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.mongodb.org/mongo-driver/x/bsonx"
@@ -22,6 +23,37 @@ type competitionHandler struct {
 	key        []byte
 
 	pb.UnimplementedCompetitionServer
+}
+
+func (h *competitionHandler) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
+	allowedWithoutAuthentication := []string{
+		"/competition.Competition/GetTime",
+	}
+
+	for _, v := range allowedWithoutAuthentication {
+		if v == fullMethodName {
+			return ctx, nil
+		}
+	}
+
+	f := jwt.ValidateAccessToken([]byte("test-key"))
+	ctx, err := f(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	claims, ok := jwt.GetClaimsFromCtx(ctx)
+	if !ok {
+		return nil, errs.ErrJWT
+	}
+
+	if claims.Team == "" {
+		return nil, errs.ErrNoTeam
+	}
+
+	// TODO: check time
+
+	return ctx, nil
 }
 
 func (h *competitionHandler) GetProblems(req *pb.GetProblemsRequest, stream pb.Competition_GetProblemsServer) error {
@@ -132,11 +164,137 @@ L1:
 
 	return nil
 }
-func (h *competitionHandler) GetSolutions(*pb.GetSolutionsRequest, pb.Competition_GetSolutionsServer) error {
-	return errs.ErrNotImplemented
+func (h *competitionHandler) GetSolutions(req *pb.GetSolutionsRequest, stream pb.Competition_GetSolutionsServer) error {
+	claims, ok := jwt.GetClaimsFromCtx(stream.Context())
+	if !ok {
+		log.Logger.Error("jwt had no data")
+		return errs.ErrJWT
+	}
+	logger := log.Logger.With(zap.String("userID", claims.UserID))
+
+	teamID, err := primitive.ObjectIDFromHex(claims.Team)
+	if err != nil {
+		log.Logger.Error("invalid team id", zap.Error(err))
+		return errs.ErrJWT
+	}
+
+	cursor, err := h.cSolutions.Find(stream.Context(), bson.M{"team": teamID})
+	if err != nil {
+		logger.Error("database error", zap.Error(err))
+		return errs.ErrDatabase
+	}
+	defer cursor.Close(context.Background())
+
+	for cursor.Next(stream.Context()) {
+		s := &entity.Solution{}
+		err := cursor.Decode(s)
+		if err != nil {
+			logger.Error("decode error", zap.Error(err))
+			return errs.ErrDatabase
+		}
+
+		err = stream.Send(&pb.GetSolutionsResponse{
+			Id:    s.Team.Hex(),
+			Type:  pb.GetSolutionsResponse_k_CHANGE,
+			Value: s.Value,
+		})
+		if err != nil {
+			logger.Debug("sending failed", zap.Error(err))
+			return err
+		}
+	}
+	if err := cursor.Err(); err != nil {
+		logger.Error("cursor error", zap.Error(err))
+		return errs.ErrDatabase
+	}
+
+	ch := events.ConsumeSolution(stream.Context(), teamID.Hex())
+
+L1:
+	for {
+		select {
+		case <-stream.Context().Done():
+			break L1
+		case s := <-ch:
+			err = stream.Send(&pb.GetSolutionsResponse{
+				Id: s.ProblemID,
+				Type: func() pb.GetSolutionsResponse_Modification {
+					if s.Type == events.SChange {
+						return pb.GetSolutionsResponse_k_CHANGE
+					}
+					if s.Type == events.SDelete {
+						return pb.GetSolutionsResponse_k_DELETE
+					}
+
+					panic("encountered invalid modification type")
+				}(),
+				Value: s.Value,
+			})
+			if err != nil {
+				logger.Debug("sending failed", zap.Error(err))
+				return err
+			}
+		}
+	}
+
+	return nil
 }
-func (h *competitionHandler) SetSolutions(context.Context, *pb.SetSolutionsRequest) (*pb.SetSolutionsResponse, error) {
-	return nil, errs.ErrNotImplemented
+func (h *competitionHandler) SetSolutions(ctx context.Context, req *pb.SetSolutionsRequest) (*pb.SetSolutionsResponse, error) {
+	res := &pb.SetSolutionsResponse{}
+
+	claims, ok := jwt.GetClaimsFromCtx(ctx)
+	if !ok {
+		log.Logger.Error("jwt had no data")
+		return nil, errs.ErrJWT
+	}
+	logger := log.Logger.With(zap.String("userID", claims.UserID))
+
+	problemID, err := primitive.ObjectIDFromHex(req.Id)
+	if err != nil {
+		return nil, errs.ErrInvalidID
+	}
+
+	teamID, err := primitive.ObjectIDFromHex(claims.Team)
+	if err != nil {
+		return nil, errs.ErrJWT
+	}
+
+	if req.Delete {
+		_, err = h.cProblems.DeleteOne(ctx, bson.M{"problem_id": problemID, "team": teamID})
+		if err != nil {
+			logger.Error("database error", zap.Error(err))
+			return nil, errs.ErrDatabase
+		}
+
+		events.PublishSolution(&events.SolutionEvent{
+			Type:      events.SDelete,
+			ProblemID: problemID.Hex(),
+			Team:      teamID.Hex(),
+		})
+
+		return res, nil
+	}
+
+	s := &entity.Solution{
+		Team:      teamID,
+		ProblemID: problemID,
+		Value:     req.Value,
+	}
+
+	_, err = h.cProblems.UpdateOne(ctx, bson.M{"problem_id": problemID, "team": teamID}, bson.M{"$set": s}, options.Update().SetUpsert(true))
+	if err != nil {
+		logger.Error("database error", zap.Error(err))
+		return nil, errs.ErrDatabase
+	}
+
+	events.PublishSolution(&events.SolutionEvent{
+		Type:      events.SChange,
+		ProblemID: problemID.Hex(),
+		Team:      teamID.Hex(),
+		Value:     req.Value,
+	})
+
+	return res, nil
 }
 func (h *competitionHandler) GetTimes(*pb.GetTimesRequest, pb.Competition_GetTimesServer) error {
 	return errs.ErrNotImplemented

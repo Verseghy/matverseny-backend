@@ -10,6 +10,6 @@ type User struct {
 	School   string             `bson:"school"`
 	Class    uint32             `bson:"class"`
 
-	IsAdmin bool   `bson:"is_admin"`
-	Team    string `bson:"team"`
+	IsAdmin bool               `bson:"is_admin"`
+	Team    primitive.ObjectID `bson:"team"`
 }
