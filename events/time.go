@@ -36,7 +36,7 @@ func ConsumeTime(ctx context.Context) <-chan *TimeEvent {
 				a := e.timeSubscribers
 				a[k] = a[len(a)-1]
 				a[len(a)-1] = nil
-				a = a[:len(a)-1]
+				e.timeSubscribers = a[:len(a)-1]
 				break
 			}
 		}

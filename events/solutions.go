@@ -47,7 +47,7 @@ func ConsumeSolution(ctx context.Context, team string) <-chan *SolutionEvent {
 				a := e.solutionSubscribers
 				a[k] = a[len(a)-1]
 				a[len(a)-1] = nil
-				a = a[:len(a)-1]
+				e.solutionSubscribers = a[:len(a)-1]
 				break
 			}
 		}

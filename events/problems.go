@@ -50,7 +50,7 @@ func ConsumeProblem(ctx context.Context) <-chan *ProblemEvent {
 				a := e.problemSubscribers
 				a[k] = a[len(a)-1]
 				a[len(a)-1] = nil
-				a = a[:len(a)-1]
+				e.problemSubscribers = a[:len(a)-1]
 				break
 			}
 		}
