@@ -24,6 +24,10 @@ type authHandler struct {
 	pb.UnimplementedAuthServer
 }
 
+func (h *authHandler) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
+	return ctx, nil
+}
+
 func (h *authHandler) Login(ctx context.Context, req *pb.LoginRequest) (*pb.LoginResponse, error) {
 	res := &pb.LoginResponse{}
 
