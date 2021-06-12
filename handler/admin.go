@@ -214,6 +214,11 @@ func (h *adminHandler) UpdateProblem(ctx context.Context, req *pb.UpdateRequest)
 		return nil, errs.ErrDatabase
 	}
 
+	events.PublishProblem(&events.ProblemEvent{
+		Type:    events.PChange,
+		Problem: p,
+	})
+
 	return res, nil
 }
 
@@ -248,6 +253,11 @@ func (h *adminHandler) DeleteProblem(ctx context.Context, req *pb.DeleteRequest)
 		logger.Error("database error", zap.Error(err))
 		return nil, errs.ErrDatabase
 	}
+
+	events.PublishProblem(&events.ProblemEvent{
+		Type:    events.PDelete,
+		Problem: p,
+	})
 
 	return res, nil
 }
@@ -305,6 +315,12 @@ func (h *adminHandler) SwapProblem(ctx context.Context, req *pb.SwapRequest) (*p
 		logger.Error("database error", zap.Error(err))
 		return nil, errs.ErrDatabase
 	}
+
+	events.PublishProblem(&events.ProblemEvent{
+		Type: events.PSwap,
+		A:    p1,
+		B:    p2,
+	})
 
 	return res, nil
 }
