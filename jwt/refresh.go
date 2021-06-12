@@ -105,7 +105,7 @@ func ValidateAccessToken(key []byte) grpc_auth.AuthFunc {
 		if len(s) != 1 {
 			return nil, errs.ErrUnauthorized
 		}
-		token := strings.TrimPrefix(s[0], "Bearer ")
+		token := strings.TrimPrefix(s[0], "Bearer: ")
 
 		t, err := jwt.ParseWithClaims(token, &AccessClaims{}, func(token *jwt.Token) (interface{}, error) {
 			return key, nil
