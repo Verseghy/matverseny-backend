@@ -164,7 +164,7 @@ func (h *authHandler) ForgotPassword(ctx context.Context, req *pb.ForgotPassword
 	err := h.c.FindOne(ctx, bson.M{"email": req.Email}).Decode(u)
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
-			return nil, nil
+			return res, nil
 		}
 
 		log.Logger.Error("database error", zap.Error(err))
