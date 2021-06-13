@@ -170,7 +170,7 @@ L1:
 					return &pb.ProblemStream_Swap{A: p.A.ID.Hex(), B: p.B.ID.Hex()}
 				}(),
 				Create: func() *pb.ProblemStream_Create {
-					if p.Type != events.PSwap {
+					if p.Type != events.PCreate {
 						return nil
 					}
 
