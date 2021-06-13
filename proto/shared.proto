@@ -42,7 +42,8 @@ message ProblemStream {
   }
 
   message Create {
-    uint32 at = 1;
+    Problem problem = 1;
+    uint32 at = 2;
   }
 
   Type type = 1;

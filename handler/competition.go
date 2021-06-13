@@ -151,7 +151,7 @@ L1:
 						return nil
 					}
 
-					return &pb.ProblemStream_Create{At: p.At}
+					return &pb.ProblemStream_Create{At: p.At, Problem: p.Problem.ToProto()}
 				}(),
 			})
 			if err != nil {

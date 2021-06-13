@@ -60,18 +60,20 @@ func (h *adminHandler) CreateProblem(ctx context.Context, req *pb.CreateRequest)
 		return nil, errs.ErrDatabase
 	}
 
-	_, err = h.cProblems.InsertOne(ctx, &entity.Problem{
+	p := &entity.Problem{
 		ID:       primitive.NewObjectID(),
 		Position: req.At,
-	})
+	}
+	_, err = h.cProblems.InsertOne(ctx, p)
 	if err != nil {
 		logger.Error("database error", zap.Error(err))
 		return nil, errs.ErrDatabase
 	}
 
 	events.PublishProblem(&events.ProblemEvent{
-		Type: events.PCreate,
-		At:   req.At,
+		Type:    events.PCreate,
+		At:      req.At,
+		Problem: p,
 	})
 
 	return res, nil
@@ -174,7 +176,7 @@ L1:
 						return nil
 					}
 
-					return &pb.ProblemStream_Create{At: p.At}
+					return &pb.ProblemStream_Create{At: p.At, Problem: p.Problem.ToAdminProto()}
 				}(),
 			})
 			if err != nil {
