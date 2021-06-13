@@ -172,7 +172,7 @@ func (h *authHandler) ForgotPassword(ctx context.Context, req *pb.ForgotPassword
 	}
 
 	token := mustGetRandToken()
-	_, err = h.c.InsertOne(ctx, &entity.PasswordReset{
+	_, err = h.pass.InsertOne(ctx, &entity.PasswordReset{
 		ID:     primitive.NewObjectID(),
 		UserID: u.ID,
 		Token:  token,

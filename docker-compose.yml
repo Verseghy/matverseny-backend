@@ -3,11 +3,6 @@ services:
   service:
     build: .
     restart: on-failure
-    depends_on:
-      - mongo1
-      - mongo2
-      - mongo3
-      - mongosetup
     environment:
       - "MONGO_URI=mongodb://mongo1:27017,mongo2:27018,mongo3:27019/?replicaSet=rs0"
     ports:
@@ -46,8 +41,6 @@ services:
   proxy:
     image: envoyproxy/envoy-dev:436946bb9df0acda0e4e709592205f0d199dfb79
     restart: on-failure
-    depends_on:
-      - service
     ports:
       - "8080:8080"
     volumes:
