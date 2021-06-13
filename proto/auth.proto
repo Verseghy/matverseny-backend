@@ -8,6 +8,7 @@ service Auth {
 	rpc Login(LoginRequest) returns (LoginResponse) {}
 	rpc Register(RegisterRequest) returns (RegisterResponse) {}
 	rpc ForgotPassword(ForgotPasswordRequest) returns (ForgotPasswordResponse) {}
+	rpc ResetPassword(ResetPasswordRequest) returns (ResetPasswordResponse) {}
 
 	rpc RefreshToken(RefreshTokenRequest) returns (RefreshTokenResponse) {}
 }
@@ -56,4 +57,13 @@ message RefreshTokenRequest {
 
 message RefreshTokenResponse {
 	string token = 2;
+}
+
+message ResetPasswordRequest {
+	string token = 1;
+	string email = 2;
+	string password = 3;
+}
+
+message ResetPasswordResponse {
 }

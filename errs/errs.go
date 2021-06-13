@@ -21,4 +21,6 @@ var (
 	ErrInvalidID              = errors.New("E0015: invalid ID")
 	ErrNotAdmin               = errors.New("E0016: not admin")
 	ErrNoTeam                 = errors.New("E0017: no team")
+	ErrMail                   = errors.New("E0018: error sending email")
+	ErrInvalidResetToken      = errors.New("E0019: reset token invalid")
 )

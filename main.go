@@ -7,6 +7,8 @@ import (
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	grpc_auth "github.com/grpc-ecosystem/go-grpc-middleware/auth"
 	grpc_zap "github.com/grpc-ecosystem/go-grpc-middleware/logging/zap"
+	"github.com/joho/godotenv"
+	"github.com/mailgun/mailgun-go/v4"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.uber.org/zap"
@@ -32,8 +34,15 @@ func main() {
 	flag.Parse()
 	log.EnsureLogger()
 
+	err := godotenv.Load()
+	if err != nil {
+		log.Logger.Fatal("Error loading .env file")
+	}
+
 	grpcListenAddr := envOrDefaultString("PORT", "6969")
 	mongoAddr := envOrDefaultString("MONGO_URI", "mongodb://mongo1:27017,mongo2:27018,mongo3:27019/?replicaSet=rs0")
+	mgDomain := envOrDefaultString("MAILGUN_DOMAIN", "sandboxd729d0f33df94a6999902985df8e0025.mailgun.org")
+	mgKey := envOrDefaultString("MAILGUN_API_KEY", "set-it-in-env-file")
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
@@ -42,7 +51,9 @@ func main() {
 		log.Logger.Fatal("failed connecting to database", zap.Error(err))
 	}
 
-	authHandler := handler.NewAuthHandler(client)
+	mg := mailgun.NewMailgun(mgDomain, mgKey)
+
+	authHandler := handler.NewAuthHandler(client, mg)
 	competitionHandler := handler.NewCompetitionHandler(client)
 	adminHandler := handler.NewAdminHandler(client)
 
