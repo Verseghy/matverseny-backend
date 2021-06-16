@@ -205,12 +205,11 @@ func (h *adminHandler) UpdateProblem(ctx context.Context, req *pb.UpdateRequest)
 	}
 
 	p := &entity.Problem{}
-	p.FromProto(req.Problem)
 
 	err = h.cProblems.FindOneAndUpdate(ctx, bson.M{"_id": mongoID}, bson.M{"$set": bson.M{
-		"body":     p.Body,
-		"image":    p.Image,
-		"solution": p.Solution,
+		"body":     req.Problem.Body,
+		"image":    req.Problem.Image,
+		"solution": req.Problem.Solution,
 	}}).Decode(p)
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
@@ -220,6 +219,10 @@ func (h *adminHandler) UpdateProblem(ctx context.Context, req *pb.UpdateRequest)
 		logger.Error("database error", zap.Error(err))
 		return nil, errs.ErrDatabase
 	}
+
+	p.Body = req.Problem.Body
+	p.Image = req.Problem.Image
+	p.Solution = req.Problem.Solution
 
 	events.PublishProblem(&events.ProblemEvent{
 		Type:    events.PChange,
