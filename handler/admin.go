@@ -60,9 +60,8 @@ func (h *adminHandler) CreateProblem(ctx context.Context, req *pb.CreateRequest)
 		return nil, errs.ErrDatabase
 	}
 
-	objID := primitive.NewObjectID()
 	p := &entity.Problem{
-		ID:       &objID,
+		ID:       primitive.NewObjectID(),
 		Position: req.At,
 	}
 	_, err = h.cProblems.InsertOne(ctx, p)
