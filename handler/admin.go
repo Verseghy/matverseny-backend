@@ -207,7 +207,11 @@ func (h *adminHandler) UpdateProblem(ctx context.Context, req *pb.UpdateRequest)
 	p := &entity.Problem{}
 	p.FromProto(req.Problem)
 
-	err = h.cProblems.FindOneAndUpdate(ctx, bson.M{"_id": mongoID}, bson.M{"$set": p}).Decode(p)
+	err = h.cProblems.FindOneAndUpdate(ctx, bson.M{"_id": mongoID}, bson.M{"$set": bson.M{
+		"body":     p.Body,
+		"image":    p.Image,
+		"solution": p.Solution,
+	}}).Decode(p)
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
 			return nil, errs.ErrNotFound
