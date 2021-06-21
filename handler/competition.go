@@ -280,7 +280,7 @@ func (h *competitionHandler) SetSolutions(ctx context.Context, req *pb.SetSoluti
 		Value:     req.Value,
 	}
 
-	_, err = h.cProblems.UpdateOne(ctx, bson.M{"problem_id": problemID, "team": teamID}, bson.M{"$set": s}, options.Update().SetUpsert(true))
+	_, err = h.cSolutions.UpdateOne(ctx, bson.M{"problem_id": problemID, "team": teamID}, bson.M{"$set": s}, options.Update().SetUpsert(true))
 	if err != nil {
 		logger.Error("database error", zap.Error(err))
 		return nil, errs.ErrDatabase
