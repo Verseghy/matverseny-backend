@@ -12,11 +12,13 @@ import (
 	"matverseny-backend/jwt"
 	"matverseny-backend/log"
 	pb "matverseny-backend/proto"
+	"sync"
 )
 
 type adminHandler struct {
 	cProblems *mongo.Collection
 	cTime     *mongo.Collection
+	m         sync.Mutex
 
 	pb.UnimplementedAdminServer
 }
@@ -41,6 +43,9 @@ func (h *adminHandler) AuthFuncOverride(ctx context.Context, fullMethodName stri
 }
 
 func (h *adminHandler) CreateProblem(ctx context.Context, req *pb.CreateRequest) (*pb.CreateResponse, error) {
+	h.m.Lock()
+	defer h.m.Unlock()
+
 	res := &pb.CreateResponse{}
 
 	claims, ok := jwt.GetClaimsFromCtx(ctx)
@@ -190,6 +195,9 @@ L1:
 }
 
 func (h *adminHandler) UpdateProblem(ctx context.Context, req *pb.UpdateRequest) (*pb.UpdateResponse, error) {
+	h.m.Lock()
+	defer h.m.Unlock()
+
 	res := &pb.UpdateResponse{}
 
 	claims, ok := jwt.GetClaimsFromCtx(ctx)
@@ -233,6 +241,9 @@ func (h *adminHandler) UpdateProblem(ctx context.Context, req *pb.UpdateRequest)
 }
 
 func (h *adminHandler) DeleteProblem(ctx context.Context, req *pb.DeleteRequest) (*pb.DeleteResponse, error) {
+	h.m.Lock()
+	defer h.m.Unlock()
+
 	res := &pb.DeleteResponse{}
 
 	claims, ok := jwt.GetClaimsFromCtx(ctx)
@@ -273,6 +284,9 @@ func (h *adminHandler) DeleteProblem(ctx context.Context, req *pb.DeleteRequest)
 }
 
 func (h *adminHandler) SwapProblem(ctx context.Context, req *pb.SwapRequest) (*pb.SwapResponse, error) {
+	h.m.Lock()
+	defer h.m.Unlock()
+
 	res := &pb.SwapResponse{}
 
 	claims, ok := jwt.GetClaimsFromCtx(ctx)
