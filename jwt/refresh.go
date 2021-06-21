@@ -19,22 +19,23 @@ var (
 )
 
 type RefreshClaims struct {
-	UserID string `json:"user_id"`
+	UserID  string `json:"user_id"`
+	IsAdmin bool   `json:"is_admin"`
 	*jwt.StandardClaims
 }
 
 type ctxAccessClaims struct{}
 
 type AccessClaims struct {
-	UserID  string `json:"user_id"`
-	IsAdmin bool   `json:"is_admin"`
-	Team    string `json:"team"`
+	UserID string `json:"user_id"`
+	Team   string `json:"team"`
 	*jwt.StandardClaims
 }
 
 func NewRefreshToken(user *entity.User, key []byte) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS512, &RefreshClaims{
-		UserID: user.ID.Hex(),
+		UserID:  user.ID.Hex(),
+		IsAdmin: user.IsAdmin,
 		StandardClaims: &jwt.StandardClaims{
 			ExpiresAt: time.Now().Add(time.Hour * 24 * 30 * 6).Unix(),
 			IssuedAt:  time.Now().Unix(),
@@ -53,9 +54,8 @@ func NewRefreshToken(user *entity.User, key []byte) (string, error) {
 
 func NewAccessToken(user *entity.User, key []byte) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS512, &AccessClaims{
-		UserID:  user.ID.Hex(),
-		IsAdmin: user.IsAdmin,
-		Team:    user.Team,
+		UserID: user.ID.Hex(),
+		Team:   user.Team,
 		StandardClaims: &jwt.StandardClaims{
 			ExpiresAt: time.Now().Add(time.Hour * 24).Unix(),
 			IssuedAt:  time.Now().Unix(),
