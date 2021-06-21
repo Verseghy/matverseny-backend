@@ -23,4 +23,5 @@ var (
 	ErrNoTeam                 = errors.New("E0017: no team")
 	ErrMail                   = errors.New("E0018: error sending email")
 	ErrInvalidResetToken      = errors.New("E0019: reset token invalid")
+	ErrQueue                  = errors.New("E0020: queue error")
 )

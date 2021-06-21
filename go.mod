@@ -10,6 +10,7 @@ require (
 	github.com/mailgun/mailgun-go/v4 v4.5.1
 	github.com/onsi/ginkgo v1.16.4
 	github.com/onsi/gomega v1.13.0
+	github.com/streadway/amqp v1.0.0 // indirect
 	go.mongodb.org/mongo-driver v1.5.3
 	go.uber.org/zap v1.17.0
 	golang.org/x/crypto v0.0.0-20200622213623-75b288015ac9

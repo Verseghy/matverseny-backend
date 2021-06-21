@@ -129,7 +129,11 @@ func (h *adminHandler) GetProblems(req *pb.ProblemStreamRequest, stream pb.Admin
 		return errs.ErrDatabase
 	}
 
-	ch := events.ConsumeProblem(stream.Context())
+	ch, err := events.ConsumeProblem(stream.Context())
+	if err != nil {
+		logger.Error("queue error", zap.Error(err))
+		return errs.ErrQueue
+	}
 
 L1:
 	for {

@@ -65,6 +65,12 @@ func (h *competitionHandler) GetProblems(req *pb.ProblemStreamRequest, stream pb
 	}
 	logger := log.Logger.With(zap.String("userID", claims.UserID))
 
+	ch, err := events.ConsumeProblem(stream.Context())
+	if err != nil {
+		logger.Error("queue error", zap.Error(err))
+		return errs.ErrQueue
+	}
+
 	cursor, err := h.cProblems.Find(stream.Context(), bson.M{})
 	if err != nil {
 		logger.Error("database error", zap.Error(err))
@@ -100,8 +106,6 @@ func (h *competitionHandler) GetProblems(req *pb.ProblemStreamRequest, stream pb
 		logger.Error("cursor error", zap.Error(err))
 		return errs.ErrDatabase
 	}
-
-	ch := events.ConsumeProblem(stream.Context())
 
 L1:
 	for {
@@ -179,6 +183,12 @@ func (h *competitionHandler) GetSolutions(req *pb.GetSolutionsRequest, stream pb
 		return errs.ErrJWT
 	}
 
+	ch, err := events.ConsumeSolution(stream.Context(), teamID.Hex())
+	if err != nil {
+		logger.Error("queue error", zap.Error(err))
+		return errs.ErrQueue
+	}
+
 	cursor, err := h.cSolutions.Find(stream.Context(), bson.M{"team": teamID})
 	if err != nil {
 		logger.Error("database error", zap.Error(err))
@@ -208,8 +218,6 @@ func (h *competitionHandler) GetSolutions(req *pb.GetSolutionsRequest, stream pb
 		logger.Error("cursor error", zap.Error(err))
 		return errs.ErrDatabase
 	}
-
-	ch := events.ConsumeSolution(stream.Context(), teamID.Hex())
 
 L1:
 	for {
@@ -305,8 +313,14 @@ func (h *competitionHandler) GetTimes(req *pb.GetTimesRequest, stream pb.Competi
 	}
 	logger := log.Logger.With(zap.String("userID", claims.UserID))
 
+	ch, err := events.ConsumeTime(stream.Context())
+	if err != nil {
+		logger.Error("queue error", zap.Error(err))
+		return errs.ErrQueue
+	}
+
 	t := &entity.Info{}
-	err := h.cInfo.FindOne(stream.Context(), bson.M{}).Decode(t)
+	err = h.cInfo.FindOne(stream.Context(), bson.M{}).Decode(t)
 	if err != nil {
 		logger.Error("database error", zap.Error(err))
 		return errs.ErrDatabase
@@ -320,8 +334,6 @@ func (h *competitionHandler) GetTimes(req *pb.GetTimesRequest, stream pb.Competi
 		logger.Debug("sending failed", zap.Error(err))
 		return err
 	}
-
-	ch := events.ConsumeTime(stream.Context())
 
 L1:
 	for {

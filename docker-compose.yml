@@ -47,3 +47,14 @@ services:
       - ./envoy.yml:/etc/envoy/envoy.yaml
     extra_hosts:
       host.docker.internal: host-gateway
+  rabbitmq:
+    image: docker.io/bitnami/rabbitmq:3.8
+    ports:
+      - '4369:4369'
+      - '5672:5672'
+      - '25672:25672'
+      - '15672:15672'
+    environment:
+      - RABBITMQ_SECURE_PASSWORD=yes
+    volumes:
+    - ./rabbitmq.conf:/bitnami/rabbitmq/conf/custom.conf:ro

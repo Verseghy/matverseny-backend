@@ -13,6 +13,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
+	"matverseny-backend/events"
 	"matverseny-backend/handler"
 	"matverseny-backend/jwt"
 	"matverseny-backend/log"
@@ -33,6 +34,7 @@ func envOrDefaultString(env, def string) string {
 func main() {
 	flag.Parse()
 	log.EnsureLogger()
+	events.EnsureEvents()
 
 	err := godotenv.Load()
 	if err != nil {

@@ -1,8 +1,13 @@
 package events
 
 import (
+	"bytes"
 	"context"
+	"encoding/gob"
 	"github.com/google/uuid"
+	"github.com/streadway/amqp"
+	"go.uber.org/zap"
+	"matverseny-backend/log"
 )
 
 type SolutionSubscriber struct {
@@ -25,46 +30,90 @@ type SolutionEvent struct {
 	Value     int64
 }
 
-func ConsumeSolution(ctx context.Context, team string) <-chan *SolutionEvent {
-	ensureEvents()
+func ConsumeSolution(ctx context.Context, team string) (<-chan *SolutionEvent, error) {
+	EnsureEvents()
 
 	ch := make(chan *SolutionEvent)
-	e.lock.Lock()
-	defer e.lock.Unlock()
 
-	ID, err := uuid.NewUUID()
+	rch, err := e.Conn.Channel()
 	if err != nil {
 		panic(err)
 	}
-	e.solutionSubscribers = append(e.solutionSubscribers, &SolutionSubscriber{ID: ID, Ch: ch, Team: team})
-	go func() {
-		<-ctx.Done()
-		e.lock.Lock()
-		defer e.lock.Unlock()
+	q, err := rch.QueueDeclare("", false, true, true, false, nil)
+	if err != nil {
+		return nil, err
+	}
 
-		for k, v := range e.solutionSubscribers {
-			if v.ID == ID {
-				a := e.solutionSubscribers
-				a[k] = a[len(a)-1]
-				a[len(a)-1] = nil
-				e.solutionSubscribers = a[:len(a)-1]
-				break
+	err = rch.QueueBind(
+		q.Name,
+		team,
+		SolutionsExchange,
+		false,
+		nil,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	msgs, err := rch.Consume(q.Name, "", true, false, false, false, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	go func() {
+		c := make(chan amqp.Delivery)
+
+		go func() {
+			for d := range msgs {
+				c <- d
+			}
+		}()
+
+		for {
+			select {
+			case <-ctx.Done():
+				err := rch.Close()
+				if err != nil {
+					log.Logger.Error("unable to close channel", zap.Error(err))
+				}
+				return
+			case d := <-c:
+				var p *SolutionEvent
+				b := bytes.NewReader(d.Body)
+				err := gob.NewDecoder(b).Decode(&p)
+				if err != nil {
+					log.Logger.Error("unable to decode event", zap.Error(err))
+				}
+
+				ch <- p
 			}
 		}
 	}()
 
-	return ch
+	return ch, nil
 }
 
-func PublishSolution(event *SolutionEvent) {
-	ensureEvents()
+func PublishSolution(event *SolutionEvent) error {
+	EnsureEvents()
 
-	e.lock.Lock()
-	defer e.lock.Unlock()
-
-	for _, v := range e.solutionSubscribers {
-		if v.Team == event.Team {
-			v.Ch <- event
-		}
+	var b bytes.Buffer
+	err := gob.NewEncoder(&b).Encode(event)
+	if err != nil {
+		return err
 	}
+
+	rch, err := e.Conn.Channel()
+	if err != nil {
+		panic(err)
+	}
+	defer rch.Close()
+	err = rch.Publish(SolutionsExchange, event.Team, false, false, amqp.Publishing{
+		ContentType: "application/protobuf",
+		Body:        b.Bytes(),
+	})
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
