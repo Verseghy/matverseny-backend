@@ -13,12 +13,14 @@ import (
 	"matverseny-backend/jwt"
 	"matverseny-backend/log"
 	pb "matverseny-backend/proto"
+	"time"
 )
 
 type competitionHandler struct {
 	cSolutions *mongo.Collection
 	cProblems  *mongo.Collection
 	cTime      *mongo.Collection
+	cInfo      *mongo.Collection
 	key        []byte
 
 	pb.UnimplementedCompetitionServer
@@ -295,8 +297,50 @@ func (h *competitionHandler) SetSolutions(ctx context.Context, req *pb.SetSoluti
 
 	return res, nil
 }
-func (h *competitionHandler) GetTimes(*pb.GetTimesRequest, pb.Competition_GetTimesServer) error {
-	return errs.ErrNotImplemented
+func (h *competitionHandler) GetTimes(req *pb.GetTimesRequest, stream pb.Competition_GetTimesServer) error {
+	claims, ok := jwt.GetClaimsFromCtx(stream.Context())
+	if !ok {
+		log.Logger.Error("jwt had no data")
+		return errs.ErrJWT
+	}
+	logger := log.Logger.With(zap.String("userID", claims.UserID))
+
+	t := &entity.Info{}
+	err := h.cInfo.FindOne(stream.Context(), bson.M{}).Decode(t)
+	if err != nil {
+		logger.Error("database error", zap.Error(err))
+		return errs.ErrDatabase
+	}
+
+	err = stream.Send(&pb.GetTimesResponse{
+		Start: t.Time.StartDate.Format(time.RFC3339),
+		End:   t.Time.EndDate.Format(time.RFC3339),
+	})
+	if err != nil {
+		logger.Debug("sending failed", zap.Error(err))
+		return err
+	}
+
+	ch := events.ConsumeTime(stream.Context())
+
+L1:
+	for {
+		select {
+		case <-stream.Context().Done():
+			break L1
+		case t := <-ch:
+			err = stream.Send(&pb.GetTimesResponse{
+				Start: t.Start.Format(time.RFC3339),
+				End:   t.End.Format(time.RFC3339),
+			})
+			if err != nil {
+				logger.Debug("sending failed", zap.Error(err))
+				return err
+			}
+		}
+	}
+
+	return nil
 }
 
 func NewCompetitionHandler(client *mongo.Client) *competitionHandler {
@@ -304,6 +348,7 @@ func NewCompetitionHandler(client *mongo.Client) *competitionHandler {
 		cSolutions: client.Database("comp").Collection("solutions"),
 		cProblems:  client.Database("comp").Collection("problems"),
 		cTime:      client.Database("comp").Collection("time"),
+		cInfo:      client.Database("comp").Collection("info"),
 		key:        []byte("test-key"),
 	}
 }
