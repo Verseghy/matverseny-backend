@@ -193,7 +193,7 @@ func (h *competitionHandler) GetSolutions(req *pb.GetSolutionsRequest, stream pb
 		}
 
 		err = stream.Send(&pb.GetSolutionsResponse{
-			Id:    s.Team.Hex(),
+			Id:    s.ProblemID.Hex(),
 			Type:  pb.GetSolutionsResponse_k_CHANGE,
 			Value: s.Value,
 		})
