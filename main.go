@@ -13,6 +13,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
+	"math/rand"
 	"matverseny-backend/events"
 	"matverseny-backend/handler"
 	"matverseny-backend/jwt"
@@ -35,6 +36,8 @@ func main() {
 	flag.Parse()
 	log.EnsureLogger()
 	events.EnsureEvents()
+
+	rand.Seed(time.Now().UTC().UnixNano())
 
 	err := godotenv.Load()
 	if err != nil {
