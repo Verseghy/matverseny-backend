@@ -2,7 +2,9 @@ package events
 
 import (
 	"github.com/streadway/amqp"
+	"matverseny-backend/log"
 	"os"
+	"time"
 )
 
 const (
@@ -27,11 +29,27 @@ func envOrDefaultString(env, def string) string {
 
 func EnsureEvents() {
 	if e == nil {
+		log.Logger.Info("Trying to connect to rabbitmq...")
 		s := envOrDefaultString("RABBITMQ_CONNSTRING", "amqp://user:bitnami@rabbitmq:5672/")
-		conn, err := amqp.Dial(s)
-		if err != nil {
-			panic(err)
+
+		var conn *amqp.Connection
+		t := time.Second
+		for i := 0; i < 6; i++ {
+			var err error
+			conn, err = amqp.Dial(s)
+			if err != nil {
+				if i == 9 {
+					panic(err)
+				}
+				time.Sleep(t)
+				t *= 2
+
+				continue
+			}
+
+			break
 		}
+		log.Logger.Info("Connected to rabbitmq")
 
 		ch, err := conn.Channel()
 		if err != nil {
