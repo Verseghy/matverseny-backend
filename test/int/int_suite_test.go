@@ -1,4 +1,4 @@
-package int_test
+package int
 
 import (
 	"testing"

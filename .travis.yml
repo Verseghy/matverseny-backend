@@ -1,0 +1,16 @@
+language: go
+go:
+  - 1.16.5
+
+cache:
+  directories:
+    - $GOPATH/pkg/mod/cache/download
+  timeout: 3600
+
+services:
+  - docker
+
+jobs:
+  include:
+    - name: Integration test
+      script: make
