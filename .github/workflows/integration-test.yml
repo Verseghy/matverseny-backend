@@ -18,7 +18,7 @@ jobs:
         run: cp .env.example .env
 
       - name: Start services
-        run: make docker-d && sleep 120
+        run: make docker-d && sleep 30
 
       - name: Setup hosts file
         run: |
