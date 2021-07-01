@@ -15,7 +15,7 @@ jobs:
         uses: actions/checkout@v1
 
       - name: Start services
-        run: make docker-d
+        run: make docker-d && sleep 60
 
       - name: Run tests
         run: make int-run
