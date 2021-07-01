@@ -18,6 +18,11 @@ var (
 	ErrExpired = errors.New("token expired")
 )
 
+type SuperAdminClaims struct {
+	IsSA bool `json:"is_sa"`
+	*jwt.StandardClaims
+}
+
 type RefreshClaims struct {
 	UserID  string `json:"user_id"`
 	IsAdmin bool   `json:"is_admin"`
@@ -94,6 +99,40 @@ func ValidateRefreshToken(token string, key []byte) (*RefreshClaims, error) {
 func GetClaimsFromCtx(ctx context.Context) (*AccessClaims, bool) {
 	val, ok := ctx.Value(ctxAccessClaims{}).(*AccessClaims)
 	return val, ok
+}
+
+func ValidateSuperAdminToken(key []byte) grpc_auth.AuthFunc {
+	return func(ctx context.Context) (context.Context, error) {
+		md, ok := metadata.FromIncomingContext(ctx)
+		if !ok {
+			return ctx, errs.ErrUnauthorized
+		}
+
+		s := md.Get("Authorization")
+		if len(s) != 1 {
+			return nil, errs.ErrUnauthorized
+		}
+		token := strings.TrimPrefix(s[0], "Bearer: ")
+
+		t, err := jwt.ParseWithClaims(token, &SuperAdminClaims{}, func(token *jwt.Token) (interface{}, error) {
+			return key, nil
+		})
+		if err != nil {
+			log.Logger.Debug("parse failure", zap.Error(err))
+			return nil, err
+		}
+
+		c := t.Claims.(*SuperAdminClaims)
+		if c.ExpiresAt < time.Now().Unix() {
+			return nil, ErrExpired
+		}
+
+		if !c.IsSA {
+			return nil, errs.ErrUnauthorized
+		}
+
+		return ctx, nil
+	}
 }
 
 func ValidateAccessToken(key []byte) grpc_auth.AuthFunc {

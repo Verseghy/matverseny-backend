@@ -30,4 +30,5 @@ var (
 	ErrOwnerCantLeave         = errors.New("E0024: owner can't leave team")
 	ErrNotAuthorized          = errors.New("E0025: not authorized to perform the action")
 	ErrDisbandNonEmptyTeam    = errors.New("E0026: can't disband non-empty team")
+	ErrInvalidTime            = errors.New("E0027: invalid time format")
 )

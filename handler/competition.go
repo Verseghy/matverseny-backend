@@ -19,7 +19,6 @@ import (
 type competitionHandler struct {
 	cSolutions *mongo.Collection
 	cProblems  *mongo.Collection
-	cTime      *mongo.Collection
 	cInfo      *mongo.Collection
 	key        []byte
 
@@ -359,7 +358,6 @@ func NewCompetitionHandler(client *mongo.Client) *competitionHandler {
 	return &competitionHandler{
 		cSolutions: client.Database("comp").Collection("solutions"),
 		cProblems:  client.Database("comp").Collection("problems"),
-		cTime:      client.Database("comp").Collection("time"),
 		cInfo:      client.Database("comp").Collection("info"),
 		key:        []byte("test-key"),
 	}

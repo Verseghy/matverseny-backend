@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+package superadmin;
+
+option go_package = "/;proto";
+
+service SuperAdmin {
+	rpc SetTime(SetTimeRequest) returns (SetTimeResponse) {}
+}
+
+message SetTimeRequest {
+	string start = 1;
+	string end = 2;
+}
+
+message SetTimeResponse {
+}

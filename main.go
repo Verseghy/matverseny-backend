@@ -61,6 +61,7 @@ func main() {
 	authHandler := handler.NewAuthHandler(client, mg)
 	competitionHandler := handler.NewCompetitionHandler(client)
 	adminHandler := handler.NewAdminHandler(client)
+	superAdminHandler := handler.NewSuperAdminHandler(client)
 
 	lis, err := net.Listen("tcp", fmt.Sprintf("0.0.0.0:%s", grpcListenAddr))
 	if err != nil {
@@ -83,6 +84,7 @@ func main() {
 	pb.RegisterAuthServer(grpcServer, authHandler)
 	pb.RegisterCompetitionServer(grpcServer, competitionHandler)
 	pb.RegisterAdminServer(grpcServer, adminHandler)
+	pb.RegisterSuperAdminServer(grpcServer, superAdminHandler)
 
 	// Run service
 	if err := grpcServer.Serve(lis); err != nil {

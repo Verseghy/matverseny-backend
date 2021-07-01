@@ -13,3 +13,7 @@ docker-d:
 .PHONY: int-run
 int-run:
 	go test ./test/int/... -v
+
+.PHONY: superadmin-keygen
+superadmin-keygen:
+	go run cmd/superadmin-keygen/main.go $(ARGS)
