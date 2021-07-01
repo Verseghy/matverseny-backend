@@ -24,7 +24,9 @@ jobs:
           sudo echo "127.0.0.1 mongo3" | sudo tee -a /etc/hosts
 
       - name: TMP
-        run: docker ps -a
+        run: |
+          docker ps -a
+          docker logs matverseny-backend_service_1
 
       - name: Run tests
         run: make int-run
