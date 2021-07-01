@@ -1,0 +1,30 @@
+name: Integration test
+
+on:
+  push:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v1
+
+      - name: Copy env file
+        run: cp .env.example .env
+
+      - name: Start services
+        run: make docker-d && sleep 30
+
+      - name: Setup hosts file
+        run: |
+          sudo echo "127.0.0.1 mongo1" | sudo tee -a /etc/hosts
+          sudo echo "127.0.0.1 mongo2" | sudo tee -a /etc/hosts
+          sudo echo "127.0.0.1 mongo3" | sudo tee -a /etc/hosts
+
+      - name: Run tests
+        run: make int-run
