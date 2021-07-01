@@ -23,5 +23,8 @@ jobs:
           sudo echo "127.0.0.1 mongo2" | sudo tee -a /etc/hosts
           sudo echo "127.0.0.1 mongo3" | sudo tee -a /etc/hosts
 
+      - name: TMP
+        run: docker ps -a
+
       - name: Run tests
         run: make int-run
