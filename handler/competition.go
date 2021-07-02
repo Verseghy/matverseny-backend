@@ -268,17 +268,20 @@ func (h *competitionHandler) SetSolutions(ctx context.Context, req *pb.SetSoluti
 	}
 
 	if req.Delete {
-		_, err = h.cProblems.DeleteOne(ctx, bson.M{"problem_id": problemID, "team": teamID})
+		_, err = h.cSolutions.DeleteOne(ctx, bson.M{"problem_id": problemID, "team": teamID})
 		if err != nil {
 			logger.Error("database error", zap.Error(err))
 			return nil, errs.ErrDatabase
 		}
 
-		events.PublishSolution(&events.SolutionEvent{
+		err := events.PublishSolution(&events.SolutionEvent{
 			Type:      events.SDelete,
 			ProblemID: problemID.Hex(),
 			Team:      teamID.Hex(),
 		})
+		if err != nil {
+			return nil, errs.ErrQueue
+		}
 
 		return res, nil
 	}
