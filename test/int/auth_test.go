@@ -175,36 +175,13 @@ var _ = Describe("Auth", func() {
 			Expect(c2.IsAdmin).To(BeFalse())
 			Expect(c2.Team).To(BeEmpty())
 		})
-		Specify("sad path - ", func() {
-			res, err := authClient.Login(context.Background(), &pb.LoginRequest{
+		Specify("sad path - wrong password", func() {
+			_, err := authClient.Login(context.Background(), &pb.LoginRequest{
 				Email:    email,
-				Password: password,
+				Password: password + " - wrong",
 			})
-			Expect(err).To(BeNil())
-
-			Expect(res.RefreshToken).NotTo(BeNil())
-			Expect(res.AccessToken).NotTo(BeNil())
-
-			rt, err := jwt.ParseWithClaims(res.RefreshToken, &jwt2.RefreshClaims{}, func(token *jwt.Token) (interface{}, error) {
-				return key, nil
-			})
-			Expect(err).To(BeNil())
-			c, ok := rt.Claims.(*jwt2.RefreshClaims)
-			Expect(ok).To(BeTrue())
-			Expect(c.ExpiresAt).To(Satisfy(func(t int64) bool { return time.Now().Unix() < t }))
-			Expect(c.UserID).NotTo(BeEmpty())
-			Expect(c.IsAdmin).To(BeFalse())
-
-			at, err := jwt.ParseWithClaims(res.AccessToken, &jwt2.AccessClaims{}, func(token *jwt.Token) (interface{}, error) {
-				return key, nil
-			})
-			Expect(err).To(BeNil())
-			c2, ok := at.Claims.(*jwt2.AccessClaims)
-			Expect(ok).To(BeTrue())
-			Expect(c2.ExpiresAt).To(Satisfy(func(t int64) bool { return time.Now().Unix() < t }))
-			Expect(c2.UserID).NotTo(BeEmpty())
-			Expect(c2.IsAdmin).To(BeFalse())
-			Expect(c2.Team).To(BeEmpty())
+			Expect(err).NotTo(BeNil())
+			Expect(err.Error()).To(ContainSubstring(errs.ErrInvalidEmailOrPassword.Error()))
 		})
 	})
 })
