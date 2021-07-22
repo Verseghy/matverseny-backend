@@ -153,7 +153,7 @@ func ValidateAccessToken(key []byte) grpc_auth.AuthFunc {
 		})
 		if err != nil {
 			log.Logger.Debug("parse failure", zap.Error(err))
-			return nil, err
+			return nil, errs.ErrJWT
 		}
 
 		c := t.Claims.(*AccessClaims)
