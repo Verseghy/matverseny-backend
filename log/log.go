@@ -35,4 +35,5 @@ func EnsureLogger() {
 	defer logger.Sync()
 
 	logger.Info("logger construction succeeded")
+	Logger = logger
 }
