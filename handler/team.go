@@ -86,25 +86,33 @@ func (h *teamHandler) CreateTeam(ctx context.Context, req *pb.CreateTeamRequest)
 	}
 	logger := log.Logger.With(zap.String("userID", claims.UserID))
 
-	if claims.Team != "" {
-		logger.Info("user already has team")
-		return nil, errs.ErrHasTeam
+	// validate
+	{
+		if claims.Team != "" {
+			logger.Info("user already has team")
+			return nil, errs.ErrHasTeam
+		}
+
+		if len(req.Name) > 64 {
+			logger.Info("team name longer than 64 characters")
+			return nil, errs.ErrTeamNameTooLong
+		}
+
+		err := h.cTeams.FindOne(ctx, bson.M{"team_name": req.Name}).Err()
+		if err == nil {
+			logger.Info("team name already exists")
+			return nil, errs.ErrTeamNameTaken
+		}
+		if err != mongo.ErrNoDocuments {
+			logger.Error("database error", zap.Error(err))
+			return nil, errs.ErrDatabase
+		}
 	}
 
 	userID, err := primitive.ObjectIDFromHex(claims.UserID)
 	if err != nil {
 		logger.Error("invalid user id", zap.Error(err))
 		return nil, errs.ErrJWT
-	}
-
-	err = h.cTeams.FindOne(ctx, bson.M{"team_name": req.Name}).Err()
-	if err == nil {
-		logger.Info("team name already exists")
-		return nil, errs.ErrTeamNameTaken
-	}
-	if err != mongo.ErrNoDocuments {
-		logger.Error("database error", zap.Error(err))
-		return nil, errs.ErrDatabase
 	}
 
 	var joinCode string

@@ -31,4 +31,5 @@ var (
 	ErrNotAuthorized          = errors.New("E0025: not authorized to perform the action")
 	ErrDisbandNonEmptyTeam    = errors.New("E0026: can't disband non-empty team")
 	ErrInvalidTime            = errors.New("E0027: invalid time format")
+	ErrTeamNameTooLong        = errors.New("E0028: team name too long")
 )
