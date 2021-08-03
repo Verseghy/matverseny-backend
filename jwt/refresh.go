@@ -74,7 +74,7 @@ func (j *jwtImpl) NewRefreshToken(ctx context.Context, user *entity.User) (strin
 }
 
 func (j *jwtImpl) NewAccessToken(ctx context.Context, user *entity.User) (string, error) {
-	var team *entity.Team
+	team := &entity.Team{}
 	err := j.cTeams.FindOne(ctx, bson.M{"members": user.ID}).Decode(team)
 	if err != nil && err != mongo.ErrNoDocuments {
 		log.Logger.Error("database error", zap.Error(err))
@@ -84,7 +84,7 @@ func (j *jwtImpl) NewAccessToken(ctx context.Context, user *entity.User) (string
 	token := jwt.NewWithClaims(jwt.SigningMethodHS512, &AccessClaims{
 		UserID: user.ID.Hex(),
 		Team: func() string {
-			if team == nil {
+			if team.ID.IsZero() {
 				return ""
 			}
 
