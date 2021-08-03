@@ -8,7 +8,7 @@ service Team {
 	rpc CreateTeam(CreateTeamRequest) returns (CreateTeamResponse) {}
 	rpc JoinTeam(JoinTeamRequest) returns (JoinTeamResponse) {}
 	rpc LeaveTeam(LeaveTeamRequest) returns (LeaveTeamResponse) {}
-	rpc ListMembers(ListMembersRequest) returns (ListMembersResponse) {}
+	rpc GetTeamInfo(GetTeamInfoRequest) returns (GetTeamInfoResponse) {}
 
 	// Owner RPCs
 	rpc UpdateTeam(UpdateTeamRequest) returns (UpdateTeamResponse) {}
@@ -41,10 +41,10 @@ message LeaveTeamRequest {
 message LeaveTeamResponse {
 }
 
-message ListMembersRequest {
+message GetTeamInfoRequest {
 }
 
-message ListMembersResponse {
+message GetTeamInfoResponse {
 	message Member {
 		enum Class {
 			k_9 = 0;
@@ -65,7 +65,9 @@ message ListMembersResponse {
 		Rank rank = 4;
 	}
 
-	repeated Member members = 1;
+	string name = 1;
+	string join_code = 2;
+	repeated Member members = 3;
 }
 
 message UpdateTeamRequest {

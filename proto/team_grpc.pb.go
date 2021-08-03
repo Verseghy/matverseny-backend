@@ -21,7 +21,7 @@ type TeamClient interface {
 	CreateTeam(ctx context.Context, in *CreateTeamRequest, opts ...grpc.CallOption) (*CreateTeamResponse, error)
 	JoinTeam(ctx context.Context, in *JoinTeamRequest, opts ...grpc.CallOption) (*JoinTeamResponse, error)
 	LeaveTeam(ctx context.Context, in *LeaveTeamRequest, opts ...grpc.CallOption) (*LeaveTeamResponse, error)
-	ListMembers(ctx context.Context, in *ListMembersRequest, opts ...grpc.CallOption) (*ListMembersResponse, error)
+	GetTeamInfo(ctx context.Context, in *GetTeamInfoRequest, opts ...grpc.CallOption) (*GetTeamInfoResponse, error)
 	// Owner RPCs
 	UpdateTeam(ctx context.Context, in *UpdateTeamRequest, opts ...grpc.CallOption) (*UpdateTeamResponse, error)
 	DisbandTeam(ctx context.Context, in *DisbandTeamRequest, opts ...grpc.CallOption) (*DisbandTeamResponse, error)
@@ -67,9 +67,9 @@ func (c *teamClient) LeaveTeam(ctx context.Context, in *LeaveTeamRequest, opts .
 	return out, nil
 }
 
-func (c *teamClient) ListMembers(ctx context.Context, in *ListMembersRequest, opts ...grpc.CallOption) (*ListMembersResponse, error) {
-	out := new(ListMembersResponse)
-	err := c.cc.Invoke(ctx, "/team.Team/ListMembers", in, out, opts...)
+func (c *teamClient) GetTeamInfo(ctx context.Context, in *GetTeamInfoRequest, opts ...grpc.CallOption) (*GetTeamInfoResponse, error) {
+	out := new(GetTeamInfoResponse)
+	err := c.cc.Invoke(ctx, "/team.Team/GetTeamInfo", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -137,7 +137,7 @@ type TeamServer interface {
 	CreateTeam(context.Context, *CreateTeamRequest) (*CreateTeamResponse, error)
 	JoinTeam(context.Context, *JoinTeamRequest) (*JoinTeamResponse, error)
 	LeaveTeam(context.Context, *LeaveTeamRequest) (*LeaveTeamResponse, error)
-	ListMembers(context.Context, *ListMembersRequest) (*ListMembersResponse, error)
+	GetTeamInfo(context.Context, *GetTeamInfoRequest) (*GetTeamInfoResponse, error)
 	// Owner RPCs
 	UpdateTeam(context.Context, *UpdateTeamRequest) (*UpdateTeamResponse, error)
 	DisbandTeam(context.Context, *DisbandTeamRequest) (*DisbandTeamResponse, error)
@@ -162,8 +162,8 @@ func (UnimplementedTeamServer) JoinTeam(context.Context, *JoinTeamRequest) (*Joi
 func (UnimplementedTeamServer) LeaveTeam(context.Context, *LeaveTeamRequest) (*LeaveTeamResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method LeaveTeam not implemented")
 }
-func (UnimplementedTeamServer) ListMembers(context.Context, *ListMembersRequest) (*ListMembersResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method ListMembers not implemented")
+func (UnimplementedTeamServer) GetTeamInfo(context.Context, *GetTeamInfoRequest) (*GetTeamInfoResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetTeamInfo not implemented")
 }
 func (UnimplementedTeamServer) UpdateTeam(context.Context, *UpdateTeamRequest) (*UpdateTeamResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UpdateTeam not implemented")
@@ -250,20 +250,20 @@ func _Team_LeaveTeam_Handler(srv interface{}, ctx context.Context, dec func(inte
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Team_ListMembers_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ListMembersRequest)
+func _Team_GetTeamInfo_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetTeamInfoRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(TeamServer).ListMembers(ctx, in)
+		return srv.(TeamServer).GetTeamInfo(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/team.Team/ListMembers",
+		FullMethod: "/team.Team/GetTeamInfo",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(TeamServer).ListMembers(ctx, req.(*ListMembersRequest))
+		return srv.(TeamServer).GetTeamInfo(ctx, req.(*GetTeamInfoRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -396,8 +396,8 @@ var Team_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _Team_LeaveTeam_Handler,
 		},
 		{
-			MethodName: "ListMembers",
-			Handler:    _Team_ListMembers_Handler,
+			MethodName: "GetTeamInfo",
+			Handler:    _Team_GetTeamInfo_Handler,
 		},
 		{
 			MethodName: "UpdateTeam",
