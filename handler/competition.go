@@ -20,7 +20,7 @@ type competitionHandler struct {
 	cSolutions *mongo.Collection
 	cProblems  *mongo.Collection
 	cInfo      *mongo.Collection
-	key        []byte
+	jwt        jwt.JWT
 
 	pb.UnimplementedCompetitionServer
 }
@@ -36,7 +36,7 @@ func (h *competitionHandler) AuthFuncOverride(ctx context.Context, fullMethodNam
 		}
 	}
 
-	f := jwt.ValidateAccessToken([]byte("test-key"))
+	f := h.jwt.ValidateAccessToken()
 	ctx, err := f(ctx)
 	if err != nil {
 		return nil, err
@@ -362,6 +362,6 @@ func NewCompetitionHandler(client *mongo.Client) *competitionHandler {
 		cSolutions: client.Database("comp").Collection("solutions"),
 		cProblems:  client.Database("comp").Collection("problems"),
 		cInfo:      client.Database("comp").Collection("info"),
-		key:        []byte("test-key"),
+		jwt:        jwt.NewJWT(client, []byte("test-key")),
 	}
 }

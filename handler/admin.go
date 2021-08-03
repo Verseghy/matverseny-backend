@@ -19,12 +19,13 @@ type adminHandler struct {
 	cProblems *mongo.Collection
 	cTime     *mongo.Collection
 	m         sync.Mutex
+	jwt       jwt.JWT
 
 	pb.UnimplementedAdminServer
 }
 
 func (h *adminHandler) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
-	f := jwt.ValidateAccessToken([]byte("test-key"))
+	f := h.jwt.ValidateAccessToken()
 	ctx, err := f(ctx)
 	if err != nil {
 		return nil, err

@@ -19,7 +19,7 @@ import (
 type teamHandler struct {
 	cTeams *mongo.Collection
 	cUser  *mongo.Collection
-	key    []byte
+	jwt    jwt.JWT
 	m      sync.Mutex
 
 	pb.UnimplementedTeamServer
@@ -57,7 +57,7 @@ func (h *teamHandler) AuthFuncOverride(ctx context.Context, fullMethodName strin
 		}
 	}
 
-	f := jwt.ValidateAccessToken([]byte("test-key"))
+	f := h.jwt.ValidateAccessToken()
 	ctx, err := f(ctx)
 	if err != nil {
 		return nil, err
@@ -633,6 +633,6 @@ func NewTeamHandler(client *mongo.Client) *teamHandler {
 	return &teamHandler{
 		cTeams: client.Database("comp").Collection("teams"),
 		cUser:  client.Database("comp").Collection("auth"),
-		key:    []byte("test-key"),
+		jwt:    jwt.NewJWT(client, []byte("test-key")),
 	}
 }

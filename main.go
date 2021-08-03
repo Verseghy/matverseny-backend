@@ -57,6 +57,7 @@ func main() {
 	}
 
 	mg := mailgun.NewMailgun(mgDomain, mgKey)
+	jwtI := jwt.NewJWT(client, []byte("test-key"))
 
 	authHandler := handler.NewAuthHandler(client, mg)
 	competitionHandler := handler.NewCompetitionHandler(client)
@@ -73,11 +74,11 @@ func main() {
 	sopts := []grpc.ServerOption{
 		grpc.StreamInterceptor(grpc_middleware.ChainStreamServer(
 			grpc_zap.StreamServerInterceptor(log.Logger),
-			grpc_auth.StreamServerInterceptor(jwt.ValidateAccessToken([]byte("test-key"))),
+			grpc_auth.StreamServerInterceptor(jwtI.ValidateAccessToken()),
 		)),
 		grpc.UnaryInterceptor(grpc_middleware.ChainUnaryServer(
 			grpc_zap.UnaryServerInterceptor(log.Logger),
-			grpc_auth.UnaryServerInterceptor(jwt.ValidateAccessToken([]byte("test-key"))),
+			grpc_auth.UnaryServerInterceptor(jwtI.ValidateAccessToken()),
 		)),
 	}
 

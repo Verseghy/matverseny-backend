@@ -4,7 +4,9 @@ import (
 	"context"
 	"errors"
 	"github.com/dgrijalva/jwt-go"
-	grpc_auth "github.com/grpc-ecosystem/go-grpc-middleware/auth"
+	grpcauth "github.com/grpc-ecosystem/go-grpc-middleware/auth"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo"
 	"go.uber.org/zap"
 	"google.golang.org/grpc/metadata"
 	"matverseny-backend/entity"
@@ -38,7 +40,20 @@ type AccessClaims struct {
 	*jwt.StandardClaims
 }
 
-func NewRefreshToken(user *entity.User, key []byte) (string, error) {
+type JWT interface {
+	NewRefreshToken(ctx context.Context, user *entity.User) (string, error)
+	NewAccessToken(ctx context.Context, user *entity.User) (string, error)
+	ValidateRefreshToken(token string) (*RefreshClaims, error)
+	ValidateSuperAdminToken() grpcauth.AuthFunc
+	ValidateAccessToken() grpcauth.AuthFunc
+}
+
+type jwtImpl struct {
+	key    []byte
+	cTeams *mongo.Collection
+}
+
+func (j *jwtImpl) NewRefreshToken(ctx context.Context, user *entity.User) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS512, &RefreshClaims{
 		UserID:  user.ID.Hex(),
 		IsAdmin: user.IsAdmin,
@@ -49,7 +64,7 @@ func NewRefreshToken(user *entity.User, key []byte) (string, error) {
 		},
 	})
 
-	ss, err := token.SignedString(key)
+	ss, err := token.SignedString(j.key)
 	if err != nil {
 		log.Logger.Error("signing failure", zap.Error(err))
 		return "", err
@@ -58,10 +73,23 @@ func NewRefreshToken(user *entity.User, key []byte) (string, error) {
 	return ss, nil
 }
 
-func NewAccessToken(user *entity.User, key []byte) (string, error) {
+func (j *jwtImpl) NewAccessToken(ctx context.Context, user *entity.User) (string, error) {
+	var team *entity.Team
+	err := j.cTeams.FindOne(ctx, bson.M{"members": user.ID}).Decode(team)
+	if err != nil && err != mongo.ErrNoDocuments {
+		log.Logger.Error("database error", zap.Error(err))
+		return "", errs.ErrDatabase
+	}
+
 	token := jwt.NewWithClaims(jwt.SigningMethodHS512, &AccessClaims{
-		UserID:  user.ID.Hex(),
-		Team:    user.Team,
+		UserID: user.ID.Hex(),
+		Team: func() string {
+			if team == nil {
+				return ""
+			}
+
+			return team.ID.Hex()
+		}(),
 		IsAdmin: user.IsAdmin,
 		StandardClaims: &jwt.StandardClaims{
 			ExpiresAt: time.Now().Add(time.Hour * 24).Unix(),
@@ -70,7 +98,7 @@ func NewAccessToken(user *entity.User, key []byte) (string, error) {
 		},
 	})
 
-	ss, err := token.SignedString(key)
+	ss, err := token.SignedString(j.key)
 	if err != nil {
 		log.Logger.Error("signing failure", zap.Error(err))
 		return "", err
@@ -79,9 +107,9 @@ func NewAccessToken(user *entity.User, key []byte) (string, error) {
 	return ss, nil
 }
 
-func ValidateRefreshToken(token string, key []byte) (*RefreshClaims, error) {
+func (j *jwtImpl) ValidateRefreshToken(token string) (*RefreshClaims, error) {
 	t, err := jwt.ParseWithClaims(token, &RefreshClaims{}, func(token *jwt.Token) (interface{}, error) {
-		return key, nil
+		return j.key, nil
 	})
 	if err != nil {
 		log.Logger.Debug("parse failure", zap.Error(err))
@@ -101,7 +129,7 @@ func GetClaimsFromCtx(ctx context.Context) (*AccessClaims, bool) {
 	return val, ok
 }
 
-func ValidateSuperAdminToken(key []byte) grpc_auth.AuthFunc {
+func (j *jwtImpl) ValidateSuperAdminToken() grpcauth.AuthFunc {
 	return func(ctx context.Context) (context.Context, error) {
 		md, ok := metadata.FromIncomingContext(ctx)
 		if !ok {
@@ -115,7 +143,7 @@ func ValidateSuperAdminToken(key []byte) grpc_auth.AuthFunc {
 		token := strings.TrimPrefix(s[0], "Bearer: ")
 
 		t, err := jwt.ParseWithClaims(token, &SuperAdminClaims{}, func(token *jwt.Token) (interface{}, error) {
-			return key, nil
+			return j.key, nil
 		})
 		if err != nil {
 			log.Logger.Debug("parse failure", zap.Error(err))
@@ -135,7 +163,7 @@ func ValidateSuperAdminToken(key []byte) grpc_auth.AuthFunc {
 	}
 }
 
-func ValidateAccessToken(key []byte) grpc_auth.AuthFunc {
+func (j *jwtImpl) ValidateAccessToken() grpcauth.AuthFunc {
 	return func(ctx context.Context) (context.Context, error) {
 		md, ok := metadata.FromIncomingContext(ctx)
 		if !ok {
@@ -149,7 +177,7 @@ func ValidateAccessToken(key []byte) grpc_auth.AuthFunc {
 		token := strings.TrimPrefix(s[0], "Bearer: ")
 
 		t, err := jwt.ParseWithClaims(token, &AccessClaims{}, func(token *jwt.Token) (interface{}, error) {
-			return key, nil
+			return j.key, nil
 		})
 		if err != nil {
 			log.Logger.Debug("parse failure", zap.Error(err))
@@ -164,5 +192,12 @@ func ValidateAccessToken(key []byte) grpc_auth.AuthFunc {
 		ctx = context.WithValue(ctx, ctxAccessClaims{}, c)
 
 		return ctx, nil
+	}
+}
+
+func NewJWT(client *mongo.Client, key []byte) *jwtImpl {
+	return &jwtImpl{
+		key:    key,
+		cTeams: client.Database("comp").Collection("teams"),
 	}
 }

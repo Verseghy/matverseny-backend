@@ -18,12 +18,13 @@ import (
 type superAdminHandler struct {
 	cInfo *mongo.Collection
 	m     sync.Mutex
+	jwt   jwt.JWT
 
 	pb.UnimplementedSuperAdminServer
 }
 
 func (h *superAdminHandler) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
-	f := jwt.ValidateSuperAdminToken([]byte("test-key"))
+	f := h.jwt.ValidateSuperAdminToken()
 	ctx, err := f(ctx)
 	if err != nil {
 		return nil, err
@@ -69,5 +70,6 @@ func (h *superAdminHandler) SetTime(ctx context.Context, req *pb.SetTimeRequest)
 func NewSuperAdminHandler(client *mongo.Client) *superAdminHandler {
 	return &superAdminHandler{
 		cInfo: client.Database("comp").Collection("info"),
+		jwt:   jwt.NewJWT(client, []byte("test-key")),
 	}
 }

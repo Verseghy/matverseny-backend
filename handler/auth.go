@@ -22,10 +22,10 @@ import (
 )
 
 type authHandler struct {
-	key  []byte
 	c    *mongo.Collection
 	pass *mongo.Collection
 	mg   *mailgun.MailgunImpl
+	jwt  jwt.JWT
 
 	pb.UnimplementedAuthServer
 }
@@ -66,13 +66,13 @@ func (h *authHandler) Login(ctx context.Context, req *pb.LoginRequest) (*pb.Logi
 		return nil, errs.ErrCryptographic
 	}
 
-	res.RefreshToken, err = jwt.NewRefreshToken(u, h.key)
+	res.RefreshToken, err = h.jwt.NewRefreshToken(ctx, u)
 	if err != nil {
 		log.Logger.Error("jwt failure", zap.Error(err))
 		return nil, errs.ErrJWT
 	}
 
-	res.AccessToken, err = jwt.NewAccessToken(u, h.key)
+	res.AccessToken, err = h.jwt.NewAccessToken(ctx, u)
 	if err != nil {
 		log.Logger.Error("jwt failure", zap.Error(err))
 		return nil, errs.ErrJWT
@@ -126,13 +126,13 @@ func (h *authHandler) Register(ctx context.Context, req *pb.RegisterRequest) (*p
 		return nil, errs.ErrDatabase
 	}
 
-	res.RefreshToken, err = jwt.NewRefreshToken(u, h.key)
+	res.RefreshToken, err = h.jwt.NewRefreshToken(ctx, u)
 	if err != nil {
 		log.Logger.Error("jwt failure", zap.Error(err))
 		return nil, errs.ErrJWT
 	}
 
-	res.AccessToken, err = jwt.NewAccessToken(u, h.key)
+	res.AccessToken, err = h.jwt.NewAccessToken(ctx, u)
 	if err != nil {
 		log.Logger.Error("jwt failure", zap.Error(err))
 		return nil, errs.ErrJWT
@@ -237,7 +237,7 @@ func (h *authHandler) ResetPassword(ctx context.Context, req *pb.ResetPasswordRe
 func (h *authHandler) RefreshToken(ctx context.Context, req *pb.RefreshTokenRequest) (*pb.RefreshTokenResponse, error) {
 	res := &pb.RefreshTokenResponse{}
 
-	claims, err := jwt.ValidateRefreshToken(req.Token, h.key)
+	claims, err := h.jwt.ValidateRefreshToken(req.Token)
 	if err != nil {
 		if err == jwt.ErrExpired {
 			return nil, errs.ErrTokenExpired
@@ -263,7 +263,7 @@ func (h *authHandler) RefreshToken(ctx context.Context, req *pb.RefreshTokenRequ
 		return nil, errs.ErrDatabase
 	}
 
-	res.Token, err = jwt.NewAccessToken(u, h.key)
+	res.Token, err = h.jwt.NewAccessToken(ctx, u)
 	if err != nil {
 		log.Logger.Error("jwt failure", zap.Error(err))
 		return nil, errs.ErrJWT
@@ -287,7 +287,7 @@ func NewAuthHandler(client *mongo.Client, mg *mailgun.MailgunImpl) *authHandler 
 	}
 
 	return &authHandler{
-		key:  []byte("test-key"),
+		jwt:  jwt.NewJWT(client, []byte("test-key")),
 		c:    client.Database("comp").Collection("auth"),
 		pass: client.Database("comp").Collection("auth-pwd-reset"),
 		mg:   mg,
