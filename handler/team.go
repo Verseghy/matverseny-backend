@@ -240,11 +240,11 @@ func (h *teamHandler) LeaveTeam(ctx context.Context, req *pb.LeaveTeamRequest) (
 	return res, nil
 }
 
-func (h *teamHandler) ListMembers(ctx context.Context, req *pb.ListMembersRequest) (*pb.ListMembersResponse, error) {
+func (h *teamHandler) GetTeamInfo(ctx context.Context, req *pb.GetTeamInfoRequest) (*pb.GetTeamInfoResponse, error) {
 	h.m.Lock()
 	defer h.m.Unlock()
 
-	res := &pb.ListMembersResponse{}
+	res := &pb.GetTeamInfoResponse{}
 
 	claims, ok := jwt.GetClaimsFromCtx(ctx)
 	if !ok {
@@ -270,7 +270,10 @@ func (h *teamHandler) ListMembers(ctx context.Context, req *pb.ListMembersReques
 		return nil, errs.ErrDatabase
 	}
 
-	mems := make([]*pb.ListMembersResponse_Member, 0, len(t.Members))
+	res.JoinCode = t.JoinCode
+	res.Name = t.TeamName
+
+	mems := make([]*pb.GetTeamInfoResponse_Member, 0, len(t.Members))
 	for _, v := range t.Members {
 		u := &entity.User{}
 		err := h.cUser.FindOne(ctx, bson.M{"_id": v}).Decode(u)
@@ -279,20 +282,20 @@ func (h *teamHandler) ListMembers(ctx context.Context, req *pb.ListMembersReques
 			return nil, errs.ErrDatabase
 		}
 
-		mems = append(mems, &pb.ListMembersResponse_Member{
+		mems = append(mems, &pb.GetTeamInfoResponse_Member{
 			ID:    u.ID.Hex(),
 			Name:  u.Name,
-			Class: pb.ListMembersResponse_Member_Class(u.Class),
-			Rank: func() pb.ListMembersResponse_Member_Rank {
+			Class: pb.GetTeamInfoResponse_Member_Class(u.Class),
+			Rank: func() pb.GetTeamInfoResponse_Member_Rank {
 				if u.ID == t.Owner {
-					return pb.ListMembersResponse_Member_k_OWNER
+					return pb.GetTeamInfoResponse_Member_k_OWNER
 				}
 
 				if t.CoOwner != nil && u.ID == *t.CoOwner {
-					return pb.ListMembersResponse_Member_k_COOWNER
+					return pb.GetTeamInfoResponse_Member_k_COOWNER
 				}
 
-				return pb.ListMembersResponse_Member_k_MEMBER
+				return pb.GetTeamInfoResponse_Member_k_MEMBER
 			}(),
 		})
 	}
