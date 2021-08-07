@@ -18,27 +18,30 @@ var _ = Describe("Team", func() {
 	authClient := pb.NewAuthClient(conn)
 	teamClient := pb.NewTeamClient(conn)
 
-	var rt string
-	var at string
+	var rt1 string
+	var at1 string
+	var rt2 string
+	_ = rt2
+	var at2 string
 
 	BeforeEach(func() {
 		cleanupMongo()
-		rt, at = registerUser(authClient)
+		rt1, at1 = registerUser(authClient, 0)
+		rt2, at2 = registerUser(authClient, 1)
 	})
 
 	Describe("Create Team", func() {
 		Specify("happy path", func() {
-			_, err := teamClient.CreateTeam(authenticatedContext(at), &pb.CreateTeamRequest{
+			_, err := teamClient.CreateTeam(authenticatedContext(at1), &pb.CreateTeamRequest{
 				Name: "Test team",
 			})
 			Expect(err).To(BeNil())
 
-			_, ac := refreshJWT(authClient, rt)
+			_, ac := refreshJWT(authClient, rt1)
 			Expect(ac.Team).NotTo(BeEmpty())
 		})
-
 		Specify("sad path - too long username", func() {
-			_, err := teamClient.CreateTeam(authenticatedContext(at), &pb.CreateTeamRequest{
+			_, err := teamClient.CreateTeam(authenticatedContext(at1), &pb.CreateTeamRequest{
 				Name: func() string {
 					var s string
 					for i := 0; i < 67; i++ {
@@ -49,6 +52,29 @@ var _ = Describe("Team", func() {
 			})
 			Expect(err).NotTo(BeNil())
 			Expect(err.Error()).To(ContainSubstring(errs.ErrTeamNameTooLong.Error()))
+		})
+		Specify("sad path - team name exists", func() {
+			_, err := teamClient.CreateTeam(authenticatedContext(at1), &pb.CreateTeamRequest{
+				Name: "test",
+			})
+			Expect(err).To(BeNil())
+
+			_, err = teamClient.CreateTeam(authenticatedContext(at2), &pb.CreateTeamRequest{
+				Name: "test",
+			})
+			Expect(err).NotTo(BeNil())
+			Expect(err.Error()).To(ContainSubstring(errs.ErrTeamNameTaken.Error()))
+		})
+		Specify("sad path - user already in team", func() {
+			_, err := teamClient.CreateTeam(authenticatedContext(at1), &pb.CreateTeamRequest{
+				Name: "test",
+			})
+			Expect(err).To(BeNil())
+			_, err = teamClient.CreateTeam(authenticatedContext(at1), &pb.CreateTeamRequest{
+				Name: "test",
+			})
+			Expect(err).NotTo(BeNil())
+			Expect(err.Error()).To(ContainSubstring(errs.ErrHasTeam.Error()))
 		})
 	})
 })
