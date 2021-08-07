@@ -10,6 +10,7 @@ import (
 	"google.golang.org/grpc/metadata"
 	jwt2 "matverseny-backend/jwt"
 	pb "matverseny-backend/proto"
+	"strconv"
 	"time"
 )
 
@@ -25,9 +26,9 @@ func cleanupMongo() {
 	}
 }
 
-func registerUser(authClient pb.AuthClient) (string, string) {
+func registerUser(authClient pb.AuthClient, uid int) (string, string) {
 	res, err := authClient.Register(context.Background(), &pb.RegisterRequest{
-		Email:    "test@test.test",
+		Email:    "test@test.test" + strconv.Itoa(uid),
 		Password: "testtest",
 		Name:     "test",
 		School:   "test",
