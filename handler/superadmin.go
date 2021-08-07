@@ -24,6 +24,8 @@ type superAdminHandler struct {
 }
 
 func (h *superAdminHandler) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
+	return nil, errs.ErrDisabled
+
 	f := h.jwt.ValidateSuperAdminToken()
 	ctx, err := f(ctx)
 	if err != nil {

@@ -26,6 +26,8 @@ type competitionHandler struct {
 }
 
 func (h *competitionHandler) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
+	return nil, errs.ErrDisabled
+
 	allowedWithoutAuthentication := []string{
 		"/competition.Competition/GetTime",
 	}

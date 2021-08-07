@@ -3,6 +3,7 @@ package errs
 import "errors"
 
 var (
+	ErrDisabled               = errors.New("E9999: disabled")
 	ErrNotImplemented         = errors.New("E0000: not implemented")
 	ErrEmailRequired          = errors.New("E0001: email is required")
 	ErrPasswordRequired       = errors.New("E0002: password is required")

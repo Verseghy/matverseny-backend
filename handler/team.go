@@ -47,6 +47,8 @@ func mustGenerateNewCode() string {
 }
 
 func (h *teamHandler) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
+	return nil, errs.ErrDisabled
+
 	allowedWithoutAuthentication := []string{
 		"/competition.Competition/GetTime",
 	}
