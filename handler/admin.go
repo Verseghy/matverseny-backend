@@ -358,5 +358,6 @@ func NewAdminHandler(client *mongo.Client) *adminHandler {
 	return &adminHandler{
 		cProblems: client.Database("comp").Collection("problems"),
 		cTime:     client.Database("comp").Collection("time"),
+		jwt:       jwt.NewJWT(client, []byte("test-key")),
 	}
 }
