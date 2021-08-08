@@ -38,7 +38,7 @@ func EnsureEvents() {
 			var err error
 			conn, err = amqp.Dial(s)
 			if err != nil {
-				if i == 9 {
+				if i == 5 {
 					panic(err)
 				}
 				time.Sleep(t)
