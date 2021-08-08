@@ -9,7 +9,18 @@ static_resources:
       address:
         socket_address: { address: 0.0.0.0, port_value: 8080 }
       filter_chains:
-        - filters:
+        - transport_socket:
+            name: envoy.transport_sockets.tls
+            typed_config:
+              "@type": type.googleapis.com/envoy.extensions.transport_sockets.tls.v3.DownstreamTlsContext
+              common_tls_context:
+                tls_certificates:
+                  - certificate_chain: { "filename": "/etc/letsencrypt/live/api.191.verseghy-gimnazium.net/fullchain.pem" }
+                    private_key: { "filename": "/etc/letsencrypt/live/api.191.verseghy-gimnazium.net/privkey.pem" }
+                validation_context:
+                  trusted_ca:
+                    filename: /etc/ssl/certs/ca-bundle.crt
+          filters:
             - name: envoy.filters.network.http_connection_manager
               typed_config:
                 "@type": type.googleapis.com/envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager
@@ -38,17 +49,7 @@ static_resources:
                   - name: envoy.filters.http.grpc_web
                   - name: envoy.filters.http.cors
                   - name: envoy.filters.http.router
-          transport_socket:
-            name: envoy.transport_sockets.tls
-            typed_config:
-              "@type": type.googleapis.com/envoy.extensions.transport_sockets.tls.v3.DownstreamTlsContext
-              common_tls_context:
-                tls_certificates:
-                  - certificate_chain: { "filename": "/etc/letsencrypt/live/api.191.verseghy-gimnazium.net/fullchain.pem" }
-                    private_key: { "filename": "/etc/letsencrypt/live/api.191.verseghy-gimnazium.net/privkey.pem" }
-                validation_context:
-                  trusted_ca:
-                    filename: /etc/ssl/certs/ca-bundle.crt
+
   clusters:
     - name: backend_service
       connect_timeout: 0.25s
