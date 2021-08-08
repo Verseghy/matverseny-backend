@@ -44,7 +44,7 @@ services:
     ports:
       - "8080:8080"
     volumes:
-      - ./envoy.yml:/etc/envoy/envoy.yaml
+      - ./envoy.yaml:/etc/envoy/envoy.yaml
     extra_hosts:
       host.docker.internal: host-gateway
   rabbitmq:
