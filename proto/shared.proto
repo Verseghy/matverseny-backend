@@ -21,11 +21,6 @@ message ProblemStream {
     k_DELETE = 2;
     k_SWAP = 3;
     k_CREATE = 4;
-
-    k_PING = 1000;
-  }
-
-  message Ping {
   }
 
   message Initial {
@@ -57,5 +52,4 @@ message ProblemStream {
   Delete delete = 4;
   Swap swap = 5;
   Create create = 6;
-  Ping ping = 1000;
 }

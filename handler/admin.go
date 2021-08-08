@@ -13,7 +13,6 @@ import (
 	"matverseny-backend/log"
 	pb "matverseny-backend/proto"
 	"sync"
-	"time"
 )
 
 type adminHandler struct {
@@ -142,15 +141,6 @@ L1:
 		select {
 		case <-stream.Context().Done():
 			break L1
-		case <-time.After(5 * time.Second):
-			err = stream.Send(&pb.ProblemStream{
-				Type: pb.ProblemStream_k_PING,
-				Ping: &pb.ProblemStream_Ping{},
-			})
-			if err != nil {
-				logger.Debug("sending failed", zap.Error(err))
-				return err
-			}
 		case p := <-ch:
 			err = stream.Send(&pb.ProblemStream{
 				Type: func() pb.ProblemStream_Type {

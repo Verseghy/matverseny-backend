@@ -28,18 +28,16 @@ const (
 	ProblemStream_k_DELETE  ProblemStream_Type = 2
 	ProblemStream_k_SWAP    ProblemStream_Type = 3
 	ProblemStream_k_CREATE  ProblemStream_Type = 4
-	ProblemStream_k_PING    ProblemStream_Type = 1000
 )
 
 // Enum value maps for ProblemStream_Type.
 var (
 	ProblemStream_Type_name = map[int32]string{
-		0:    "k_INITIAL",
-		1:    "k_UPDATE",
-		2:    "k_DELETE",
-		3:    "k_SWAP",
-		4:    "k_CREATE",
-		1000: "k_PING",
+		0: "k_INITIAL",
+		1: "k_UPDATE",
+		2: "k_DELETE",
+		3: "k_SWAP",
+		4: "k_CREATE",
 	}
 	ProblemStream_Type_value = map[string]int32{
 		"k_INITIAL": 0,
@@ -47,7 +45,6 @@ var (
 		"k_DELETE":  2,
 		"k_SWAP":    3,
 		"k_CREATE":  4,
-		"k_PING":    1000,
 	}
 )
 
@@ -198,7 +195,6 @@ type ProblemStream struct {
 	Delete  *ProblemStream_Delete  `protobuf:"bytes,4,opt,name=delete,proto3" json:"delete,omitempty"`
 	Swap    *ProblemStream_Swap    `protobuf:"bytes,5,opt,name=swap,proto3" json:"swap,omitempty"`
 	Create  *ProblemStream_Create  `protobuf:"bytes,6,opt,name=create,proto3" json:"create,omitempty"`
-	Ping    *ProblemStream_Ping    `protobuf:"bytes,1000,opt,name=ping,proto3" json:"ping,omitempty"`
 }
 
 func (x *ProblemStream) Reset() {
@@ -275,51 +271,6 @@ func (x *ProblemStream) GetCreate() *ProblemStream_Create {
 	return nil
 }
 
-func (x *ProblemStream) GetPing() *ProblemStream_Ping {
-	if x != nil {
-		return x.Ping
-	}
-	return nil
-}
-
-type ProblemStream_Ping struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-}
-
-func (x *ProblemStream_Ping) Reset() {
-	*x = ProblemStream_Ping{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_shared_proto_msgTypes[3]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
-}
-
-func (x *ProblemStream_Ping) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*ProblemStream_Ping) ProtoMessage() {}
-
-func (x *ProblemStream_Ping) ProtoReflect() protoreflect.Message {
-	mi := &file_shared_proto_msgTypes[3]
-	if protoimpl.UnsafeEnabled && x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use ProblemStream_Ping.ProtoReflect.Descriptor instead.
-func (*ProblemStream_Ping) Descriptor() ([]byte, []int) {
-	return file_shared_proto_rawDescGZIP(), []int{2, 0}
-}
-
 type ProblemStream_Initial struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -332,7 +283,7 @@ type ProblemStream_Initial struct {
 func (x *ProblemStream_Initial) Reset() {
 	*x = ProblemStream_Initial{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_shared_proto_msgTypes[4]
+		mi := &file_shared_proto_msgTypes[3]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -345,7 +296,7 @@ func (x *ProblemStream_Initial) String() string {
 func (*ProblemStream_Initial) ProtoMessage() {}
 
 func (x *ProblemStream_Initial) ProtoReflect() protoreflect.Message {
-	mi := &file_shared_proto_msgTypes[4]
+	mi := &file_shared_proto_msgTypes[3]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -358,7 +309,7 @@ func (x *ProblemStream_Initial) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ProblemStream_Initial.ProtoReflect.Descriptor instead.
 func (*ProblemStream_Initial) Descriptor() ([]byte, []int) {
-	return file_shared_proto_rawDescGZIP(), []int{2, 1}
+	return file_shared_proto_rawDescGZIP(), []int{2, 0}
 }
 
 func (x *ProblemStream_Initial) GetProblem() *Problem {
@@ -386,7 +337,7 @@ type ProblemStream_Update struct {
 func (x *ProblemStream_Update) Reset() {
 	*x = ProblemStream_Update{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_shared_proto_msgTypes[5]
+		mi := &file_shared_proto_msgTypes[4]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -399,7 +350,7 @@ func (x *ProblemStream_Update) String() string {
 func (*ProblemStream_Update) ProtoMessage() {}
 
 func (x *ProblemStream_Update) ProtoReflect() protoreflect.Message {
-	mi := &file_shared_proto_msgTypes[5]
+	mi := &file_shared_proto_msgTypes[4]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -412,7 +363,7 @@ func (x *ProblemStream_Update) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ProblemStream_Update.ProtoReflect.Descriptor instead.
 func (*ProblemStream_Update) Descriptor() ([]byte, []int) {
-	return file_shared_proto_rawDescGZIP(), []int{2, 2}
+	return file_shared_proto_rawDescGZIP(), []int{2, 1}
 }
 
 func (x *ProblemStream_Update) GetProblem() *Problem {
@@ -433,7 +384,7 @@ type ProblemStream_Delete struct {
 func (x *ProblemStream_Delete) Reset() {
 	*x = ProblemStream_Delete{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_shared_proto_msgTypes[6]
+		mi := &file_shared_proto_msgTypes[5]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -446,7 +397,7 @@ func (x *ProblemStream_Delete) String() string {
 func (*ProblemStream_Delete) ProtoMessage() {}
 
 func (x *ProblemStream_Delete) ProtoReflect() protoreflect.Message {
-	mi := &file_shared_proto_msgTypes[6]
+	mi := &file_shared_proto_msgTypes[5]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -459,7 +410,7 @@ func (x *ProblemStream_Delete) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ProblemStream_Delete.ProtoReflect.Descriptor instead.
 func (*ProblemStream_Delete) Descriptor() ([]byte, []int) {
-	return file_shared_proto_rawDescGZIP(), []int{2, 3}
+	return file_shared_proto_rawDescGZIP(), []int{2, 2}
 }
 
 func (x *ProblemStream_Delete) GetId() string {
@@ -481,7 +432,7 @@ type ProblemStream_Swap struct {
 func (x *ProblemStream_Swap) Reset() {
 	*x = ProblemStream_Swap{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_shared_proto_msgTypes[7]
+		mi := &file_shared_proto_msgTypes[6]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -494,7 +445,7 @@ func (x *ProblemStream_Swap) String() string {
 func (*ProblemStream_Swap) ProtoMessage() {}
 
 func (x *ProblemStream_Swap) ProtoReflect() protoreflect.Message {
-	mi := &file_shared_proto_msgTypes[7]
+	mi := &file_shared_proto_msgTypes[6]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -507,7 +458,7 @@ func (x *ProblemStream_Swap) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ProblemStream_Swap.ProtoReflect.Descriptor instead.
 func (*ProblemStream_Swap) Descriptor() ([]byte, []int) {
-	return file_shared_proto_rawDescGZIP(), []int{2, 4}
+	return file_shared_proto_rawDescGZIP(), []int{2, 3}
 }
 
 func (x *ProblemStream_Swap) GetA() string {
@@ -536,7 +487,7 @@ type ProblemStream_Create struct {
 func (x *ProblemStream_Create) Reset() {
 	*x = ProblemStream_Create{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_shared_proto_msgTypes[8]
+		mi := &file_shared_proto_msgTypes[7]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -549,7 +500,7 @@ func (x *ProblemStream_Create) String() string {
 func (*ProblemStream_Create) ProtoMessage() {}
 
 func (x *ProblemStream_Create) ProtoReflect() protoreflect.Message {
-	mi := &file_shared_proto_msgTypes[8]
+	mi := &file_shared_proto_msgTypes[7]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -562,7 +513,7 @@ func (x *ProblemStream_Create) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ProblemStream_Create.ProtoReflect.Descriptor instead.
 func (*ProblemStream_Create) Descriptor() ([]byte, []int) {
-	return file_shared_proto_rawDescGZIP(), []int{2, 5}
+	return file_shared_proto_rawDescGZIP(), []int{2, 4}
 }
 
 func (x *ProblemStream_Create) GetProblem() *Problem {
@@ -591,7 +542,7 @@ var file_shared_proto_rawDesc = []byte{
 	0x6f, 0x6c, 0x75, 0x74, 0x69, 0x6f, 0x6e, 0x18, 0x04, 0x20, 0x01, 0x28, 0x03, 0x52, 0x08, 0x73,
 	0x6f, 0x6c, 0x75, 0x74, 0x69, 0x6f, 0x6e, 0x22, 0x16, 0x0a, 0x14, 0x50, 0x72, 0x6f, 0x62, 0x6c,
 	0x65, 0x6d, 0x53, 0x74, 0x72, 0x65, 0x61, 0x6d, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x22,
-	0xdb, 0x05, 0x0a, 0x0d, 0x50, 0x72, 0x6f, 0x62, 0x6c, 0x65, 0x6d, 0x53, 0x74, 0x72, 0x65, 0x61,
+	0x95, 0x05, 0x0a, 0x0d, 0x50, 0x72, 0x6f, 0x62, 0x6c, 0x65, 0x6d, 0x53, 0x74, 0x72, 0x65, 0x61,
 	0x6d, 0x12, 0x2e, 0x0a, 0x04, 0x74, 0x79, 0x70, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0e, 0x32,
 	0x1a, 0x2e, 0x73, 0x68, 0x61, 0x72, 0x65, 0x64, 0x2e, 0x50, 0x72, 0x6f, 0x62, 0x6c, 0x65, 0x6d,
 	0x53, 0x74, 0x72, 0x65, 0x61, 0x6d, 0x2e, 0x54, 0x79, 0x70, 0x65, 0x52, 0x04, 0x74, 0x79, 0x70,
@@ -611,33 +562,29 @@ var file_shared_proto_rawDesc = []byte{
 	0x52, 0x04, 0x73, 0x77, 0x61, 0x70, 0x12, 0x34, 0x0a, 0x06, 0x63, 0x72, 0x65, 0x61, 0x74, 0x65,
 	0x18, 0x06, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1c, 0x2e, 0x73, 0x68, 0x61, 0x72, 0x65, 0x64, 0x2e,
 	0x50, 0x72, 0x6f, 0x62, 0x6c, 0x65, 0x6d, 0x53, 0x74, 0x72, 0x65, 0x61, 0x6d, 0x2e, 0x43, 0x72,
-	0x65, 0x61, 0x74, 0x65, 0x52, 0x06, 0x63, 0x72, 0x65, 0x61, 0x74, 0x65, 0x12, 0x2f, 0x0a, 0x04,
-	0x70, 0x69, 0x6e, 0x67, 0x18, 0xe8, 0x07, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1a, 0x2e, 0x73, 0x68,
-	0x61, 0x72, 0x65, 0x64, 0x2e, 0x50, 0x72, 0x6f, 0x62, 0x6c, 0x65, 0x6d, 0x53, 0x74, 0x72, 0x65,
-	0x61, 0x6d, 0x2e, 0x50, 0x69, 0x6e, 0x67, 0x52, 0x04, 0x70, 0x69, 0x6e, 0x67, 0x1a, 0x06, 0x0a,
-	0x04, 0x50, 0x69, 0x6e, 0x67, 0x1a, 0x44, 0x0a, 0x07, 0x49, 0x6e, 0x69, 0x74, 0x69, 0x61, 0x6c,
-	0x12, 0x29, 0x0a, 0x07, 0x70, 0x72, 0x6f, 0x62, 0x6c, 0x65, 0x6d, 0x18, 0x01, 0x20, 0x01, 0x28,
-	0x0b, 0x32, 0x0f, 0x2e, 0x73, 0x68, 0x61, 0x72, 0x65, 0x64, 0x2e, 0x50, 0x72, 0x6f, 0x62, 0x6c,
-	0x65, 0x6d, 0x52, 0x07, 0x70, 0x72, 0x6f, 0x62, 0x6c, 0x65, 0x6d, 0x12, 0x0e, 0x0a, 0x02, 0x61,
-	0x74, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0d, 0x52, 0x02, 0x61, 0x74, 0x1a, 0x33, 0x0a, 0x06, 0x55,
-	0x70, 0x64, 0x61, 0x74, 0x65, 0x12, 0x29, 0x0a, 0x07, 0x70, 0x72, 0x6f, 0x62, 0x6c, 0x65, 0x6d,
-	0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x0f, 0x2e, 0x73, 0x68, 0x61, 0x72, 0x65, 0x64, 0x2e,
-	0x50, 0x72, 0x6f, 0x62, 0x6c, 0x65, 0x6d, 0x52, 0x07, 0x70, 0x72, 0x6f, 0x62, 0x6c, 0x65, 0x6d,
-	0x1a, 0x18, 0x0a, 0x06, 0x44, 0x65, 0x6c, 0x65, 0x74, 0x65, 0x12, 0x0e, 0x0a, 0x02, 0x69, 0x64,
-	0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x02, 0x69, 0x64, 0x1a, 0x22, 0x0a, 0x04, 0x53, 0x77,
-	0x61, 0x70, 0x12, 0x0c, 0x0a, 0x01, 0x61, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x01, 0x61,
-	0x12, 0x0c, 0x0a, 0x01, 0x62, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x01, 0x62, 0x1a, 0x43,
-	0x0a, 0x06, 0x43, 0x72, 0x65, 0x61, 0x74, 0x65, 0x12, 0x29, 0x0a, 0x07, 0x70, 0x72, 0x6f, 0x62,
-	0x6c, 0x65, 0x6d, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x0f, 0x2e, 0x73, 0x68, 0x61, 0x72,
-	0x65, 0x64, 0x2e, 0x50, 0x72, 0x6f, 0x62, 0x6c, 0x65, 0x6d, 0x52, 0x07, 0x70, 0x72, 0x6f, 0x62,
-	0x6c, 0x65, 0x6d, 0x12, 0x0e, 0x0a, 0x02, 0x61, 0x74, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0d, 0x52,
-	0x02, 0x61, 0x74, 0x22, 0x58, 0x0a, 0x04, 0x54, 0x79, 0x70, 0x65, 0x12, 0x0d, 0x0a, 0x09, 0x6b,
-	0x5f, 0x49, 0x4e, 0x49, 0x54, 0x49, 0x41, 0x4c, 0x10, 0x00, 0x12, 0x0c, 0x0a, 0x08, 0x6b, 0x5f,
-	0x55, 0x50, 0x44, 0x41, 0x54, 0x45, 0x10, 0x01, 0x12, 0x0c, 0x0a, 0x08, 0x6b, 0x5f, 0x44, 0x45,
-	0x4c, 0x45, 0x54, 0x45, 0x10, 0x02, 0x12, 0x0a, 0x0a, 0x06, 0x6b, 0x5f, 0x53, 0x57, 0x41, 0x50,
-	0x10, 0x03, 0x12, 0x0c, 0x0a, 0x08, 0x6b, 0x5f, 0x43, 0x52, 0x45, 0x41, 0x54, 0x45, 0x10, 0x04,
-	0x12, 0x0b, 0x0a, 0x06, 0x6b, 0x5f, 0x50, 0x49, 0x4e, 0x47, 0x10, 0xe8, 0x07, 0x42, 0x09, 0x5a,
-	0x07, 0x2f, 0x3b, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x65, 0x61, 0x74, 0x65, 0x52, 0x06, 0x63, 0x72, 0x65, 0x61, 0x74, 0x65, 0x1a, 0x44, 0x0a, 0x07,
+	0x49, 0x6e, 0x69, 0x74, 0x69, 0x61, 0x6c, 0x12, 0x29, 0x0a, 0x07, 0x70, 0x72, 0x6f, 0x62, 0x6c,
+	0x65, 0x6d, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x0f, 0x2e, 0x73, 0x68, 0x61, 0x72, 0x65,
+	0x64, 0x2e, 0x50, 0x72, 0x6f, 0x62, 0x6c, 0x65, 0x6d, 0x52, 0x07, 0x70, 0x72, 0x6f, 0x62, 0x6c,
+	0x65, 0x6d, 0x12, 0x0e, 0x0a, 0x02, 0x61, 0x74, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0d, 0x52, 0x02,
+	0x61, 0x74, 0x1a, 0x33, 0x0a, 0x06, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x12, 0x29, 0x0a, 0x07,
+	0x70, 0x72, 0x6f, 0x62, 0x6c, 0x65, 0x6d, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x0f, 0x2e,
+	0x73, 0x68, 0x61, 0x72, 0x65, 0x64, 0x2e, 0x50, 0x72, 0x6f, 0x62, 0x6c, 0x65, 0x6d, 0x52, 0x07,
+	0x70, 0x72, 0x6f, 0x62, 0x6c, 0x65, 0x6d, 0x1a, 0x18, 0x0a, 0x06, 0x44, 0x65, 0x6c, 0x65, 0x74,
+	0x65, 0x12, 0x0e, 0x0a, 0x02, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x02, 0x69,
+	0x64, 0x1a, 0x22, 0x0a, 0x04, 0x53, 0x77, 0x61, 0x70, 0x12, 0x0c, 0x0a, 0x01, 0x61, 0x18, 0x01,
+	0x20, 0x01, 0x28, 0x09, 0x52, 0x01, 0x61, 0x12, 0x0c, 0x0a, 0x01, 0x62, 0x18, 0x02, 0x20, 0x01,
+	0x28, 0x09, 0x52, 0x01, 0x62, 0x1a, 0x43, 0x0a, 0x06, 0x43, 0x72, 0x65, 0x61, 0x74, 0x65, 0x12,
+	0x29, 0x0a, 0x07, 0x70, 0x72, 0x6f, 0x62, 0x6c, 0x65, 0x6d, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b,
+	0x32, 0x0f, 0x2e, 0x73, 0x68, 0x61, 0x72, 0x65, 0x64, 0x2e, 0x50, 0x72, 0x6f, 0x62, 0x6c, 0x65,
+	0x6d, 0x52, 0x07, 0x70, 0x72, 0x6f, 0x62, 0x6c, 0x65, 0x6d, 0x12, 0x0e, 0x0a, 0x02, 0x61, 0x74,
+	0x18, 0x02, 0x20, 0x01, 0x28, 0x0d, 0x52, 0x02, 0x61, 0x74, 0x22, 0x4b, 0x0a, 0x04, 0x54, 0x79,
+	0x70, 0x65, 0x12, 0x0d, 0x0a, 0x09, 0x6b, 0x5f, 0x49, 0x4e, 0x49, 0x54, 0x49, 0x41, 0x4c, 0x10,
+	0x00, 0x12, 0x0c, 0x0a, 0x08, 0x6b, 0x5f, 0x55, 0x50, 0x44, 0x41, 0x54, 0x45, 0x10, 0x01, 0x12,
+	0x0c, 0x0a, 0x08, 0x6b, 0x5f, 0x44, 0x45, 0x4c, 0x45, 0x54, 0x45, 0x10, 0x02, 0x12, 0x0a, 0x0a,
+	0x06, 0x6b, 0x5f, 0x53, 0x57, 0x41, 0x50, 0x10, 0x03, 0x12, 0x0c, 0x0a, 0x08, 0x6b, 0x5f, 0x43,
+	0x52, 0x45, 0x41, 0x54, 0x45, 0x10, 0x04, 0x42, 0x09, 0x5a, 0x07, 0x2f, 0x3b, 0x70, 0x72, 0x6f,
+	0x74, 0x6f, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -653,35 +600,33 @@ func file_shared_proto_rawDescGZIP() []byte {
 }
 
 var file_shared_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_shared_proto_msgTypes = make([]protoimpl.MessageInfo, 9)
+var file_shared_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
 var file_shared_proto_goTypes = []interface{}{
 	(ProblemStream_Type)(0),       // 0: shared.ProblemStream.Type
 	(*Problem)(nil),               // 1: shared.Problem
 	(*ProblemStreamRequest)(nil),  // 2: shared.ProblemStreamRequest
 	(*ProblemStream)(nil),         // 3: shared.ProblemStream
-	(*ProblemStream_Ping)(nil),    // 4: shared.ProblemStream.Ping
-	(*ProblemStream_Initial)(nil), // 5: shared.ProblemStream.Initial
-	(*ProblemStream_Update)(nil),  // 6: shared.ProblemStream.Update
-	(*ProblemStream_Delete)(nil),  // 7: shared.ProblemStream.Delete
-	(*ProblemStream_Swap)(nil),    // 8: shared.ProblemStream.Swap
-	(*ProblemStream_Create)(nil),  // 9: shared.ProblemStream.Create
+	(*ProblemStream_Initial)(nil), // 4: shared.ProblemStream.Initial
+	(*ProblemStream_Update)(nil),  // 5: shared.ProblemStream.Update
+	(*ProblemStream_Delete)(nil),  // 6: shared.ProblemStream.Delete
+	(*ProblemStream_Swap)(nil),    // 7: shared.ProblemStream.Swap
+	(*ProblemStream_Create)(nil),  // 8: shared.ProblemStream.Create
 }
 var file_shared_proto_depIdxs = []int32{
-	0,  // 0: shared.ProblemStream.type:type_name -> shared.ProblemStream.Type
-	5,  // 1: shared.ProblemStream.initial:type_name -> shared.ProblemStream.Initial
-	6,  // 2: shared.ProblemStream.update:type_name -> shared.ProblemStream.Update
-	7,  // 3: shared.ProblemStream.delete:type_name -> shared.ProblemStream.Delete
-	8,  // 4: shared.ProblemStream.swap:type_name -> shared.ProblemStream.Swap
-	9,  // 5: shared.ProblemStream.create:type_name -> shared.ProblemStream.Create
-	4,  // 6: shared.ProblemStream.ping:type_name -> shared.ProblemStream.Ping
-	1,  // 7: shared.ProblemStream.Initial.problem:type_name -> shared.Problem
-	1,  // 8: shared.ProblemStream.Update.problem:type_name -> shared.Problem
-	1,  // 9: shared.ProblemStream.Create.problem:type_name -> shared.Problem
-	10, // [10:10] is the sub-list for method output_type
-	10, // [10:10] is the sub-list for method input_type
-	10, // [10:10] is the sub-list for extension type_name
-	10, // [10:10] is the sub-list for extension extendee
-	0,  // [0:10] is the sub-list for field type_name
+	0, // 0: shared.ProblemStream.type:type_name -> shared.ProblemStream.Type
+	4, // 1: shared.ProblemStream.initial:type_name -> shared.ProblemStream.Initial
+	5, // 2: shared.ProblemStream.update:type_name -> shared.ProblemStream.Update
+	6, // 3: shared.ProblemStream.delete:type_name -> shared.ProblemStream.Delete
+	7, // 4: shared.ProblemStream.swap:type_name -> shared.ProblemStream.Swap
+	8, // 5: shared.ProblemStream.create:type_name -> shared.ProblemStream.Create
+	1, // 6: shared.ProblemStream.Initial.problem:type_name -> shared.Problem
+	1, // 7: shared.ProblemStream.Update.problem:type_name -> shared.Problem
+	1, // 8: shared.ProblemStream.Create.problem:type_name -> shared.Problem
+	9, // [9:9] is the sub-list for method output_type
+	9, // [9:9] is the sub-list for method input_type
+	9, // [9:9] is the sub-list for extension type_name
+	9, // [9:9] is the sub-list for extension extendee
+	0, // [0:9] is the sub-list for field type_name
 }
 
 func init() { file_shared_proto_init() }
@@ -727,18 +672,6 @@ func file_shared_proto_init() {
 			}
 		}
 		file_shared_proto_msgTypes[3].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ProblemStream_Ping); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_shared_proto_msgTypes[4].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*ProblemStream_Initial); i {
 			case 0:
 				return &v.state
@@ -750,7 +683,7 @@ func file_shared_proto_init() {
 				return nil
 			}
 		}
-		file_shared_proto_msgTypes[5].Exporter = func(v interface{}, i int) interface{} {
+		file_shared_proto_msgTypes[4].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*ProblemStream_Update); i {
 			case 0:
 				return &v.state
@@ -762,7 +695,7 @@ func file_shared_proto_init() {
 				return nil
 			}
 		}
-		file_shared_proto_msgTypes[6].Exporter = func(v interface{}, i int) interface{} {
+		file_shared_proto_msgTypes[5].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*ProblemStream_Delete); i {
 			case 0:
 				return &v.state
@@ -774,7 +707,7 @@ func file_shared_proto_init() {
 				return nil
 			}
 		}
-		file_shared_proto_msgTypes[7].Exporter = func(v interface{}, i int) interface{} {
+		file_shared_proto_msgTypes[6].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*ProblemStream_Swap); i {
 			case 0:
 				return &v.state
@@ -786,7 +719,7 @@ func file_shared_proto_init() {
 				return nil
 			}
 		}
-		file_shared_proto_msgTypes[8].Exporter = func(v interface{}, i int) interface{} {
+		file_shared_proto_msgTypes[7].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*ProblemStream_Create); i {
 			case 0:
 				return &v.state
@@ -805,7 +738,7 @@ func file_shared_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_shared_proto_rawDesc,
 			NumEnums:      1,
-			NumMessages:   9,
+			NumMessages:   8,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
