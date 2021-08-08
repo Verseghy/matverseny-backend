@@ -54,3 +54,14 @@ static_resources:
                     socket_address:
                       address: host.docker.internal
                       port_value: 6969
+      transport_socket:
+        name: envoy.transport_sockets.tls
+        typed_config:
+          "@type": type.googleapis.com/envoy.extensions.transport_sockets.tls.v3.UpstreamTlsContext
+          common_tls_context:
+            tls_certificates:
+              - certificate_chain: { "filename": "/etc/letsencrypt/live/api.191.verseghy-gimnazium.net/fullchain.pem" }
+                private_key: { "filename": "/etc/letsencrypt/live/api.191.verseghy-gimnazium.net/privkey.pem" }
+            validation_context:
+              trusted_ca:
+                filename: /etc/ssl/certs/ca-bundle.crt
