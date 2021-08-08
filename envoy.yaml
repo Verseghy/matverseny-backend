@@ -63,5 +63,5 @@ static_resources:
               - endpoint:
                   address:
                     socket_address:
-                      address: host.docker.internal
+                      address: localhost
                       port_value: 6969
