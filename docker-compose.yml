@@ -9,27 +9,27 @@ services:
       - "6969:6969"
   mongo1:
     hostname: mongo1
-    image: mongo:4.4-bionic
+    image: mongo:5.0-focal
     ports:
       - 27017:27017
     restart: on-failure
     entrypoint: [ "/usr/bin/mongod", "--bind_ip_all", "--replSet", "rs0" ]
   mongo2:
     hostname: mongo2
-    image: mongo:4.4-bionic
+    image: mongo:5.0-focal
     ports:
       - 27018:27018
     restart: on-failure
     entrypoint: [ "/usr/bin/mongod", "--bind_ip_all", "--replSet", "rs0", "--port", "27018"]
   mongo3:
     hostname: mongo3
-    image: mongo:4.4-bionic
+    image: mongo:5.0-focal
     ports:
       - 27019:27019
     restart: on-failure
     entrypoint: [ "/usr/bin/mongod", "--bind_ip_all", "--replSet", "rs0",  "--port", "27019"]
   mongosetup:
-    image: mongo:4.4-bionic
+    image: mongo:5.0-focal
     depends_on:
       - mongo1
       - mongo2
