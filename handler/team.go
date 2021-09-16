@@ -581,7 +581,7 @@ func (h *teamHandler) KickUser(ctx context.Context, req *pb.KickUserRequest) (*p
 		return nil, errs.ErrDatabase
 	}
 
-	if t.Owner != userID || (t.CoOwner != nil && *t.CoOwner != userID) {
+	if t.Owner != userID {
 		logger.Info("not authorized")
 		return nil, errs.ErrNotAuthorized
 	}
@@ -593,6 +593,11 @@ func (h *teamHandler) KickUser(ctx context.Context, req *pb.KickUserRequest) (*p
 		}
 	}
 	t.Members = mems
+
+	if t.CoOwner != nil && *t.CoOwner == userID {
+		t.CoOwner = nil
+	}
+
 	_, err = h.cTeams.ReplaceOne(ctx, bson.M{"_id": t.ID}, t)
 	if err != nil {
 		logger.Error("database error", zap.Error(err))
