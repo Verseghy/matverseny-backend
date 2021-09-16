@@ -581,7 +581,7 @@ func (h *teamHandler) KickUser(ctx context.Context, req *pb.KickUserRequest) (*p
 		return nil, errs.ErrDatabase
 	}
 
-	if t.Owner == kickedUser {
+	if t.Owner == kickedUser || userID == kickedUser {
 		logger.Info("not authorized")
 		return nil, errs.ErrNotAuthorized
 	}
