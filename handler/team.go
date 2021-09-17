@@ -599,7 +599,7 @@ func (h *teamHandler) KickUser(ctx context.Context, req *pb.KickUserRequest) (*p
 	}
 	t.Members = mems
 
-	if t.CoOwner != nil && *t.CoOwner == userID {
+	if t.CoOwner != nil && *t.CoOwner == kickedUser {
 		t.CoOwner = nil
 	}
 

@@ -186,5 +186,24 @@ var _ = Describe("Team", func() {
 			Expect(err).NotTo(BeNil())
 			Expect(err.Error()).To(ContainSubstring(errs.ErrNotAuthorized.Error()))
 		})
+
+		Specify("Co-owner has rank after kicking", func() {
+			_, err = teamClient.KickUser(user2.Context(), &pb.KickUserRequest{
+				UserId: user3.UserID(),
+			})
+			Expect(err).To(BeNil())
+
+			info, err := teamClient.GetTeamInfo(user2.Context(), &pb.GetTeamInfoRequest{})
+			Expect(err).To(BeNil())
+			Expect(info).NotTo(BeNil())
+			Expect(info.Members).NotTo(BeNil())
+			Expect(info.Members).NotTo(BeEmpty())
+			Expect(info.Members).To(ContainElement(&pb.GetTeamInfoResponse_Member{
+				ID: user2.UserID(),
+				Name: "test",
+				Class: 0,
+				Rank: pb.GetTeamInfoResponse_Member_k_COOWNER,
+			}))
+		})
 	})
 })
