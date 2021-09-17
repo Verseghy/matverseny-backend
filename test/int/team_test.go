@@ -53,7 +53,7 @@ var _ = Describe("Team", func() {
 				}(),
 			})
 			Expect(err).NotTo(BeNil())
-			Expect(err.Error()).To(ContainSubstring(errs.ErrTeamNameTooLong.Error()))
+			Expect(err).To(MatchBackendError(errs.ErrTeamNameTooLong))
 		})
 		Specify("sad path - team name exists", func() {
 			_, err := teamClient.CreateTeam(user1.Context(), &pb.CreateTeamRequest{
@@ -65,7 +65,7 @@ var _ = Describe("Team", func() {
 				Name: "test",
 			})
 			Expect(err).NotTo(BeNil())
-			Expect(err.Error()).To(ContainSubstring(errs.ErrTeamNameTaken.Error()))
+			Expect(err).To(MatchBackendError(errs.ErrTeamNameTaken))
 		})
 		Specify("sad path - user already in team", func() {
 			_, err := teamClient.CreateTeam(user1.Context(), &pb.CreateTeamRequest{
@@ -76,7 +76,7 @@ var _ = Describe("Team", func() {
 				Name: "test",
 			})
 			Expect(err).NotTo(BeNil())
-			Expect(err.Error()).To(ContainSubstring(errs.ErrHasTeam.Error()))
+			Expect(err).To(MatchBackendError(errs.ErrHasTeam))
 		})
 	})
 
@@ -115,7 +115,7 @@ var _ = Describe("Team", func() {
 				UserId: user1.UserID(),
 			})
 			Expect(err).NotTo(BeNil())
-			Expect(err.Error()).To(ContainSubstring(errs.ErrNotAuthorized.Error()))
+			Expect(err).To(MatchBackendError(errs.ErrNotAuthorized))
 		})
 
 		Specify("Owner can kick the co-owner", func() {
@@ -137,7 +137,7 @@ var _ = Describe("Team", func() {
 				UserId: user1.UserID(),
 			})
 			Expect(err).NotTo(BeNil())
-			Expect(err.Error()).To(ContainSubstring(errs.ErrNotAuthorized.Error()))
+			Expect(err).To(MatchBackendError(errs.ErrNotAuthorized))
 		})
 
 		Specify("Co-owner cannot kick himself", func() {
@@ -145,7 +145,7 @@ var _ = Describe("Team", func() {
 				UserId: user2.UserID(),
 			})
 			Expect(err).NotTo(BeNil())
-			Expect(err.Error()).To(ContainSubstring(errs.ErrNotAuthorized.Error()))
+			Expect(err).To(MatchBackendError(errs.ErrNotAuthorized))
 		})
 
 		Specify("Co-owner can kick a member", func() {
@@ -160,7 +160,7 @@ var _ = Describe("Team", func() {
 				UserId: user1.UserID(),
 			})
 			Expect(err).NotTo(BeNil())
-			Expect(err.Error()).To(ContainSubstring(errs.ErrNotAuthorized.Error()))
+			Expect(err).To(MatchBackendError(errs.ErrNotAuthorized))
 		})
 
 		Specify("Member cannot kick the co-owner", func() {
@@ -168,7 +168,7 @@ var _ = Describe("Team", func() {
 				UserId: user2.UserID(),
 			})
 			Expect(err).NotTo(BeNil())
-			Expect(err.Error()).To(ContainSubstring(errs.ErrNotAuthorized.Error()))
+			Expect(err).To(MatchBackendError(errs.ErrNotAuthorized))
 		})
 
 		Specify("Member cannot kick a member", func() {
@@ -176,7 +176,7 @@ var _ = Describe("Team", func() {
 				UserId: user4.UserID(),
 			})
 			Expect(err).NotTo(BeNil())
-			Expect(err.Error()).To(ContainSubstring(errs.ErrNotAuthorized.Error()))
+			Expect(err).To(MatchBackendError(errs.ErrNotAuthorized))
 		})
 
 		Specify("Member cannot kick himself", func() {
@@ -184,7 +184,7 @@ var _ = Describe("Team", func() {
 				UserId: user3.UserID(),
 			})
 			Expect(err).NotTo(BeNil())
-			Expect(err.Error()).To(ContainSubstring(errs.ErrNotAuthorized.Error()))
+			Expect(err).To(MatchBackendError(errs.ErrNotAuthorized))
 		})
 
 		Specify("Co-owner has rank after kicking", func() {
