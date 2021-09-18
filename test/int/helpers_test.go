@@ -26,7 +26,58 @@ func cleanupMongo() {
 	}
 }
 
-func registerUser(authClient pb.AuthClient, uid int) (string, string) {
+type User struct {
+	AccessToken string
+	RefreshToken string
+	Claims *jwt2.AccessClaims
+	RefreshClaims *jwt2.RefreshClaims
+	authClient pb.AuthClient
+}
+
+func (user *User) Context() context.Context {
+	return metadata.AppendToOutgoingContext(context.Background(), "authorization", user.AccessToken)
+}
+
+func (user *User) UserID() string {
+	return user.Claims.UserID
+}
+
+func (user *User) Refresh() {
+	res, err := user.authClient.RefreshToken(context.Background(), &pb.RefreshTokenRequest{
+		Token: user.RefreshToken,
+	})
+
+	Expect(err).To(BeNil())
+	Expect(res.Token).NotTo(BeNil())
+
+	user.AccessToken = res.Token
+	user.ParseTokens()
+}
+
+func (user *User) ParseTokens() {
+	rt, err := jwt.ParseWithClaims(user.RefreshToken, &jwt2.RefreshClaims{}, func(token *jwt.Token) (interface{}, error) {
+		return key, nil
+	})
+	Expect(err).To(BeNil())
+	c, ok := rt.Claims.(*jwt2.RefreshClaims)
+	Expect(ok).To(BeTrue())
+	Expect(c.ExpiresAt).To(Satisfy(func(t int64) bool { return time.Now().Unix() < t }))
+	Expect(c.UserID).NotTo(BeEmpty())
+
+	at, err := jwt.ParseWithClaims(user.AccessToken, &jwt2.AccessClaims{}, func(token *jwt.Token) (interface{}, error) {
+		return key, nil
+	})
+	Expect(err).To(BeNil())
+	c2, ok := at.Claims.(*jwt2.AccessClaims)
+	Expect(ok).To(BeTrue())
+	Expect(c2.ExpiresAt).To(Satisfy(func(t int64) bool { return time.Now().Unix() < t }))
+	Expect(c2.UserID).NotTo(BeEmpty())
+
+	user.RefreshClaims = c
+	user.Claims = c2
+}
+
+func registerUser(authClient pb.AuthClient, uid int) (user User) {
 	res, err := authClient.Register(context.Background(), &pb.RegisterRequest{
 		Email:    "test@test.test" + strconv.Itoa(uid),
 		Password: "testtest",
@@ -39,59 +90,11 @@ func registerUser(authClient pb.AuthClient, uid int) (string, string) {
 	Expect(res.RefreshToken).NotTo(BeNil())
 	Expect(res.AccessToken).NotTo(BeNil())
 
-	rt, err := jwt.ParseWithClaims(res.RefreshToken, &jwt2.RefreshClaims{}, func(token *jwt.Token) (interface{}, error) {
-		return key, nil
-	})
-	Expect(err).To(BeNil())
-	c, ok := rt.Claims.(*jwt2.RefreshClaims)
-	Expect(ok).To(BeTrue())
-	Expect(c.ExpiresAt).To(Satisfy(func(t int64) bool { return time.Now().Unix() < t }))
-	Expect(c.UserID).NotTo(BeEmpty())
-	Expect(c.IsAdmin).To(BeFalse())
+	user.RefreshToken = res.RefreshToken
+	user.AccessToken = res.AccessToken
+	user.authClient = authClient
 
-	at, err := jwt.ParseWithClaims(res.AccessToken, &jwt2.AccessClaims{}, func(token *jwt.Token) (interface{}, error) {
-		return key, nil
-	})
-	Expect(err).To(BeNil())
-	c2, ok := at.Claims.(*jwt2.AccessClaims)
-	Expect(ok).To(BeTrue())
-	Expect(c2.ExpiresAt).To(Satisfy(func(t int64) bool { return time.Now().Unix() < t }))
-	Expect(c2.UserID).NotTo(BeEmpty())
-	Expect(c2.IsAdmin).To(BeFalse())
-	Expect(c2.Team).To(BeEmpty())
+	user.ParseTokens()
 
-	return res.RefreshToken, res.AccessToken
-}
-
-func refreshJWT(authClient pb.AuthClient, accesstoken string) (*jwt2.RefreshClaims, *jwt2.AccessClaims) {
-	res, err := authClient.RefreshToken(context.Background(), &pb.RefreshTokenRequest{
-		Token: accesstoken,
-	})
-	Expect(err).To(BeNil())
-
-	Expect(res.Token).NotTo(BeNil())
-
-	rt, err := jwt.ParseWithClaims(accesstoken, &jwt2.RefreshClaims{}, func(token *jwt.Token) (interface{}, error) {
-		return key, nil
-	})
-	Expect(err).To(BeNil())
-	c, ok := rt.Claims.(*jwt2.RefreshClaims)
-	Expect(ok).To(BeTrue())
-	Expect(c.ExpiresAt).To(Satisfy(func(t int64) bool { return time.Now().Unix() < t }))
-	Expect(c.UserID).NotTo(BeEmpty())
-
-	at, err := jwt.ParseWithClaims(res.Token, &jwt2.AccessClaims{}, func(token *jwt.Token) (interface{}, error) {
-		return key, nil
-	})
-	Expect(err).To(BeNil())
-	c2, ok := at.Claims.(*jwt2.AccessClaims)
-	Expect(ok).To(BeTrue())
-	Expect(c2.ExpiresAt).To(Satisfy(func(t int64) bool { return time.Now().Unix() < t }))
-	Expect(c2.UserID).NotTo(BeEmpty())
-
-	return c, c2
-}
-
-func authenticatedContext(at string) context.Context {
-	return metadata.AppendToOutgoingContext(context.Background(), "authorization", at)
+	return
 }
