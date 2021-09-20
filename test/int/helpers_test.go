@@ -122,7 +122,7 @@ func createTeam(owner User, name string, teamClient pb.TeamClient) (team Team) {
 	Expect(info).NotTo(BeNil())
 	Expect(info.JoinCode).NotTo(BeNil())
 	Expect(info.Name).To(Equal(name))
-	Expect(len(info.Members)).To(Equal(1))
+	Expect(info.Members).To(HaveLen(1))
 
 	owner.Refresh()
 
