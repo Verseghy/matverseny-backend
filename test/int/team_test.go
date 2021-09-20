@@ -191,4 +191,41 @@ var _ = Describe("Team", func() {
 			}))
 		})
 	})
+
+	Describe("Generate Join Code", func() {
+		var user1 User
+		var user2 User
+		var user3 User
+
+		BeforeEach(func() {
+			cleanupMongo()
+			user1 = registerUser(authClient, 0)
+			user2 = registerUser(authClient, 1)
+			user3 = registerUser(authClient, 2)
+
+			team := createTeam(user1, "Test team", teamClient)
+			team.AddMember(user2, true)
+			team.AddMember(user3, false)
+		})
+
+		Specify("Owner can generate join code", func() {
+			res, err := teamClient.GenerateJoinCode(user1.Context(), &pb.GenerateJoinCodeRequest{})
+
+			Expect(err).To(BeNil())
+			Expect(res).NotTo(BeNil())
+			Expect(res.NewCode).NotTo(BeNil())
+		})
+		Specify("Co-owner can't generate join code", func() {
+			res, err := teamClient.GenerateJoinCode(user2.Context(), &pb.GenerateJoinCodeRequest{})
+
+			Expect(res).To(BeNil())
+			Expect(err).To(MatchBackendError(errs.ErrNotAuthorized))
+		})
+		Specify("Member can't generate join code", func() {
+			res, err := teamClient.GenerateJoinCode(user3.Context(), &pb.GenerateJoinCodeRequest{})
+
+			Expect(res).To(BeNil())
+			Expect(err).To(MatchBackendError(errs.ErrNotAuthorized))
+		})
+	})
 })
