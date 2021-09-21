@@ -3,6 +3,7 @@ package int
 import (
 	"context"
 	"github.com/golang-jwt/jwt/v4"
+	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -97,4 +98,61 @@ func registerUser(authClient pb.AuthClient, uid int) (user User) {
 	user.ParseTokens()
 
 	return
+}
+
+type Team struct {
+	teamClient pb.TeamClient
+
+	JoinCode string
+	Owner User
+} 
+
+func createTeam(owner User, name string, teamClient pb.TeamClient) (team Team) {
+	By("Create Team")
+
+	_, err := teamClient.CreateTeam(owner.Context(), &pb.CreateTeamRequest{
+		Name: name,
+	})
+
+	Expect(err).To(BeNil())
+
+	info, err := teamClient.GetTeamInfo(owner.Context(), &pb.GetTeamInfoRequest{})
+
+	Expect(err).To(BeNil())
+	Expect(info).NotTo(BeNil())
+	Expect(info.JoinCode).NotTo(BeNil())
+	Expect(info.Name).To(Equal(name))
+	Expect(info.Members).To(HaveLen(1))
+
+	owner.Refresh()
+
+	team.teamClient = teamClient
+	team.JoinCode = info.JoinCode
+	team.Owner = owner
+
+	return
+}
+
+func (team *Team) AddMember(user User, shouldCoowner bool) {
+	By("Add Member to Team")
+
+	_, err := team.teamClient.JoinTeam(user.Context(), &pb.JoinTeamRequest{
+		Code: team.JoinCode,
+	})
+
+	Expect(err).To(BeNil())
+
+
+	if (shouldCoowner == true) {
+		By("Add Member - Set Rank")
+
+		_, err := team.teamClient.ChangeCoOwnerStatus(team.Owner.Context(), &pb.ChangeCoOwnerStatusRequest{
+			UserId: user.UserID(),
+			ShouldCoowner: true,
+		})
+
+		Expect(err).To(BeNil())
+	}
+
+	user.Refresh()
 }

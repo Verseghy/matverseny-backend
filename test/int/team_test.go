@@ -19,20 +19,16 @@ var _ = Describe("Team", func() {
 	authClient := pb.NewAuthClient(conn)
 	teamClient := pb.NewTeamClient(conn)
 
-	var user1 User
-	var user2 User
-	var user3 User
-	var user4 User
-	
-	BeforeEach(func() {
-		cleanupMongo()
-		user1 = registerUser(authClient, 0)
-		user2 = registerUser(authClient, 1)
-		user3 = registerUser(authClient, 2)
-		user4 = registerUser(authClient, 3)
-	})
-
 	Describe("Create Team", func() {
+		var user1 User
+		var user2 User
+
+		BeforeEach(func() {
+			cleanupMongo()
+			user1 = registerUser(authClient, 0)
+			user2 = registerUser(authClient, 1)
+		})
+
 		Specify("happy path", func() {
 			_, err := teamClient.CreateTeam(user1.Context(), &pb.CreateTeamRequest{
 				Name: "Test team",
@@ -81,33 +77,22 @@ var _ = Describe("Team", func() {
 	})
 
 	Describe("Kick User", func() {
+		var user1 User
+		var user2 User
+		var user3 User
+		var user4 User
+
 		BeforeEach(func() {
-			_, err = teamClient.CreateTeam(user1.Context(), &pb.CreateTeamRequest{
-				Name: "Test team",
-			})
+			cleanupMongo()
+			user1 = registerUser(authClient, 0)
+			user2 = registerUser(authClient, 1)
+			user3 = registerUser(authClient, 2)
+			user4 = registerUser(authClient, 3)
 
-			Expect(err).To(BeNil())
-
-			info, _ := teamClient.GetTeamInfo(user1.Context(), &pb.GetTeamInfoRequest{})
-
-			Expect(info).NotTo(BeNil())
-			Expect(info.JoinCode).NotTo(BeNil())
-   
-			teamClient.JoinTeam(user2.Context(), &pb.JoinTeamRequest{ Code: info.JoinCode })
-			teamClient.JoinTeam(user3.Context(), &pb.JoinTeamRequest{ Code: info.JoinCode })
-			teamClient.JoinTeam(user4.Context(), &pb.JoinTeamRequest{ Code: info.JoinCode })
-
-			user1.Refresh()
-			user2.Refresh()
-			user3.Refresh()
-			user4.Refresh()
-
-			_, err = teamClient.ChangeCoOwnerStatus(user1.Context(), &pb.ChangeCoOwnerStatusRequest{
-				UserId: user2.UserID(),
-				ShouldCoowner: true,
-			})
-
-			Expect(err).To(BeNil())
+			team := createTeam(user1, "Test team", teamClient)
+			team.AddMember(user2, true)
+			team.AddMember(user3, false)
+			team.AddMember(user4, false)
 		})
 
 		Specify("Owner cannot kick himself", func() {
@@ -204,6 +189,59 @@ var _ = Describe("Team", func() {
 				Class: 0,
 				Rank: pb.GetTeamInfoResponse_Member_k_COOWNER,
 			}))
+		})
+	})
+
+	Describe("Generate Join Code", func() {
+		var user1 User
+		var user2 User
+		var user3 User
+
+		BeforeEach(func() {
+			cleanupMongo()
+			user1 = registerUser(authClient, 0)
+			user2 = registerUser(authClient, 1)
+			user3 = registerUser(authClient, 2)
+		})
+
+		Context("Has team", func() {
+			BeforeEach(func() {
+				team := createTeam(user1, "Test team", teamClient)
+				team.AddMember(user2, true)
+				team.AddMember(user3, false)
+			})
+
+			Specify("Owner can generate join code", func() {
+				res, err := teamClient.GenerateJoinCode(user1.Context(), &pb.GenerateJoinCodeRequest{})
+
+				Expect(err).To(BeNil())
+				Expect(res).NotTo(BeNil())
+				Expect(res.NewCode).NotTo(BeNil())
+			})
+
+			Specify("Co-owner can't generate join code", func() {
+				res, err := teamClient.GenerateJoinCode(user2.Context(), &pb.GenerateJoinCodeRequest{})
+
+				Expect(res).To(BeNil())
+				Expect(err).To(MatchBackendError(errs.ErrNotAuthorized))
+			})
+
+			Specify("Member can't generate join code", func() {
+				res, err := teamClient.GenerateJoinCode(user3.Context(), &pb.GenerateJoinCodeRequest{})
+
+				Expect(res).To(BeNil())
+				Expect(err).To(MatchBackendError(errs.ErrNotAuthorized))
+			})
+		})
+
+
+		Context("No team", func() {
+			Specify("Cannot generate join code without a team", func() {
+				res, err := teamClient.GenerateJoinCode(user1.Context(), &pb.GenerateJoinCodeRequest{})
+
+				Expect(res).To(BeNil())
+				Expect(err).To(MatchBackendError(errs.ErrNoTeam))
+			})
 		})
 	})
 })
