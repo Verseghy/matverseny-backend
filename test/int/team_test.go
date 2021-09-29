@@ -139,6 +139,47 @@ var _ = Describe("Team", func() {
 		})
 	})
 
+	Describe("Leave Team", func() {
+		var user1 User
+		var user2 User
+
+		var team Team
+
+		BeforeEach(func() {
+			cleanupMongo()
+			user1 = registerUser(authClient, 0)
+			user2 = registerUser(authClient, 1)
+
+			team = createTeam(user1, "Test team 1", teamClient)
+		})
+
+		Specify("Can't leave without a team", func() {
+			_, err := teamClient.LeaveTeam(user2.Context(), &pb.LeaveTeamRequest{})
+
+			Expect(err).To(MatchBackendError(errs.ErrNoTeam))
+		})
+
+		Specify("Owner can't leave", func() {
+			_, err := teamClient.LeaveTeam(user1.Context(), &pb.LeaveTeamRequest{})
+
+			Expect(err).To(MatchBackendError(errs.ErrOwnerCantLeave))
+		})
+
+		Specify("Member can leave", func() {
+			team.AddMember(user2, false)
+			_, err := teamClient.LeaveTeam(user2.Context(), &pb.LeaveTeamRequest{})
+
+			Expect(err).To(BeNil())
+		})
+
+		Specify("Coowner can leave", func() {
+			team.AddMember(user2, true)
+			_, err := teamClient.LeaveTeam(user2.Context(), &pb.LeaveTeamRequest{})
+
+			Expect(err).To(BeNil())
+		})
+	})
+
 	Describe("Kick User", func() {
 		var user1 User
 		var user2 User
