@@ -375,6 +375,200 @@ var _ = Describe("Team", func() {
 		})
 	})
 
+	Describe("Change Co-owner Status", func() {
+		var user1 User
+		var user2 User
+		var user3 User
+
+		BeforeEach(func() {
+			cleanupMongo()
+			user1 = registerUser(authClient, 0)
+			user2 = registerUser(authClient, 1)
+		})
+
+		Context("No team", func() {
+			Specify("Cannot change co-owner status without a team", func() {
+				_, err := teamClient.ChangeCoOwnerStatus(user1.Context(), &pb.ChangeCoOwnerStatusRequest{
+					UserId: user2.UserID(),
+					ShouldCoowner: true,
+				})
+				Expect(err).To(MatchBackendError(errs.ErrNoTeam))
+			})
+		})
+
+		Context("Has team", func() {
+			BeforeEach(func() {
+				user3 = registerUser(authClient, 2)
+
+				team := createTeam(user1, "Test Team", teamClient)
+				team.AddMember(user2, false)
+				team.AddMember(user3, false)
+			})
+
+			Specify("Member can't change status", func() {
+				_, err := teamClient.ChangeCoOwnerStatus(user2.Context(), &pb.ChangeCoOwnerStatusRequest{
+					UserId: user3.UserID(),
+					ShouldCoowner: true,
+				})
+
+				Expect(err).To(MatchBackendError(errs.ErrNotAuthorized))
+			})
+
+			Specify("Co-owner can't change status", func() {
+				_, err := teamClient.ChangeCoOwnerStatus(user1.Context(), &pb.ChangeCoOwnerStatusRequest{
+					UserId: user2.UserID(),
+				})
+
+				Expect(err).To(BeNil())
+
+				_, err = teamClient.ChangeCoOwnerStatus(user2.Context(), &pb.ChangeCoOwnerStatusRequest{
+					UserId: user3.UserID(),
+					ShouldCoowner: true,
+				})
+
+				Expect(err).To(MatchBackendError(errs.ErrNotAuthorized))
+			})
+
+			Specify("Change member to co-owner and back", func() {
+				By("Get initial info")
+				info, err := teamClient.GetTeamInfo(user1.Context(), &pb.GetTeamInfoRequest{})
+
+				Expect(err).To(BeNil())
+				Expect(info).NotTo(BeNil())
+				Expect(info.Members).NotTo(BeNil())
+				Expect(info.Members).To(ContainElement(&pb.GetTeamInfoResponse_Member{
+					ID: user2.UserID(),
+					Name: "test",
+					Class: 0,
+					Rank: pb.GetTeamInfoResponse_Member_k_MEMBER,
+				}))
+
+				By("Change status")
+				_, err = teamClient.ChangeCoOwnerStatus(user1.Context(), &pb.ChangeCoOwnerStatusRequest{
+					UserId: user2.UserID(),
+					ShouldCoowner: true,
+				})
+				Expect(err).To(BeNil())
+
+				By("Get new info")
+				info, err = teamClient.GetTeamInfo(user1.Context(), &pb.GetTeamInfoRequest{})
+
+				Expect(err).To(BeNil())
+				Expect(info).NotTo(BeNil())
+				Expect(info.Members).NotTo(BeNil())
+				Expect(info.Members).To(ContainElement(&pb.GetTeamInfoResponse_Member{
+					ID: user2.UserID(),
+					Name: "test",
+					Class: 0,
+					Rank: pb.GetTeamInfoResponse_Member_k_COOWNER,
+				}))
+
+
+				By("Change status")
+				_, err = teamClient.ChangeCoOwnerStatus(user1.Context(), &pb.ChangeCoOwnerStatusRequest{
+					UserId: user2.UserID(),
+					ShouldCoowner: false,
+				})
+				Expect(err).To(BeNil())
+
+				By("Get third info")
+				info, err = teamClient.GetTeamInfo(user1.Context(), &pb.GetTeamInfoRequest{})
+
+				Expect(err).To(BeNil())
+				Expect(info).NotTo(BeNil())
+				Expect(info.Members).NotTo(BeNil())
+				Expect(info.Members).To(ContainElement(&pb.GetTeamInfoResponse_Member{
+					ID: user2.UserID(),
+					Name: "test",
+					Class: 0,
+					Rank: pb.GetTeamInfoResponse_Member_k_MEMBER,
+				}))
+			})
+
+			Specify("No two co-owner", func() {
+				By("Get initial info")
+				info, err := teamClient.GetTeamInfo(user1.Context(), &pb.GetTeamInfoRequest{})
+
+				Expect(err).To(BeNil())
+				Expect(info).NotTo(BeNil())
+				Expect(info.Members).NotTo(BeNil())
+				Expect(info.Members).To(ContainElement(&pb.GetTeamInfoResponse_Member{
+					ID: user2.UserID(),
+					Name: "test",
+					Class: 0,
+					Rank: pb.GetTeamInfoResponse_Member_k_MEMBER,
+				}))
+				Expect(info.Members).To(ContainElement(&pb.GetTeamInfoResponse_Member{
+					ID: user3.UserID(),
+					Name: "test",
+					Class: 0,
+					Rank: pb.GetTeamInfoResponse_Member_k_MEMBER,
+				}))
+
+				By("Set user2 to the co-owner")
+				_, err = teamClient.ChangeCoOwnerStatus(user1.Context(), &pb.ChangeCoOwnerStatusRequest{
+					UserId: user2.UserID(),
+					ShouldCoowner: true,
+				})
+				Expect(err).To(BeNil())
+
+				By("Get second info")
+				info, err = teamClient.GetTeamInfo(user1.Context(), &pb.GetTeamInfoRequest{})
+
+				Expect(err).To(BeNil())
+				Expect(info).NotTo(BeNil())
+				Expect(info.Members).NotTo(BeNil())
+				Expect(info.Members).To(ContainElement(&pb.GetTeamInfoResponse_Member{
+					ID: user2.UserID(),
+					Name: "test",
+					Class: 0,
+					Rank: pb.GetTeamInfoResponse_Member_k_COOWNER,
+				}))
+				Expect(info.Members).To(ContainElement(&pb.GetTeamInfoResponse_Member{
+					ID: user3.UserID(),
+					Name: "test",
+					Class: 0,
+					Rank: pb.GetTeamInfoResponse_Member_k_MEMBER,
+				}))
+
+				By("Set user3 to the co-owner")
+				_, err = teamClient.ChangeCoOwnerStatus(user1.Context(), &pb.ChangeCoOwnerStatusRequest{
+					UserId: user3.UserID(),
+					ShouldCoowner: true,
+				})
+				Expect(err).To(BeNil())
+
+				By("Get second info")
+				info, err = teamClient.GetTeamInfo(user1.Context(), &pb.GetTeamInfoRequest{})
+
+				Expect(err).To(BeNil())
+				Expect(info).NotTo(BeNil())
+				Expect(info.Members).NotTo(BeNil())
+				Expect(info.Members).To(ContainElement(&pb.GetTeamInfoResponse_Member{
+					ID: user2.UserID(),
+					Name: "test",
+					Class: 0,
+					Rank: pb.GetTeamInfoResponse_Member_k_MEMBER,
+				}))
+				Expect(info.Members).To(ContainElement(&pb.GetTeamInfoResponse_Member{
+					ID: user3.UserID(),
+					Name: "test",
+					Class: 0,
+					Rank: pb.GetTeamInfoResponse_Member_k_COOWNER,
+				}))
+			})
+
+			XSpecify("Cannot change owner co-owner status", func() {
+				_, err := teamClient.ChangeCoOwnerStatus(user1.Context(), &pb.ChangeCoOwnerStatusRequest{
+					UserId: user1.UserID(),
+					ShouldCoowner: true,
+				})
+
+				Expect(err).To(MatchBackendError(errs.ErrNotAuthorized))
+			})
+		})
+	})
+
 	Describe("Kick User", func() {
 		var user1 User
 		var user2 User
