@@ -76,6 +76,69 @@ var _ = Describe("Team", func() {
 		})
 	})
 
+	Describe("Join Team", func() {
+		var user1 User
+		var user2 User
+		var user3 User
+
+		var team1 Team
+		var team2 Team
+
+		BeforeEach(func() {
+			cleanupMongo()
+			user1 = registerUser(authClient, 0)
+			user2 = registerUser(authClient, 1)
+			user3 = registerUser(authClient, 2)
+
+			team1 = createTeam(user1, "Test team 1", teamClient)
+			team2 = createTeam(user2, "Test team 2", teamClient)
+		})
+
+		Specify("Should join team", func() {
+			_, err := teamClient.JoinTeam(user3.Context(), &pb.JoinTeamRequest{
+				Code: team1.JoinCode,
+			})
+
+			Expect(err).To(BeNil())
+		})
+
+		Specify("Can't join team twice", func() {
+			_, err := teamClient.JoinTeam(user3.Context(), &pb.JoinTeamRequest{
+				Code: team1.JoinCode,
+			})
+
+			Expect(err).To(BeNil())
+
+			_, err = teamClient.JoinTeam(user3.Context(), &pb.JoinTeamRequest{
+				Code: team1.JoinCode,
+			})
+
+			Expect(err).To(MatchBackendError(errs.ErrHasTeam))
+		})
+
+		Specify("Can't join to another team", func() {
+			_, err := teamClient.JoinTeam(user3.Context(), &pb.JoinTeamRequest{
+				Code: team1.JoinCode,
+			})
+
+			Expect(err).To(BeNil())
+
+			_, err = teamClient.JoinTeam(user3.Context(), &pb.JoinTeamRequest{
+				Code: team2.JoinCode,
+			})
+
+			Expect(err).To(MatchBackendError(errs.ErrHasTeam))
+		})
+
+		Specify("Wrong join code", func() {
+			_, err := teamClient.JoinTeam(user3.Context(), &pb.JoinTeamRequest{
+				Code: "0",
+			})
+
+			Expect(err).To(MatchBackendError(errs.ErrNotFound))
+		})
+	})
+
 	Describe("Kick User", func() {
 		var user1 User
 		var user2 User
