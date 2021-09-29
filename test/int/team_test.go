@@ -180,6 +180,43 @@ var _ = Describe("Team", func() {
 		})
 	})
 
+	Describe("Get Team Info", func() {
+		var user1 User
+		var user2 User
+
+		var team Team
+
+		BeforeEach(func() {
+			cleanupMongo()
+			user1 = registerUser(authClient, 0)
+			user2 = registerUser(authClient, 1)
+
+			team = createTeam(user1, "Test Team", teamClient)
+		})
+
+		Specify("Can't get team info without a team", func() {
+			info, err := teamClient.GetTeamInfo(user2.Context(), &pb.GetTeamInfoRequest{})
+			Expect(err).To(MatchBackendError(errs.ErrNoTeam))
+			Expect(info).To(BeNil())
+		})
+
+		Specify("Member list changes", func() {
+			info, err := teamClient.GetTeamInfo(user1.Context(), &pb.GetTeamInfoRequest{})
+			Expect(err).To(BeNil())
+			Expect(info).NotTo(BeNil())
+			Expect(info.Members).NotTo(BeNil())
+			Expect(info.Members).To(HaveLen(1))
+
+			team.AddMember(user2, false)
+
+			info, err = teamClient.GetTeamInfo(user1.Context(), &pb.GetTeamInfoRequest{})
+			Expect(err).To(BeNil())
+			Expect(info).NotTo(BeNil())
+			Expect(info.Members).NotTo(BeNil())
+			Expect(info.Members).To(HaveLen(2))
+		})
+	})
+
 	Describe("Kick User", func() {
 		var user1 User
 		var user2 User
