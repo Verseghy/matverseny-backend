@@ -287,6 +287,49 @@ var _ = Describe("Team", func() {
 		})
 	})
 
+	Describe("Disband Team", func() {
+		var user1 User
+		var user2 User
+
+		var team Team
+
+		BeforeEach(func() {
+			cleanupMongo()
+			user1 = registerUser(authClient, 0)
+			user2 = registerUser(authClient, 1)
+
+			team = createTeam(user1, "Test Team", teamClient)
+		})
+
+		Specify("Cannot disband team if there is no team", func() {
+			_, err := teamClient.DisbandTeam(user2.Context(), &pb.DisbandTeamRequest{})
+			Expect(err).To(MatchBackendError(errs.ErrNoTeam))
+		})
+
+		Specify("Member can't disband team", func() {
+			team.AddMember(user2, false)
+			_, err := teamClient.DisbandTeam(user2.Context(), &pb.DisbandTeamRequest{})
+			Expect(err).To(MatchBackendError(errs.ErrNotAuthorized))
+		})
+
+		Specify("Co-owner can't disband team", func() {
+			team.AddMember(user2, true)
+			_, err := teamClient.DisbandTeam(user2.Context(), &pb.DisbandTeamRequest{})
+			Expect(err).To(MatchBackendError(errs.ErrNotAuthorized))
+		})
+
+		Specify("Cannot disband non-empty team", func() {
+			team.AddMember(user2, false)
+			_, err := teamClient.DisbandTeam(user1.Context(), &pb.DisbandTeamRequest{})
+			Expect(err).To(MatchBackendError(errs.ErrDisbandNonEmptyTeam))
+		})
+
+		Specify("Success", func() {
+			_, err := teamClient.DisbandTeam(user1.Context(), &pb.DisbandTeamRequest{})
+			Expect(err).To(BeNil())
+		})
+	})
+
 	Describe("Kick User", func() {
 		var user1 User
 		var user2 User
