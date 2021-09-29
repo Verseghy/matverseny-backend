@@ -330,6 +330,51 @@ var _ = Describe("Team", func() {
 		})
 	})
 
+	Describe("Change Lock", func() {
+		var user1 User
+		var user2 User
+
+		var team Team
+
+		BeforeEach(func() {
+			cleanupMongo()
+			user1 = registerUser(authClient, 0)
+			user2 = registerUser(authClient, 1)
+
+			team = createTeam(user1, "Test Team", teamClient)
+		})
+
+		Specify("No team", func() {
+			_, err := teamClient.ChangeLock(user2.Context(), &pb.ChangeLockRequest{
+				ShouldLock: true,
+			})
+			Expect(err).To(MatchBackendError(errs.ErrNoTeam))
+		})
+
+		Specify("Member can't lock team", func() {
+			team.AddMember(user2, false)
+			_, err := teamClient.ChangeLock(user2.Context(), &pb.ChangeLockRequest{
+				ShouldLock: true,
+			})
+			Expect(err).To(MatchBackendError(errs.ErrNotAuthorized))
+		})
+
+		Specify("Co-owner can't lock team", func() {
+			team.AddMember(user2, true)
+			_, err := teamClient.ChangeLock(user2.Context(), &pb.ChangeLockRequest{
+				ShouldLock: true,
+			})
+			Expect(err).To(MatchBackendError(errs.ErrNotAuthorized))
+		})
+
+		Specify("Owner can lock team", func() {
+			_, err := teamClient.ChangeLock(user1.Context(), &pb.ChangeLockRequest{
+				ShouldLock: true,
+			})
+			Expect(err).To(BeNil())
+		})
+	})
+
 	Describe("Kick User", func() {
 		var user1 User
 		var user2 User
