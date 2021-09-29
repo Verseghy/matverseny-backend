@@ -217,6 +217,76 @@ var _ = Describe("Team", func() {
 		})
 	})
 
+	Describe("Update Team", func() {
+		var user1 User
+		var user2 User
+
+		var team Team
+
+		BeforeEach(func() {
+			cleanupMongo()
+			user1 = registerUser(authClient, 0)
+			user2 = registerUser(authClient, 1)
+
+			team = createTeam(user1, "Test Team", teamClient)
+		})
+
+		Specify("Change team name", func() {
+			By("Get initial name")
+			info, err := teamClient.GetTeamInfo(user1.Context(), &pb.GetTeamInfoRequest{})
+
+			Expect(err).To(BeNil())
+			Expect(info).NotTo(BeNil())
+			Expect(info.Name).To(Equal("Test Team"))
+
+			By("Update name")
+			_, err = teamClient.UpdateTeam(user1.Context(), &pb.UpdateTeamRequest{
+				Name: "New test name",
+			})
+
+			Expect(err).To(BeNil())
+
+			By("Get new name")
+			info, err = teamClient.GetTeamInfo(user1.Context(), &pb.GetTeamInfoRequest{})
+
+			Expect(err).To(BeNil())
+			Expect(info).NotTo(BeNil())
+			Expect(info.Name).To(Equal("New test name"))
+		})
+
+		Specify("No team", func() {
+			_, err = teamClient.UpdateTeam(user2.Context(), &pb.UpdateTeamRequest{
+				Name: "New test name",
+			})
+			Expect(err).To(MatchBackendError(errs.ErrNoTeam))
+		})
+
+		Specify("Member cannot change name", func() {
+			team.AddMember(user2, false)
+			_, err = teamClient.UpdateTeam(user2.Context(), &pb.UpdateTeamRequest{
+				Name: "New test name",
+			})
+			Expect(err).To(MatchBackendError(errs.ErrNotAuthorized))
+		})
+
+		Specify("Co-owner cannot change name", func() {
+			team.AddMember(user2, true)
+			_, err = teamClient.UpdateTeam(user2.Context(), &pb.UpdateTeamRequest{
+				Name: "New test name",
+			})
+			Expect(err).To(MatchBackendError(errs.ErrNotAuthorized))
+		})
+
+		Specify("Team name already exists", func() {
+			createTeam(user2, "Test Team 2", teamClient)
+
+			_, err = teamClient.UpdateTeam(user1.Context(), &pb.UpdateTeamRequest{
+				Name: "Test Team 2",
+			})
+			Expect(err).To(MatchBackendError(errs.ErrTeamNameTaken))
+		})
+	})
+
 	Describe("Kick User", func() {
 		var user1 User
 		var user2 User
