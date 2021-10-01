@@ -200,6 +200,29 @@ var _ = Describe("Team", func() {
 			Expect(info).To(BeNil())
 		})
 
+		XSpecify("Join Code is empty if user is a member", func() {
+			team.AddMember(user2, false)
+			info, err := teamClient.GetTeamInfo(user2.Context(), &pb.GetTeamInfoRequest{})
+			Expect(err).To(BeNil())
+			Expect(info).NotTo(BeNil())
+			Expect(info.JoinCode).To(BeNil())
+		})
+
+		XSpecify("Join Code is empty if user is the co-owner", func() {
+			team.AddMember(user2, true)
+			info, err := teamClient.GetTeamInfo(user2.Context(), &pb.GetTeamInfoRequest{})
+			Expect(err).To(BeNil())
+			Expect(info).NotTo(BeNil())
+			Expect(info.JoinCode).To(BeNil())
+		})
+
+		Specify("Join Code not is empty if user is the owner", func() {
+			info, err := teamClient.GetTeamInfo(user1.Context(), &pb.GetTeamInfoRequest{})
+			Expect(err).To(BeNil())
+			Expect(info).NotTo(BeNil())
+			Expect(info.JoinCode).NotTo(BeNil())
+		})
+
 		Specify("Member list changes", func() {
 			info, err := teamClient.GetTeamInfo(user1.Context(), &pb.GetTeamInfoRequest{})
 			Expect(err).To(BeNil())
