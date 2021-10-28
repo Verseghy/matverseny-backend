@@ -337,6 +337,7 @@ func (h *teamHandler) GetTeamInfo(ctx context.Context, req *pb.GetTeamInfoReques
 	}
 
 	res.Members = mems
+	res.IsLocked = t.Locked
 
 	return res, nil
 }
