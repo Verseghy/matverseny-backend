@@ -68,6 +68,7 @@ message GetTeamInfoResponse {
 	string name = 1;
 	string join_code = 2;
 	repeated Member members = 3;
+	bool is_locked = 4;
 }
 
 message UpdateTeamRequest {
