@@ -31,7 +31,7 @@ var _ = Describe("Superadmin", func() {
 			cleanupMongo()
 		})
 
-		FSpecify("happy path", func() {
+		Specify("happy path", func() {
 			start := int64(1635554584)
 			_, err := superadminClient.SetTime(getContext(), &pb.SetTimeRequest{
 				Start: time.Unix(start, 0).Format(time.RFC3339),
