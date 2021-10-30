@@ -4,6 +4,7 @@ import (
 	"context"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.uber.org/zap"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -52,7 +53,7 @@ func (h *superAdminHandler) SetTime(ctx context.Context, req *pb.SetTimeRequest)
 		StartDate: start,
 		EndDate:   end,
 	}
-	_, err = h.cInfo.UpdateOne(ctx, bson.M{}, bson.M{"$set": bson.M{"time": t}})
+	_, err = h.cInfo.UpdateOne(ctx, bson.M{}, bson.M{"$set": bson.M{"time": t}}, options.Update().SetUpsert(true))
 	if err != nil {
 		log.Logger.Error("database error", zap.Error(err))
 		return nil, errs.ErrDatabase
