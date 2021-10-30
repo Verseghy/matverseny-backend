@@ -5,6 +5,8 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.uber.org/zap"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"matverseny-backend/entity"
 	"matverseny-backend/errs"
 	"matverseny-backend/events"
@@ -65,6 +67,25 @@ func (h *superAdminHandler) SetTime(ctx context.Context, req *pb.SetTimeRequest)
 	}
 
 	return res, nil
+}
+
+func (h *superAdminHandler) GetTime(ctx context.Context, req *pb.GetTimeRequest) (*pb.GetTimeResponse, error) {
+	t := &entity.Info{}
+	err := h.cInfo.FindOne(ctx, bson.M{}).Decode(t)
+	if err != nil {
+		log.Logger.Error("database error", zap.Error(err))
+		return nil, errs.ErrDatabase
+	}
+
+	res := &pb.GetTimeResponse{
+		Start: t.Time.StartDate.Format(time.RFC3339),
+		End:   t.Time.EndDate.Format(time.RFC3339),
+	}
+
+	return res, nil
+}
+func (h *superAdminHandler) GetResults(req *pb.GetResultsRequest, stream pb.SuperAdmin_GetResultsServer) error {
+	return status.Errorf(codes.Unimplemented, "method GetResults not implemented")
 }
 
 func NewSuperAdminHandler(client *mongo.Client) *superAdminHandler {
