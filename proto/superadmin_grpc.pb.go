@@ -19,6 +19,9 @@ const _ = grpc.SupportPackageIsVersion7
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type SuperAdminClient interface {
 	SetTime(ctx context.Context, in *SetTimeRequest, opts ...grpc.CallOption) (*SetTimeResponse, error)
+	GetTime(ctx context.Context, in *GetTimeRequest, opts ...grpc.CallOption) (*GetTimeResponse, error)
+	// Add admins
+	GetResults(ctx context.Context, in *GetResultsRequest, opts ...grpc.CallOption) (SuperAdmin_GetResultsClient, error)
 }
 
 type superAdminClient struct {
@@ -38,11 +41,55 @@ func (c *superAdminClient) SetTime(ctx context.Context, in *SetTimeRequest, opts
 	return out, nil
 }
 
+func (c *superAdminClient) GetTime(ctx context.Context, in *GetTimeRequest, opts ...grpc.CallOption) (*GetTimeResponse, error) {
+	out := new(GetTimeResponse)
+	err := c.cc.Invoke(ctx, "/superadmin.SuperAdmin/GetTime", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *superAdminClient) GetResults(ctx context.Context, in *GetResultsRequest, opts ...grpc.CallOption) (SuperAdmin_GetResultsClient, error) {
+	stream, err := c.cc.NewStream(ctx, &SuperAdmin_ServiceDesc.Streams[0], "/superadmin.SuperAdmin/GetResults", opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &superAdminGetResultsClient{stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+type SuperAdmin_GetResultsClient interface {
+	Recv() (*GetResultsResponse, error)
+	grpc.ClientStream
+}
+
+type superAdminGetResultsClient struct {
+	grpc.ClientStream
+}
+
+func (x *superAdminGetResultsClient) Recv() (*GetResultsResponse, error) {
+	m := new(GetResultsResponse)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
 // SuperAdminServer is the server API for SuperAdmin service.
 // All implementations must embed UnimplementedSuperAdminServer
 // for forward compatibility
 type SuperAdminServer interface {
 	SetTime(context.Context, *SetTimeRequest) (*SetTimeResponse, error)
+	GetTime(context.Context, *GetTimeRequest) (*GetTimeResponse, error)
+	// Add admins
+	GetResults(*GetResultsRequest, SuperAdmin_GetResultsServer) error
 	mustEmbedUnimplementedSuperAdminServer()
 }
 
@@ -52,6 +99,12 @@ type UnimplementedSuperAdminServer struct {
 
 func (UnimplementedSuperAdminServer) SetTime(context.Context, *SetTimeRequest) (*SetTimeResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SetTime not implemented")
+}
+func (UnimplementedSuperAdminServer) GetTime(context.Context, *GetTimeRequest) (*GetTimeResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetTime not implemented")
+}
+func (UnimplementedSuperAdminServer) GetResults(*GetResultsRequest, SuperAdmin_GetResultsServer) error {
+	return status.Errorf(codes.Unimplemented, "method GetResults not implemented")
 }
 func (UnimplementedSuperAdminServer) mustEmbedUnimplementedSuperAdminServer() {}
 
@@ -84,6 +137,45 @@ func _SuperAdmin_SetTime_Handler(srv interface{}, ctx context.Context, dec func(
 	return interceptor(ctx, in, info, handler)
 }
 
+func _SuperAdmin_GetTime_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetTimeRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SuperAdminServer).GetTime(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/superadmin.SuperAdmin/GetTime",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SuperAdminServer).GetTime(ctx, req.(*GetTimeRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _SuperAdmin_GetResults_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(GetResultsRequest)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(SuperAdminServer).GetResults(m, &superAdminGetResultsServer{stream})
+}
+
+type SuperAdmin_GetResultsServer interface {
+	Send(*GetResultsResponse) error
+	grpc.ServerStream
+}
+
+type superAdminGetResultsServer struct {
+	grpc.ServerStream
+}
+
+func (x *superAdminGetResultsServer) Send(m *GetResultsResponse) error {
+	return x.ServerStream.SendMsg(m)
+}
+
 // SuperAdmin_ServiceDesc is the grpc.ServiceDesc for SuperAdmin service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -95,7 +187,17 @@ var SuperAdmin_ServiceDesc = grpc.ServiceDesc{
 			MethodName: "SetTime",
 			Handler:    _SuperAdmin_SetTime_Handler,
 		},
+		{
+			MethodName: "GetTime",
+			Handler:    _SuperAdmin_GetTime_Handler,
+		},
 	},
-	Streams:  []grpc.StreamDesc{},
+	Streams: []grpc.StreamDesc{
+		{
+			StreamName:    "GetResults",
+			Handler:       _SuperAdmin_GetResults_Handler,
+			ServerStreams: true,
+		},
+	},
 	Metadata: "superadmin.proto",
 }

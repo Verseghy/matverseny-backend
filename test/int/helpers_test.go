@@ -2,6 +2,9 @@ package int
 
 import (
 	"context"
+	"strconv"
+	"time"
+
 	"github.com/golang-jwt/jwt/v4"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -11,8 +14,6 @@ import (
 	"google.golang.org/grpc/metadata"
 	jwt2 "matverseny-backend/jwt"
 	pb "matverseny-backend/proto"
-	"strconv"
-	"time"
 )
 
 func cleanupMongo() {
@@ -28,11 +29,11 @@ func cleanupMongo() {
 }
 
 type User struct {
-	AccessToken string
-	RefreshToken string
-	Claims *jwt2.AccessClaims
+	AccessToken   string
+	RefreshToken  string
+	Claims        *jwt2.AccessClaims
 	RefreshClaims *jwt2.RefreshClaims
-	authClient pb.AuthClient
+	authClient    pb.AuthClient
 }
 
 func (user *User) Context() context.Context {
@@ -104,8 +105,8 @@ type Team struct {
 	teamClient pb.TeamClient
 
 	JoinCode string
-	Owner User
-} 
+	Owner    User
+}
 
 func createTeam(owner User, name string, teamClient pb.TeamClient) (team Team) {
 	By("Create Team")
@@ -142,12 +143,11 @@ func (team *Team) AddMember(user User, shouldCoowner bool) {
 
 	Expect(err).To(BeNil())
 
-
-	if (shouldCoowner == true) {
+	if shouldCoowner == true {
 		By("Add Member - Set Rank")
 
 		_, err := team.teamClient.ChangeCoOwnerStatus(team.Owner.Context(), &pb.ChangeCoOwnerStatusRequest{
-			UserId: user.UserID(),
+			UserId:        user.UserID(),
 			ShouldCoowner: true,
 		})
 

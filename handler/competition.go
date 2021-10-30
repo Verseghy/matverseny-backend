@@ -20,6 +20,7 @@ type competitionHandler struct {
 	cSolutions *mongo.Collection
 	cProblems  *mongo.Collection
 	cInfo      *mongo.Collection
+	cHistory   *mongo.Collection
 	jwt        jwt.JWT
 
 	pb.UnimplementedCompetitionServer
@@ -305,6 +306,18 @@ func (h *competitionHandler) SetSolutions(ctx context.Context, req *pb.SetSoluti
 		Value:     req.Value,
 	})
 
+	historyEntry := &entity.History{
+		Team:      teamID,
+		ProblemID: problemID,
+		Value:     req.Value,
+		Time:      time.Now(),
+	}
+
+	_, err = h.cHistory.InsertOne(context.Background(), historyEntry)
+	if err != nil {
+		logger.Error("failed to insert historical data", zap.Error(err))
+	}
+
 	return res, nil
 }
 func (h *competitionHandler) GetTimes(req *pb.GetTimesRequest, stream pb.Competition_GetTimesServer) error {
@@ -362,6 +375,7 @@ func NewCompetitionHandler(client *mongo.Client) *competitionHandler {
 		cSolutions: client.Database("comp").Collection("solutions"),
 		cProblems:  client.Database("comp").Collection("problems"),
 		cInfo:      client.Database("comp").Collection("info"),
+		cHistory:   client.Database("comp").Collection("history"),
 		jwt:        jwt.NewJWT(client, []byte("test-key")),
 	}
 }

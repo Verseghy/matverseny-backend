@@ -6,6 +6,9 @@ option go_package = "/;proto";
 
 service SuperAdmin {
 	rpc SetTime(SetTimeRequest) returns (SetTimeResponse) {}
+	rpc GetTime(GetTimeRequest) returns (GetTimeResponse) {}
+	// Add admins
+	rpc GetResults(GetResultsRequest) returns (stream GetResultsResponse) {}
 }
 
 message SetTimeRequest {
@@ -14,4 +17,25 @@ message SetTimeRequest {
 }
 
 message SetTimeResponse {
+}
+
+message GetTimeRequest{
+}
+
+message GetTimeResponse{
+	string start = 1;
+	string end = 2;
+}
+
+message GetResultsRequest {
+}
+
+message GetResultsResponse {
+	message Result {
+		uint32 total_answered = 1;
+		uint32 successfully_answered = 2;
+	}
+
+	map<string, Result> results = 1; // Team name to result map
+	uint32 timestamp = 2;
 }

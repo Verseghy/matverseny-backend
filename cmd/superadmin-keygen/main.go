@@ -3,8 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/golang-jwt/jwt/v4"
-	jwt2 "matverseny-backend/jwt"
+	"matverseny-backend/internal/superadmin"
 	"os"
 	"time"
 )
@@ -25,18 +24,8 @@ func main() {
 		os.Exit(1)
 	}
 
-	token := jwt.NewWithClaims(jwt.SigningMethodHS512, &jwt2.SuperAdminClaims{
-		IsSA: true,
-		StandardClaims: &jwt.StandardClaims{
-			ExpiresAt: exp.Unix(),
-			IssuedAt:  time.Now().Unix(),
-			Issuer:    "verseghy-matverseny",
-		},
-	})
-
-	ss, err := token.SignedString([]byte(*s))
+	ss, err := superadmin.GenerateToken(exp, *s)
 	if err != nil {
-		fmt.Println("Signing failure:", err)
 		os.Exit(1)
 	}
 

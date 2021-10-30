@@ -10,6 +10,7 @@ require (
 	github.com/mailgun/mailgun-go/v4 v4.5.1
 	github.com/onsi/ginkgo v1.16.4
 	github.com/onsi/gomega v1.13.0
+	github.com/sclevine/agouti v3.0.0+incompatible // indirect
 	github.com/streadway/amqp v1.0.0
 	go.mongodb.org/mongo-driver v1.7.1
 	go.uber.org/zap v1.17.0
