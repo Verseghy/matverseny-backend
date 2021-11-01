@@ -4,24 +4,25 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
-	grpc_auth "github.com/grpc-ecosystem/go-grpc-middleware/auth"
-	grpc_zap "github.com/grpc-ecosystem/go-grpc-middleware/logging/zap"
+	"math/rand"
+	"net"
+	"os"
+	"time"
+
+	grpcmiddleware "github.com/grpc-ecosystem/go-grpc-middleware"
+	grpcauth "github.com/grpc-ecosystem/go-grpc-middleware/auth"
+	grpczap "github.com/grpc-ecosystem/go-grpc-middleware/logging/zap"
 	"github.com/joho/godotenv"
 	"github.com/mailgun/mailgun-go/v4"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
-	"math/rand"
 	"matverseny-backend/events"
 	"matverseny-backend/handler"
 	"matverseny-backend/jwt"
 	"matverseny-backend/log"
 	pb "matverseny-backend/proto"
-	"net"
-	"os"
-	"time"
 )
 
 func envOrDefaultString(env, def string) string {
@@ -72,13 +73,13 @@ func main() {
 	log.Logger.Info(fmt.Sprintf("Listening on port: %s", grpcListenAddr))
 
 	sopts := []grpc.ServerOption{
-		grpc.StreamInterceptor(grpc_middleware.ChainStreamServer(
-			grpc_zap.StreamServerInterceptor(log.Logger),
-			grpc_auth.StreamServerInterceptor(jwtI.ValidateAccessToken()),
+		grpc.StreamInterceptor(grpcmiddleware.ChainStreamServer(
+			grpczap.StreamServerInterceptor(log.Logger),
+			grpcauth.StreamServerInterceptor(jwtI.ValidateAccessToken()),
 		)),
-		grpc.UnaryInterceptor(grpc_middleware.ChainUnaryServer(
-			grpc_zap.UnaryServerInterceptor(log.Logger),
-			grpc_auth.UnaryServerInterceptor(jwtI.ValidateAccessToken()),
+		grpc.UnaryInterceptor(grpcmiddleware.ChainUnaryServer(
+			grpczap.UnaryServerInterceptor(log.Logger),
+			grpcauth.UnaryServerInterceptor(jwtI.ValidateAccessToken()),
 		)),
 	}
 

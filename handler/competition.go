@@ -2,6 +2,8 @@ package handler
 
 import (
 	"context"
+	"time"
+
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -13,7 +15,6 @@ import (
 	"matverseny-backend/jwt"
 	"matverseny-backend/log"
 	pb "matverseny-backend/proto"
-	"time"
 )
 
 type competitionHandler struct {
@@ -226,7 +227,7 @@ L1:
 			break L1
 		case s := <-ch:
 			err = stream.Send(&pb.GetSolutionsResponse{
-				Id: s.ProblemID,
+				Id: s.ProblemID.Hex(),
 				Type: func() pb.GetSolutionsResponse_Modification {
 					if s.Type == events.SChange {
 						return pb.GetSolutionsResponse_k_CHANGE
@@ -277,8 +278,8 @@ func (h *competitionHandler) SetSolutions(ctx context.Context, req *pb.SetSoluti
 
 		err := events.PublishSolution(&events.SolutionEvent{
 			Type:      events.SDelete,
-			ProblemID: problemID.Hex(),
-			Team:      teamID.Hex(),
+			ProblemID: problemID,
+			Team:      teamID,
 		})
 		if err != nil {
 			return nil, errs.ErrQueue
@@ -299,12 +300,16 @@ func (h *competitionHandler) SetSolutions(ctx context.Context, req *pb.SetSoluti
 		return nil, errs.ErrDatabase
 	}
 
-	events.PublishSolution(&events.SolutionEvent{
+	err = events.PublishSolution(&events.SolutionEvent{
 		Type:      events.SChange,
-		ProblemID: problemID.Hex(),
-		Team:      teamID.Hex(),
+		ProblemID: problemID,
+		Team:      teamID,
 		Value:     req.Value,
 	})
+	if err != nil {
+		logger.Error("queue error", zap.Error(err))
+		return nil, errs.ErrQueue
+	}
 
 	historyEntry := &entity.History{
 		Team:      teamID,
