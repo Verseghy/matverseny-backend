@@ -187,7 +187,7 @@ func (h *superAdminHandler) GetResults(req *pb.GetResultsRequest, stream pb.Supe
 			return err
 		}
 
-		currentTimeBucket.Add(timePeriod)
+		currentTimeBucket = currentTimeBucket.Add(timePeriod)
 		return nil
 	}
 
@@ -213,7 +213,9 @@ func (h *superAdminHandler) GetResults(req *pb.GetResultsRequest, stream pb.Supe
 			}
 		}
 
-		currentSolution[s.Team][s.ProblemID] = s.Value
+		currentSolution[s.Team] = map[primitive.ObjectID]int64{
+			s.ProblemID: s.Value,
+		}
 	}
 	if err := cursor.Err(); err != nil {
 		logger.Error("cursor error", zap.Error(err))
