@@ -213,9 +213,10 @@ func (h *superAdminHandler) GetResults(req *pb.GetResultsRequest, stream pb.Supe
 			}
 		}
 
-		currentSolution[s.Team] = map[primitive.ObjectID]int64{
-			s.ProblemID: s.Value,
+		if _, ok := currentSolution[s.Team]; !ok {
+			currentSolution[s.Team] = make(map[primitive.ObjectID]int64)
 		}
+		currentSolution[s.Team][s.ProblemID] = s.Value
 	}
 	if err := cursor.Err(); err != nil {
 		logger.Error("cursor error", zap.Error(err))
@@ -235,6 +236,9 @@ L1:
 				}
 			}
 
+			if _, ok := currentSolution[s.Team]; !ok {
+				currentSolution[s.Team] = make(map[primitive.ObjectID]int64)
+			}
 			currentSolution[s.Team][s.ProblemID] = s.Value
 		}
 	}
