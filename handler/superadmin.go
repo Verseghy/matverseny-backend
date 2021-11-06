@@ -222,6 +222,10 @@ func (h *superAdminHandler) GetResults(req *pb.GetResultsRequest, stream pb.Supe
 		logger.Error("cursor error", zap.Error(err))
 		return errs.ErrDatabase
 	}
+	err = sendResponse()
+	if err != nil {
+		return err
+	}
 
 L1:
 	for {
@@ -240,6 +244,10 @@ L1:
 				currentSolution[s.Team] = make(map[primitive.ObjectID]int64)
 			}
 			currentSolution[s.Team][s.ProblemID] = s.Value
+			err = sendResponse()
+			if err != nil {
+				return err
+			}
 		}
 	}
 
