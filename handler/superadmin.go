@@ -26,6 +26,7 @@ type superAdminHandler struct {
 	cInfo     *mongo.Collection
 	cHistory  *mongo.Collection
 	cProblems *mongo.Collection
+	cTeams    *mongo.Collection
 	jwt       jwt.JWT
 
 	pb.UnimplementedSuperAdminServer
@@ -148,13 +149,25 @@ func (h *superAdminHandler) GetResults(req *pb.GetResultsRequest, stream pb.Supe
 		return errs.ErrDatabase
 	}
 
-	problems := make([]*entity.Problem, 0)
-	find, err := h.cProblems.Find(ctx, bson.M{})
+	teams := []entity.Team{}
+	teamsCursor, err := h.cTeams.Find(ctx, bson.M{})
 	if err != nil {
 		logger.Error("database error", zap.Error(err))
 		return errs.ErrDatabase
 	}
-	err = find.All(ctx, &problems)
+	err = teamsCursor.All(ctx, &teams)
+	if err != nil {
+		logger.Error("database error", zap.Error(err))
+		return errs.ErrDatabase
+	}
+
+	problems := make([]*entity.Problem, 0)
+	problemsCursor, err := h.cProblems.Find(ctx, bson.M{})
+	if err != nil {
+		logger.Error("database error", zap.Error(err))
+		return errs.ErrDatabase
+	}
+	err = problemsCursor.All(ctx, &problems)
 	if err != nil {
 		logger.Error("database error", zap.Error(err))
 		return errs.ErrDatabase
@@ -173,10 +186,10 @@ func (h *superAdminHandler) GetResults(req *pb.GetResultsRequest, stream pb.Supe
 			Timestamp: uint32(currentTimeBucket.Unix()),
 			Results: func() map[string]*pb.GetResultsResponse_Result {
 				res := make(map[string]*pb.GetResultsResponse_Result)
-				for team, point := range points {
-					res[team.Hex()] = &pb.GetResultsResponse_Result{
-						TotalAnswered:        uint32(len(currentSolution[team])),
-						SuccessfullyAnswered: point,
+				for _, team := range teams {
+					res[team.ID.Hex()] = &pb.GetResultsResponse_Result{
+						TotalAnswered:        uint32(len(currentSolution[team.ID])),
+						SuccessfullyAnswered: points[team.ID],
 					}
 				}
 				return res
@@ -266,6 +279,7 @@ func NewSuperAdminHandler(client *mongo.Client) *superAdminHandler {
 		cInfo:     client.Database("comp").Collection("info"),
 		cHistory:  client.Database("comp").Collection("history"),
 		cProblems: client.Database("comp").Collection("problems"),
+		cTeams:    client.Database("comp").Collection("teams"),
 		jwt:       jwt.NewJWT(client, []byte("test-key")),
 	}
 }
