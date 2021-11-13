@@ -190,6 +190,7 @@ func (h *superAdminHandler) GetResults(req *pb.GetResultsRequest, stream pb.Supe
 					res[team.ID.Hex()] = &pb.GetResultsResponse_Result{
 						TotalAnswered:        uint32(len(currentSolution[team.ID])),
 						SuccessfullyAnswered: points[team.ID],
+						TeamName:             team.TeamName,
 					}
 				}
 				return res
@@ -240,6 +241,8 @@ func (h *superAdminHandler) GetResults(req *pb.GetResultsRequest, stream pb.Supe
 		return err
 	}
 
+	ticker := time.NewTicker(timePeriod)
+	defer ticker.Stop()
 L1:
 	for {
 		select {
@@ -257,9 +260,12 @@ L1:
 				currentSolution[s.Team] = make(map[primitive.ObjectID]int64)
 			}
 			currentSolution[s.Team][s.ProblemID] = s.Value
-			err = sendResponse()
-			if err != nil {
-				return err
+		case t := <-ticker.C:
+			for t.After(currentTimeBucket) {
+				err = sendResponse()
+				if err != nil {
+					return err
+				}
 			}
 		}
 	}
