@@ -1,10 +1,11 @@
 package events
 
 import (
-	"github.com/streadway/amqp"
-	"matverseny-backend/log"
 	"os"
 	"time"
+
+	"github.com/streadway/amqp"
+	"matverseny-backend/log"
 )
 
 const (
@@ -72,7 +73,7 @@ func EnsureEvents() {
 
 		err = ch.ExchangeDeclare(
 			SolutionsExchange,
-			"fanout",
+			"topic",
 			true,
 			false,
 			false,

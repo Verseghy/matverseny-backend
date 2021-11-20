@@ -34,8 +34,9 @@ message GetResultsResponse {
 	message Result {
 		uint32 total_answered = 1;
 		uint32 successfully_answered = 2;
+		string team_name = 3;
 	}
 
-	map<string, Result> results = 1; // Team name to result map
+	map<string, Result> results = 1; // Team ID to result map
 	uint32 timestamp = 2;
 }
