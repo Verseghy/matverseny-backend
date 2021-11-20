@@ -336,12 +336,7 @@ func (h *competitionHandler) SetSolutions(ctx context.Context, req *pb.SetSoluti
 	return res, nil
 }
 func (h *competitionHandler) GetTimes(req *pb.GetTimesRequest, stream pb.Competition_GetTimesServer) error {
-	claims, ok := jwt.GetClaimsFromCtx(stream.Context())
-	if !ok {
-		log.Logger.Error("jwt had no data")
-		return errs.ErrJWT
-	}
-	logger := log.Logger.With(zap.String("userID", claims.UserID))
+	logger := log.Logger
 
 	ch, err := events.ConsumeTime(stream.Context())
 	if err != nil {
