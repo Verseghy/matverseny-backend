@@ -249,13 +249,6 @@ L1:
 		case <-ctx.Done():
 			break L1
 		case s := <-chSolution:
-			for time.Now().After(currentTimeBucket) {
-				err := sendResponse()
-				if err != nil {
-					return err
-				}
-			}
-
 			if _, ok := currentSolution[s.Team]; !ok {
 				currentSolution[s.Team] = make(map[primitive.ObjectID]int64)
 			}
