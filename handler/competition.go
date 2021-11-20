@@ -52,8 +52,18 @@ func (h *competitionHandler) AuthFuncOverride(ctx context.Context, fullMethodNam
 	if claims.Team == "" {
 		return nil, errs.ErrNoTeam
 	}
+	logger := log.Logger.With(zap.String("userID", claims.UserID))
 
-	// TODO: check time
+	t := &entity.Info{}
+	err = h.cInfo.FindOne(ctx, bson.M{}).Decode(t)
+	if err != nil {
+		logger.Error("database error", zap.Error(err))
+		return nil, errs.ErrDatabase
+	}
+
+	if t.Time.StartDate.After(time.Now()) {
+		return nil, errs.ErrTooSoon
+	}
 
 	return ctx, nil
 }

@@ -32,4 +32,5 @@ var (
 	ErrDisbandNonEmptyTeam    = errors.New("E0026: can't disband non-empty team")
 	ErrInvalidTime            = errors.New("E0027: invalid time format")
 	ErrTeamNameTooLong        = errors.New("E0028: team name too long")
+	ErrTooSoon                = errors.New("E0029: competition not started yet")
 )
