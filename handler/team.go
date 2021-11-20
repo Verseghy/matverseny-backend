@@ -3,17 +3,18 @@ package handler
 import (
 	"context"
 	"crypto/rand"
+	"io"
+	"sync"
+
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.uber.org/zap"
-	"io"
 	"matverseny-backend/entity"
 	"matverseny-backend/errs"
 	"matverseny-backend/jwt"
 	"matverseny-backend/log"
 	pb "matverseny-backend/proto"
-	"sync"
 )
 
 type teamHandler struct {
@@ -476,7 +477,7 @@ func (h *teamHandler) ChangeLock(ctx context.Context, req *pb.ChangeLockRequest)
 		return nil, errs.ErrDatabase
 	}
 
-	if t.Owner != userID || (t.CoOwner != nil && *t.CoOwner != userID) {
+	if t.Owner != userID && (t.CoOwner != nil && *t.CoOwner != userID) {
 		logger.Info("not authorized")
 		return nil, errs.ErrNotAuthorized
 	}
