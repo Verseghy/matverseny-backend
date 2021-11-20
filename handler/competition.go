@@ -29,7 +29,7 @@ type competitionHandler struct {
 
 func (h *competitionHandler) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
 	allowedWithoutAuthentication := []string{
-		"/competition.Competition/GetTime",
+		"/competition.Competition/GetTimes",
 	}
 
 	for _, v := range allowedWithoutAuthentication {
