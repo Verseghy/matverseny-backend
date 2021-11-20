@@ -61,8 +61,8 @@ func (h *competitionHandler) AuthFuncOverride(ctx context.Context, fullMethodNam
 		return nil, errs.ErrDatabase
 	}
 
-	if t.Time.StartDate.After(time.Now()) {
-		return nil, errs.ErrTooSoon
+	for t.Time.StartDate.After(time.Now()) {
+		time.Sleep(t.Time.StartDate.Sub(time.Now()))
 	}
 
 	return ctx, nil
