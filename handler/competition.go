@@ -62,7 +62,13 @@ func (h *competitionHandler) AuthFuncOverride(ctx context.Context, fullMethodNam
 	}
 
 	for t.Time.StartDate.After(time.Now()) {
-		time.Sleep(t.Time.StartDate.Sub(time.Now()))
+		select {
+		case <-time.After(t.Time.StartDate.Sub(time.Now())):
+			break
+		case <-ctx.Done():
+			return nil, ctx.Err()
+		}
+
 	}
 
 	return ctx, nil

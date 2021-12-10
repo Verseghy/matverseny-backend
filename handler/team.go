@@ -477,7 +477,7 @@ func (h *teamHandler) ChangeLock(ctx context.Context, req *pb.ChangeLockRequest)
 		return nil, errs.ErrDatabase
 	}
 
-	if t.Owner != userID && (t.CoOwner != nil && *t.CoOwner != userID) {
+	if t.Owner != userID {
 		logger.Info("not authorized")
 		return nil, errs.ErrNotAuthorized
 	}
