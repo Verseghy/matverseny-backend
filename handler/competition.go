@@ -29,7 +29,7 @@ type competitionHandler struct {
 
 func (h *competitionHandler) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
 	allowedWithoutAuthentication := []string{
-		"/competition.Competition/GetTime",
+		"/competition.Competition/GetTimes",
 	}
 
 	for _, v := range allowedWithoutAuthentication {
@@ -52,8 +52,24 @@ func (h *competitionHandler) AuthFuncOverride(ctx context.Context, fullMethodNam
 	if claims.Team == "" {
 		return nil, errs.ErrNoTeam
 	}
+	logger := log.Logger.With(zap.String("userID", claims.UserID))
 
-	// TODO: check time
+	t := &entity.Info{}
+	err = h.cInfo.FindOne(ctx, bson.M{}).Decode(t)
+	if err != nil {
+		logger.Error("database error", zap.Error(err))
+		return nil, errs.ErrDatabase
+	}
+
+	for t.Time.StartDate.After(time.Now()) {
+		select {
+		case <-time.After(t.Time.StartDate.Sub(time.Now())):
+			break
+		case <-ctx.Done():
+			return nil, ctx.Err()
+		}
+
+	}
 
 	return ctx, nil
 }
@@ -326,12 +342,7 @@ func (h *competitionHandler) SetSolutions(ctx context.Context, req *pb.SetSoluti
 	return res, nil
 }
 func (h *competitionHandler) GetTimes(req *pb.GetTimesRequest, stream pb.Competition_GetTimesServer) error {
-	claims, ok := jwt.GetClaimsFromCtx(stream.Context())
-	if !ok {
-		log.Logger.Error("jwt had no data")
-		return errs.ErrJWT
-	}
-	logger := log.Logger.With(zap.String("userID", claims.UserID))
+	logger := log.Logger
 
 	ch, err := events.ConsumeTime(stream.Context())
 	if err != nil {

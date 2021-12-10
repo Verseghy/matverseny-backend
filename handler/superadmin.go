@@ -236,9 +236,11 @@ func (h *superAdminHandler) GetResults(req *pb.GetResultsRequest, stream pb.Supe
 		logger.Error("cursor error", zap.Error(err))
 		return errs.ErrDatabase
 	}
-	err = sendResponse()
-	if err != nil {
-		return err
+	for time.Now().After(currentTimeBucket) {
+		err := sendResponse()
+		if err != nil {
+			return err
+		}
 	}
 
 	ticker := time.NewTicker(timePeriod)
