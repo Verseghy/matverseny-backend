@@ -8,10 +8,12 @@ members = [".", "entity", "migration"]
 
 [dependencies]
 axum = { version = "0.5.15", features = ["ws", "http2"] }
+serde = { version = "1.0.144", features = ["derive"] }
 tokio = { version = "1.21.0", features = ["macros", "rt-multi-thread", "signal"] }
 tower = "0.4.13"
 tower-http = { version = "0.3.4", features = ["cors", "compression-full", "decompression-full", "catch-panic", "sensitive-headers", "trace", "request-id", "util", "add-extension"] }
 tracing = "0.1.36"
 tracing-subscriber = "0.3.15"
+entity = { path = "./entity" }
 sea-orm = { version = "0.9.2", default-features = false, features = ["runtime-tokio-rustls", "sqlx-postgres"] }
 serde_json = "1.0.85"

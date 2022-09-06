@@ -1,10 +1,13 @@
-use axum::{routing::get, Router, http::header::AUTHORIZATION};
+mod handlers;
 mod shared;
 mod json;
 mod error;
+
 use error::*;
 use json::*;
 use shared::*;
+
+use axum::{Router, http::header::AUTHORIZATION};
 use std::{net::{Ipv4Addr, SocketAddr}, iter::once};
 use tokio::signal;
 use tower::ServiceBuilder;
@@ -35,10 +38,6 @@ async fn shutdown_signal() {
     };
 }
 
-fn router() -> Router {
-    Router::new().route("/", get(handler))
-}
-
 fn app<S: SharedTrait>(shared: S) -> Router {
     let cors_layer = CorsLayer::new()
         .allow_origin(Any)
@@ -53,9 +52,10 @@ fn app<S: SharedTrait>(shared: S) -> Router {
         .compression()
         .decompression()
         .layer(cors_layer)
+        .add_extension(shared)
         .into_inner();
 
-    router().layer(middlewares)
+    handlers::routes::<S>().layer(middlewares)
 }
 
 #[tokio::main]
@@ -75,8 +75,4 @@ async fn main() {
         .with_graceful_shutdown(shutdown_signal())
         .await
         .unwrap()
-}
-
-async fn handler() -> String {
-    String::from("hello world")
 }

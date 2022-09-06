@@ -1098,7 +1098,9 @@ name = "matverseny-backend"
 version = "0.1.0"
 dependencies = [
  "axum",
+ "entity",
  "sea-orm",
+ "serde",
  "serde_json",
  "tokio",
  "tower",
