@@ -1,6 +1,6 @@
-use sea_orm::{ConnectionTrait, DbConn, ConnectOptions, Database};
-use tracing::log::LevelFilter;
+use sea_orm::{ConnectOptions, ConnectionTrait, Database, DbConn};
 use std::sync::Arc;
+use tracing::log::LevelFilter;
 
 pub trait SharedTrait: Send + Sync + Clone + 'static {
     type Db: ConnectionTrait + Clone;

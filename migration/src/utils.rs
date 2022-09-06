@@ -1,9 +1,6 @@
 macro_rules! create_table_migration {
     ($entity:expr) => {
-        use ::sea_orm_migration::{
-            prelude::*,
-            sea_orm::Schema,
-        };
+        use ::sea_orm_migration::{prelude::*, sea_orm::Schema};
 
         #[derive(DeriveMigrationName)]
         pub struct Migration;
@@ -14,7 +11,7 @@ macro_rules! create_table_migration {
                 manager
                     .create_table(
                         Schema::new(manager.get_database_backend())
-                            .create_table_from_entity($entity)
+                            .create_table_from_entity($entity),
                     )
                     .await
             }
@@ -25,7 +22,7 @@ macro_rules! create_table_migration {
                     .await
             }
         }
-    }
+    };
 }
 
 pub(crate) use create_table_migration;

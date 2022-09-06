@@ -1,17 +1,23 @@
-mod handlers;
-mod shared;
-mod json;
 mod error;
+mod handlers;
+mod json;
+mod shared;
 
 use error::*;
 use json::*;
 use shared::*;
 
-use axum::{Router, http::header::AUTHORIZATION};
-use std::{net::{Ipv4Addr, SocketAddr}, iter::once};
+use axum::{http::header::AUTHORIZATION, Router};
+use std::{
+    iter::once,
+    net::{Ipv4Addr, SocketAddr},
+};
 use tokio::signal;
 use tower::ServiceBuilder;
-use tower_http::{cors::{Any, CorsLayer}, ServiceBuilderExt};
+use tower_http::{
+    cors::{Any, CorsLayer},
+    ServiceBuilderExt,
+};
 use tracing::level_filters::LevelFilter;
 
 async fn shutdown_signal() {
