@@ -3,6 +3,9 @@ name = "matverseny-backend"
 version = "0.1.0"
 edition = "2021"
 
+[workspace]
+members = [".", "entity"]
+
 [dependencies]
 axum = { version = "0.5.15", features = ["ws", "http2"] }
 tokio = { version = "1.21.0", features = ["macros", "rt-multi-thread", "signal"] }
