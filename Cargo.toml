@@ -3,6 +3,10 @@ name = "matverseny-backend"
 version = "0.1.0"
 edition = "2021"
 
+[profile.release]
+strip = true
+lto = true
+
 [workspace]
 members = [".", "entity", "migration"]
 
