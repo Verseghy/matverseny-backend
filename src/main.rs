@@ -1,6 +1,10 @@
 use axum::{routing::get, Router, http::header::AUTHORIZATION};
+mod shared;
 mod json;
+mod error;
+use error::*;
 use json::*;
+use shared::*;
 use std::{net::{Ipv4Addr, SocketAddr}, iter::once};
 use tokio::signal;
 use tower::ServiceBuilder;
@@ -35,7 +39,7 @@ fn router() -> Router {
     Router::new().route("/", get(handler))
 }
 
-fn app() -> Router {
+fn app<S: SharedTrait>(shared: S) -> Router {
     let cors_layer = CorsLayer::new()
         .allow_origin(Any)
         .allow_methods(Any)
@@ -63,10 +67,11 @@ async fn main() {
         .init();
 
     let addr = SocketAddr::from((Ipv4Addr::UNSPECIFIED, 3002));
+    let shared = Shared::new().await;
 
     tracing::info!("listening on port {}", addr.port());
     axum::Server::bind(&addr)
-        .serve(app().into_make_service())
+        .serve(app(shared).into_make_service())
         .with_graceful_shutdown(shutdown_signal())
         .await
         .unwrap()
