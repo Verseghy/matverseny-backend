@@ -8,7 +8,6 @@ use axum::Extension;
 use entity::teams;
 use sea_orm::{DbErr, EntityTrait, Set};
 use serde::{Deserialize, Serialize};
-use std::sync::Arc;
 use uuid::Uuid;
 use validator::Validate;
 
@@ -25,7 +24,7 @@ pub struct Response {
 
 pub async fn create_team<S: SharedTrait>(
     Extension(shared): Extension<S>,
-    Extension(claims): Extension<Arc<Claims>>,
+    claims: Claims,
     ValidatedJson(request): ValidatedJson<Request>,
 ) -> Result<Json<Response>> {
     let id = Uuid::new_v4()

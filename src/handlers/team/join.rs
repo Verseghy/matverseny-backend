@@ -3,7 +3,6 @@ use axum::{http::StatusCode, Extension};
 use entity::{teams, users};
 use sea_orm::{EntityTrait, FromQueryResult, IntoActiveModel, QuerySelect, Set};
 use serde::Deserialize;
-use std::sync::Arc;
 
 #[derive(Deserialize)]
 pub struct Request {
@@ -18,7 +17,7 @@ struct Team {
 
 pub async fn join_team<S: SharedTrait>(
     Extension(shared): Extension<S>,
-    Extension(claims): Extension<Arc<Claims>>,
+    claims: Claims,
     Json(request): Json<Request>,
 ) -> Result<StatusCode> {
     let team = teams::Entity::find_by_join_code(&request.code)

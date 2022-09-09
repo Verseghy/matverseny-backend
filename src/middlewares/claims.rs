@@ -10,7 +10,6 @@ use std::{
     future::Future,
     marker::PhantomData,
     pin::Pin,
-    sync::Arc,
     task::{Context, Poll},
 };
 use tower::{Layer, Service};
@@ -83,7 +82,7 @@ where
         let span = match shared.iam().get_claims(header.token()) {
             Ok(claims) => {
                 let span = Some(tracing::info_span!("claims", user_id = claims.subject));
-                request.extensions_mut().insert(Arc::new(claims));
+                request.extensions_mut().insert(claims);
                 span
             }
             Err(_) => None,

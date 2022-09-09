@@ -8,8 +8,8 @@ error!(
     BAD_REQUEST, 3, "missing or wrong content-type"
 );
 error!(JSON_VALIDATE_INVALID, BAD_REQUEST, 4, "invalid data");
-
 error!(DUPLICATE_TEAM_NAME, BAD_REQUEST, 5, "team name exists");
 error!(JOIN_CODE_NOT_FOUND, BAD_REQUEST, 6, "join code not found");
 error!(LOCKED_TEAM, BAD_REQUEST, 7, "locked team");
 error!(ALREADY_IN_TEAM, BAD_REQUEST, 8, "already in team");
+error!(COULD_NOT_GET_CLAIMS, BAD_REQUEST, 9, "could not get claims");

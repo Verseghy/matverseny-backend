@@ -1,3 +1,8 @@
+use crate::error;
+use axum::{
+    async_trait,
+    extract::{FromRequest, RequestParts},
+};
 use jsonwebtoken::{errors::Error, Algorithm, DecodingKey, Validation};
 use once_cell::sync::Lazy;
 use serde::Deserialize;
@@ -17,6 +22,17 @@ pub struct Claims {
     pub not_before: i64,
     #[serde(rename = "iat")]
     pub issued_at: i64,
+}
+
+#[async_trait]
+impl<B: Send> FromRequest<B> for Claims {
+    type Rejection = error::Error;
+
+    async fn from_request(req: &mut RequestParts<B>) -> Result<Self, Self::Rejection> {
+        req.extensions_mut()
+            .remove::<Claims>()
+            .ok_or(error::COULD_NOT_GET_CLAIMS)
+    }
 }
 
 pub trait IamTrait {
