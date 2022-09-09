@@ -1,5 +1,6 @@
 mod error;
 mod handlers;
+mod iam;
 mod json;
 mod shared;
 
@@ -8,6 +9,7 @@ use json::*;
 use shared::*;
 
 use axum::{http::header::AUTHORIZATION, Router};
+use dotenvy::dotenv;
 use std::{
     iter::once,
     net::{Ipv4Addr, SocketAddr},
@@ -66,6 +68,8 @@ fn app<S: SharedTrait>(shared: S) -> Router {
 
 #[tokio::main]
 async fn main() {
+    dotenv().ok();
+
     tracing_subscriber::fmt()
         .with_max_level(LevelFilter::DEBUG)
         .with_line_number(true)

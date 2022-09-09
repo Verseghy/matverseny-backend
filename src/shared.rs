@@ -1,21 +1,26 @@
+use crate::iam::{Iam, IamTrait};
 use sea_orm::{ConnectOptions, ConnectionTrait, Database, DbConn};
 use std::sync::Arc;
 use tracing::log::LevelFilter;
 
 pub trait SharedTrait: Send + Sync + Clone + 'static {
     type Db: ConnectionTrait + Clone;
+    type Iam: IamTrait;
 
     fn db(&self) -> &Self::Db;
+    fn iam(&self) -> &Self::Iam;
 }
 
 pub struct Shared {
     database: DbConn,
+    iam: Iam,
 }
 
 impl Shared {
     pub async fn new() -> Arc<Self> {
         Arc::new(Self {
             database: Self::connect_database().await,
+            iam: Iam::new(),
         })
     }
 
@@ -36,8 +41,13 @@ impl Shared {
 
 impl SharedTrait for Arc<Shared> {
     type Db = DbConn;
+    type Iam = Iam;
 
     fn db(&self) -> &Self::Db {
         &self.database
+    }
+
+    fn iam(&self) -> &Self::Iam {
+        &self.iam
     }
 }
