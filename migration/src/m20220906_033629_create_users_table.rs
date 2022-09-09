@@ -1,6 +1,6 @@
-use super::utils::{create_table_up, create_table_down};
-use sea_orm_migration::prelude::*;
+use super::utils::{create_table_down, create_table_up};
 use entity::users;
+use sea_orm_migration::prelude::*;
 
 #[derive(DeriveMigrationName)]
 pub struct Migration;

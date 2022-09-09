@@ -1,5 +1,5 @@
+use entity::{teams, users};
 use sea_orm_migration::prelude::*;
-use entity::{users, teams};
 
 const FOREIGN_KEY: &str = "FK_users_team";
 

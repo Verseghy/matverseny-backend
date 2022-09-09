@@ -2,6 +2,7 @@ mod error;
 mod handlers;
 mod iam;
 mod json;
+mod middlewares;
 mod shared;
 
 use error::{Error, Result};
@@ -56,11 +57,12 @@ fn app<S: SharedTrait>(shared: S) -> Router {
         .catch_panic()
         .sensitive_headers(once(AUTHORIZATION))
         .propagate_x_request_id()
+        .add_extension(shared)
+        .layer(middlewares::GetClaimsLayer::<S>::new())
         .trace_for_http()
         .compression()
         .decompression()
         .layer(cors_layer)
-        .add_extension(shared)
         .into_inner();
 
     handlers::routes::<S>().layer(middlewares)
