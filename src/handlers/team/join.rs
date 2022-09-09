@@ -33,10 +33,14 @@ pub async fn join_team<S: SharedTrait>(
             return Err(error::LOCKED_TEAM);
         }
 
-        let user = users::Entity::find_by_id(claims.subject.clone())
+        let user = users::Entity::find_by_id(claims.subject)
             .one(shared.db())
             .await?
-            .expect("user not in database?");
+            .ok_or_else(|| {
+                // this is suspicious so log it
+                tracing::warn!("tried to join team without registration");
+                error::USER_NOT_REGISTERED
+            })?;
 
         if user.team.is_some() {
             return Err(error::ALREADY_IN_TEAM);

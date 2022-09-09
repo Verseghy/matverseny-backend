@@ -35,7 +35,7 @@ pub async fn create_team<S: SharedTrait>(
     let team = teams::ActiveModel {
         id: Set(id.clone()),
         name: Set(request.name),
-        owner: Set(claims.subject.clone()),
+        owner: Set(claims.subject),
         locked: Set(false),
         // TODO: handle clash
         join_code: Set(generate_join_code(&mut shared.rng().clone())),
@@ -48,15 +48,15 @@ pub async fn create_team<S: SharedTrait>(
         Err(DbErr::Query(error)) => {
             if &error[..] == "error returned from database: duplicate key value violates unique constraint \"teams_name_key\"" {
                 Err(error::DUPLICATE_TEAM_NAME)
+            } else if &error[..] == "error returned from database: insert or update on table \"teams\" violates foreign key constraint \"FK_teams_owner\"" {
+                // this is suspicious so log it
+                tracing::warn!("tried to create team without registration");
+                Err(error::USER_NOT_REGISTERED)
             } else {
                 Err(Error::internal(error))
             }
-        },
-        Err(error) => Err(Error::internal(error)),
-        Ok(_) => {
-            Ok(Json(Response {
-                id,
-            }))
         }
+        Err(error) => Err(Error::internal(error)),
+        Ok(_) => Ok(Json(Response { id })),
     }
 }
