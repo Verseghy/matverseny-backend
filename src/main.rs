@@ -60,7 +60,6 @@ fn app<S: SharedTrait>(shared: S) -> Router {
         .propagate_x_request_id()
         .add_extension(shared)
         .layer(middlewares::GetClaimsLayer::<S>::new())
-        .trace_for_http()
         .compression()
         .decompression()
         .layer(cors_layer)
