@@ -1,6 +1,6 @@
 use crate::utils::{create_table_down, create_table_up};
 use entity::{teams, users};
-use sea_orm_migration::{prelude::*, sea_orm::Schema};
+use sea_orm_migration::prelude::*;
 
 #[derive(DeriveMigrationName)]
 pub struct Migration;

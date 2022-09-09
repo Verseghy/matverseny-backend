@@ -1,5 +1,6 @@
 use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};
+use super::teams;
 
 #[derive(Clone, Debug, PartialEq, Eq, DeriveEntityModel)]
 #[sea_orm(table_name = "users")]
@@ -8,6 +9,7 @@ pub struct Model {
     pub id: String,
     pub school: String,
     pub class: Class,
+    pub team: Option<String>,
 }
 
 #[derive(EnumIter, DeriveActiveEnum, PartialEq, Eq, Clone, Debug, Serialize, Deserialize)]
@@ -20,11 +22,24 @@ pub enum Class {
 }
 
 #[derive(Copy, Clone, Debug, EnumIter)]
-pub enum Relation {}
+pub enum Relation {
+    Team,
+}
 
 impl RelationTrait for Relation {
     fn def(&self) -> RelationDef {
-        panic!("No RelationDef");
+        match self {
+            Relation::Team => Entity::belongs_to(teams::Entity)
+                .from(Column::Team)
+                .to(teams::Column::Id)
+                .into(),
+        }
+    }
+}
+
+impl Related<teams::Entity> for Entity {
+    fn to() -> RelationDef {
+        Relation::Team.def()
     }
 }
 
