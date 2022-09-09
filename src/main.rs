@@ -4,6 +4,7 @@ mod iam;
 mod json;
 mod middlewares;
 mod shared;
+mod utils;
 
 use error::{Error, Result};
 use json::*;

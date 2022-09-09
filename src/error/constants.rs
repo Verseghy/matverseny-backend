@@ -8,3 +8,5 @@ error!(
     BAD_REQUEST, 3, "missing or wrong content-type"
 );
 error!(JSON_VALIDATE_INVALID, BAD_REQUEST, 4, "invalid data");
+
+error!(DUPLICATE_TEAM_NAME, BAD_REQUEST, 5, "team name exists");

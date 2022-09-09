@@ -1,4 +1,5 @@
 use crate::iam::{Iam, IamTrait};
+use rand::{rngs::StdRng, Rng, SeedableRng};
 use sea_orm::{ConnectOptions, ConnectionTrait, Database, DbConn};
 use std::sync::Arc;
 use tracing::log::LevelFilter;
@@ -6,14 +7,17 @@ use tracing::log::LevelFilter;
 pub trait SharedTrait: Send + Sync + Clone + 'static {
     type Db: ConnectionTrait + Clone;
     type Iam: IamTrait;
+    type Rand: Rng + Clone;
 
     fn db(&self) -> &Self::Db;
     fn iam(&self) -> &Self::Iam;
+    fn rng(&self) -> &Self::Rand;
 }
 
 pub struct Shared {
     database: DbConn,
     iam: Iam,
+    rand: StdRng,
 }
 
 impl Shared {
@@ -21,6 +25,7 @@ impl Shared {
         Arc::new(Self {
             database: Self::connect_database().await,
             iam: Iam::new(),
+            rand: StdRng::from_entropy(),
         })
     }
 
@@ -42,6 +47,7 @@ impl Shared {
 impl SharedTrait for Arc<Shared> {
     type Db = DbConn;
     type Iam = Iam;
+    type Rand = StdRng;
 
     fn db(&self) -> &Self::Db {
         &self.database
@@ -49,5 +55,9 @@ impl SharedTrait for Arc<Shared> {
 
     fn iam(&self) -> &Self::Iam {
         &self.iam
+    }
+
+    fn rng(&self) -> &Self::Rand {
+        &self.rand
     }
 }
