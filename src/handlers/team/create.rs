@@ -2,7 +2,7 @@ use crate::{
     error::{self, Error, Result},
     iam::Claims,
     utils::generate_join_code,
-    Json, SharedTrait,
+    Json, SharedTrait, ValidatedJson,
 };
 use axum::Extension;
 use entity::teams;
@@ -26,7 +26,7 @@ pub struct Response {
 pub async fn create_team<S: SharedTrait>(
     Extension(shared): Extension<S>,
     Extension(claims): Extension<Arc<Claims>>,
-    Json(request): Json<Request>,
+    ValidatedJson(request): ValidatedJson<Request>,
 ) -> Result<Json<Response>> {
     let id = Uuid::new_v4()
         .hyphenated()
