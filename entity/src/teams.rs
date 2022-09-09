@@ -18,3 +18,9 @@ pub struct Model {
 pub enum Relation {}
 
 impl ActiveModelBehavior for ActiveModel {}
+
+impl Entity {
+    pub fn find_by_join_code(code: &str) -> Select<Entity> {
+        Self::find().filter(Column::JoinCode.eq(code))
+    }
+}

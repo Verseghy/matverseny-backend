@@ -1,4 +1,5 @@
 mod create;
+mod join;
 
 use crate::shared::SharedTrait;
 use axum::{routing::post, Router};
@@ -21,5 +22,7 @@ use axum::{routing::post, Router};
 /// POST  /team/kick
 /// POST  /team/code
 pub fn routes<S: SharedTrait>() -> Router {
-    Router::new().route("/create", post(create::create_team::<S>))
+    Router::new()
+        .route("/create", post(create::create_team::<S>))
+        .route("/join", post(join::join_team::<S>))
 }
