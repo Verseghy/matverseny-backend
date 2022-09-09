@@ -4,7 +4,7 @@ mod iam;
 mod json;
 mod shared;
 
-use error::*;
+use error::{Error, Result};
 use json::*;
 use shared::*;
 
