@@ -1,7 +1,7 @@
-use crate::{iam::Claims, Json, Result, SharedTrait};
+use crate::{error, iam::Claims, Error, Json, Result, SharedTrait};
 use axum::{http::StatusCode, Extension};
 use entity::users::{self, Class};
-use sea_orm::{EntityTrait, Set};
+use sea_orm::{DbErr, EntityTrait, Set};
 use serde::Deserialize;
 
 #[derive(Deserialize)]
@@ -22,7 +22,17 @@ pub async fn register<S: SharedTrait>(
         ..Default::default()
     };
 
-    users::Entity::insert(user).exec(shared.db()).await?;
+    let result = users::Entity::insert(user).exec(shared.db()).await;
 
-    Ok(StatusCode::CREATED)
+    match result {
+        Err(DbErr::Query(error)) => {
+            if &error[..] == "error returned from database: duplicate key value violates unique constraint \"users_pkey\"" {
+                Err(error::USER_ALREADY_EXISTS)
+            } else {
+                Err(Error::internal(error))
+            }
+        },
+        Err(error) => Err(Error::internal(error)),
+        Ok(_) => Ok(StatusCode::CREATED),
+    }
 }

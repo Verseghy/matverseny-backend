@@ -13,3 +13,4 @@ error!(JOIN_CODE_NOT_FOUND, BAD_REQUEST, 6, "join code not found");
 error!(LOCKED_TEAM, BAD_REQUEST, 7, "locked team");
 error!(ALREADY_IN_TEAM, BAD_REQUEST, 8, "already in team");
 error!(COULD_NOT_GET_CLAIMS, BAD_REQUEST, 9, "could not get claims");
+error!(USER_ALREADY_EXISTS, BAD_REQUEST, 10, "user already exists");
