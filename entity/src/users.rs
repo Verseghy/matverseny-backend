@@ -1,6 +1,6 @@
-use sea_orm::entity::prelude::*;
-use serde::{Deserialize, Serialize};
 use super::teams;
+use sea_orm::entity::prelude::*;
+use serde_repr::{Deserialize_repr, Serialize_repr};
 
 #[derive(Clone, Debug, PartialEq, Eq, DeriveEntityModel)]
 #[sea_orm(table_name = "users")]
@@ -12,7 +12,10 @@ pub struct Model {
     pub team: Option<String>,
 }
 
-#[derive(EnumIter, DeriveActiveEnum, PartialEq, Eq, Clone, Debug, Serialize, Deserialize)]
+#[derive(
+    EnumIter, DeriveActiveEnum, PartialEq, Eq, Clone, Debug, Serialize_repr, Deserialize_repr,
+)]
+#[repr(u8)]
 #[sea_orm(rs_type = "u8", db_type = "TinyUnsigned")]
 pub enum Class {
     Nine = 9,
