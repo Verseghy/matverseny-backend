@@ -1,11 +1,59 @@
-version: '3.1'
+version: '3'
 
 services:
   db:
     image: postgres
+    restart: always
     environment:
       POSTGRES_USER: matverseny
       POSTGRES_PASSWORD: secret
       POSTGRES_DB: matverseny
     ports:
       - 5432:5432
+
+  iam:
+    image: verseghy/iam
+    restart: always
+    environment:
+      DATABASE_URL: mysql://iam:secret@iam-database:3306/iam
+      # TEST KEYS
+      JWT_RSA_PRIVATE: -----BEGIN RSA PRIVATE KEY-----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-----END RSA PRIVATE KEY-----
+      JWT_RSA_PUBLIC: -----BEGIN PUBLIC KEY-----MIICITANBgkqhkiG9w0BAQEFAAOCAg4AMIICCQKCAgBdptOAsZZBpF7P0+79iKssZuYKq6UMVUYVHYFv2ClXAJmIMU+QXcued9oZA077BXhv5e7Lu8RXqylMNUd3hEEJjisXce3e33bcDrJZmGEljv/I3YCrNWK1LFpqd5YzossJpT+65TPxmeVipqJ65ZUpBCO3V82r3dDMx8d2CGMqOOygI1afeFxoZDVm/H1flR+uDusbB9EvYlKsiCfEGlQz/lnHiHI/bEmdeIzhpCLmRhtWxyyl6wqe07f718JdGpnPo6Aql8UtSMQRjtKcRW2G67hNXGgB7uS5y8qW8fj/fIcyePZGm8TUv3vL+wMUb6+05RN7i9BXt6Eurgok2NQGYvwforJHlCsj3aIzjTcfH3s6jkdZSj9Yho2BgtJi50qWxiWYxTTAmtVSDihjIty2h2NkzlXePWDF+iQW0bkbuYQQKzM6dLGNF0+z8t7ddlvKeqG8CI1+kZ3QR+XsKWSIhhGx+yncbxWUAzqMoLUUK9WlmQttoC8VenFSunNof2QxT+1BbYJt9ZFI5ZltTICR6K9kmRNQQ7qrdQacBsKi2SD+JVK7ESAARj9FZNvf0X78LM+H1NZACe4pT4tlObH4OwkHpl77oCmghNe49Q1CNv7d5QKesOS19kBoQYMYb+jKjKc/uj7iObwTuywX8I1d19gJeHD2XkZS9VVcHbYLUQIDAQAB-----END PUBLIC KEY-----
+    ports:
+      - 3001:3001
+    networks:
+      - default
+      - iam
+    depends_on:
+      iam-migration:
+        condition: service_completed_successfully
+
+  iam-database:
+    image: mysql:8.0
+    restart: always
+    environment:
+      MYSQL_DATABASE: iam
+      MYSQL_USER: iam
+      MYSQL_PASSWORD: secret
+      MYSQL_ALLOW_EMPTY_PASSWORD: yes
+      TZ: Europe/Budapest
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1"]
+      interval: 5s
+      timeout: 1s
+      retries: 10
+    networks:
+      - iam
+
+  iam-migration:
+    image: verseghy/iam-migration
+    environment:
+      DATABASE_URL: mysql://iam:secret@iam-database:3306/iam
+    networks:
+      - iam
+    depends_on:
+      iam-database:
+        condition: service_healthy
+
+networks:
+  iam:
