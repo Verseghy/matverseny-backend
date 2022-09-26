@@ -56,6 +56,12 @@ impl Iam {
     }
 }
 
+impl Default for Iam {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 static VALIDATION: Lazy<Validation> = Lazy::new(|| {
     let mut validation = Validation::new(Algorithm::RS256);
     validation.set_audience(&["https://verseghy-gimnazium.net"]);
