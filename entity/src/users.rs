@@ -24,25 +24,15 @@ pub enum Class {
     Twelve = 12,
 }
 
-#[derive(Copy, Clone, Debug, EnumIter)]
-pub enum Relation {
-    Team,
-}
-
-impl RelationTrait for Relation {
-    fn def(&self) -> RelationDef {
-        match self {
-            Relation::Team => Entity::belongs_to(teams::Entity)
-                .from(Column::Team)
-                .to(teams::Column::Id)
-                .into(),
-        }
-    }
-}
+#[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
+pub enum Relation {}
 
 impl Related<teams::Entity> for Entity {
     fn to() -> RelationDef {
-        Relation::Team.def()
+        Entity::belongs_to(teams::Entity)
+            .from(Column::Team)
+            .to(teams::Column::Id)
+            .into()
     }
 }
 
