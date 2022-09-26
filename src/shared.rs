@@ -22,8 +22,12 @@ pub struct Shared {
 
 impl Shared {
     pub async fn new() -> Arc<Self> {
+        Self::with_database(Self::connect_database().await).await
+    }
+
+    pub async fn with_database(conn: DbConn) -> Arc<Self> {
         Arc::new(Self {
-            database: Self::connect_database().await,
+            database: conn,
             iam: Iam::new(),
             rand: StdRng::from_entropy(),
         })
