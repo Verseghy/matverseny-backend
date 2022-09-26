@@ -8,7 +8,7 @@ mod utils;
 
 use error::{Error, Result};
 use json::*;
-use shared::*;
+pub use shared::*;
 
 use axum::{http::header::AUTHORIZATION, Router};
 use std::{iter::once, net::TcpListener};
@@ -63,9 +63,7 @@ fn app<S: SharedTrait>(shared: S) -> Router {
     handlers::routes::<S>().layer(middlewares)
 }
 
-pub async fn run(listener: TcpListener) {
-    let shared = Shared::new().await;
-
+pub async fn run(listener: TcpListener, shared: impl SharedTrait) {
     tracing::info!(
         "listening on port {}",
         listener.local_addr().unwrap().port()

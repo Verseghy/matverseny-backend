@@ -2,6 +2,8 @@ pub mod iam;
 
 use dotenvy::dotenv;
 use http::StatusCode;
+use iam::User;
+use matverseny_backend::Shared;
 use migration::MigratorTrait;
 use reqwest::{
     header::{HeaderName, HeaderValue},
@@ -9,10 +11,7 @@ use reqwest::{
 };
 use sea_orm::{ConnectionTrait, Database, DbConn, Statement};
 use serde::{de::DeserializeOwned, Serialize};
-use std::{
-    env,
-    net::{Ipv4Addr, SocketAddr, TcpListener},
-};
+use std::net::{Ipv4Addr, SocketAddr, TcpListener};
 use tokio::task::JoinHandle;
 use uuid::Uuid;
 
@@ -30,13 +29,14 @@ impl App {
     pub async fn new() -> Self {
         dotenv().ok();
 
-        let (conn, database) = Self::setup_database().await;
+        let (conn, conn2, database) = Self::setup_database().await;
 
         let addr = SocketAddr::from((Ipv4Addr::UNSPECIFIED, 0));
         let listener = TcpListener::bind(addr).expect("failed to bind tcp listener");
         let addr = listener.local_addr().unwrap();
+        let shared = Shared::with_database(conn2).await;
 
-        let join_handle = tokio::spawn(matverseny_backend::run(listener));
+        let join_handle = tokio::spawn(matverseny_backend::run(listener, shared));
 
         App {
             _database: database,
@@ -47,7 +47,7 @@ impl App {
         }
     }
 
-    async fn setup_database() -> (DbConn, String) {
+    async fn setup_database() -> (DbConn, DbConn, String) {
         let conn = Database::connect(DEFAULT_URL)
             .await
             .expect("failed to connect to database");
@@ -64,20 +64,17 @@ impl App {
         .await
         .expect("failed to create database");
 
-        let connection_string = format!("{}/{}", DEFAULT_URL, database);
-        env::set_var("DATABASE_URL", &connection_string);
+        let conn2 = Database::connect(format!("{}/{}", DEFAULT_URL, database))
+            .await
+            .expect("failed to connect to database");
 
-        {
-            let conn = Database::connect(&connection_string)
-                .await
-                .expect("failed to connect to database");
+        migration::Migrator::up(&conn2, None)
+            .await
+            .expect("failed to apply migrations");
 
-            migration::Migrator::up(&conn, None)
-                .await
-                .expect("failed to apply migrations");
-        }
+        (conn, conn2, database)
+    }
 
-        (conn, database)
     }
 
     #[allow(dead_code)]
