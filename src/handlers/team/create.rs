@@ -4,7 +4,7 @@ use crate::{
     utils::generate_join_code,
     Json, SharedTrait, ValidatedJson,
 };
-use axum::Extension;
+use axum::{http::StatusCode, Extension};
 use entity::teams;
 use sea_orm::{DbErr, EntityTrait, Set};
 use serde::{Deserialize, Serialize};
@@ -26,7 +26,7 @@ pub async fn create_team<S: SharedTrait>(
     Extension(shared): Extension<S>,
     claims: Claims,
     ValidatedJson(request): ValidatedJson<Request>,
-) -> Result<Json<Response>> {
+) -> Result<(StatusCode, Json<Response>)> {
     let id = Uuid::new_v4()
         .hyphenated()
         .encode_lower(&mut Uuid::encode_buffer())
@@ -57,6 +57,6 @@ pub async fn create_team<S: SharedTrait>(
             }
         }
         Err(error) => Err(Error::internal(error)),
-        Ok(_) => Ok(Json(Response { id })),
+        Ok(_) => Ok((StatusCode::CREATED, Json(Response { id }))),
     }
 }
