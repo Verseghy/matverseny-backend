@@ -11,6 +11,7 @@ use reqwest::{
 };
 use sea_orm::{ConnectionTrait, Database, DbConn, Statement};
 use serde::{de::DeserializeOwned, Serialize};
+use serde_json::json;
 use std::net::{Ipv4Addr, SocketAddr, TcpListener};
 use tokio::task::JoinHandle;
 use uuid::Uuid;
@@ -75,6 +76,23 @@ impl App {
         (conn, conn2, database)
     }
 
+    #[allow(unused)]
+    pub async fn register_user(&self) -> User {
+        let user = iam::register_user().await;
+
+        let res = self
+            .post("/register")
+            .user(&user)
+            .json(&json!({
+                "school": "Test School",
+                "class": 9,
+            }))
+            .send()
+            .await;
+
+        assert_eq!(res.status(), StatusCode::CREATED);
+
+        user
     }
 
     #[allow(dead_code)]

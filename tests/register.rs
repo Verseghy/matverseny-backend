@@ -1,10 +1,10 @@
 mod utils;
 
 use http::header::AUTHORIZATION;
+use http::StatusCode;
 use matverseny_backend::error;
 use serde_json::json;
 use utils::{assert_error, App};
-use http::StatusCode;
 
 #[tokio::test]
 async fn no_claims() {
