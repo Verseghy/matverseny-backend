@@ -27,6 +27,20 @@ impl Error {
     pub(self) const fn new(status: StatusCode, code: u32, msg: &'static str) -> Self {
         Error::Other(status, code, msg)
     }
+
+    pub const fn code(&self) -> u32 {
+        match self {
+            Error::Other(_, code, _) => *code,
+            Error::Internal(_) => 0,
+        }
+    }
+
+    pub const fn status(&self) -> StatusCode {
+        match self {
+            Error::Other(status, _, _) => *status,
+            Error::Internal(_) => StatusCode::INTERNAL_SERVER_ERROR,
+        }
+    }
 }
 
 impl IntoResponse for Error {
