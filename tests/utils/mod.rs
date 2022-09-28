@@ -3,6 +3,7 @@ pub mod iam;
 #[allow(unused_imports)]
 pub(crate) mod prelude {
     pub(crate) use super::{assert_error, App};
+    pub use futures::{Stream, StreamExt};
     pub use http::StatusCode;
     pub use matverseny_backend::error;
     pub use serde_json::{json, Value};
@@ -18,10 +19,14 @@ use reqwest::{
     Client,
 };
 use sea_orm::{ConnectionTrait, Database, DbConn, Statement};
-use serde::{de::DeserializeOwned, Serialize};
+use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use serde_json::json;
-use std::net::{Ipv4Addr, SocketAddr, TcpListener};
-use tokio::task::JoinHandle;
+use std::{
+    net::{Ipv4Addr, SocketAddr, TcpListener},
+    sync::atomic::{AtomicU64, Ordering},
+};
+use tokio::{net::TcpStream, task::JoinHandle};
+use tokio_tungstenite::{MaybeTlsStream, WebSocketStream};
 use uuid::Uuid;
 
 const DEFAULT_URL: &str = "postgres://matverseny:secret@127.0.0.1:5432";
@@ -32,6 +37,12 @@ pub struct App {
     _join_handle: JoinHandle<()>,
     client: Client,
     addr: SocketAddr,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct Team {
+    #[allow(unused)]
+    id: String,
 }
 
 impl App {
@@ -103,11 +114,73 @@ impl App {
         user
     }
 
+    #[allow(unused)]
+    pub async fn create_team(&self, owner: &User) -> Team {
+        static TEAM_COUNT: AtomicU64 = AtomicU64::new(0);
+
+        let res = self
+            .post("/team/create")
+            .user(owner)
+            .json(&json!({
+                "name": format!("Team-{}", TEAM_COUNT.fetch_add(1, Ordering::Relaxed))
+            }))
+            .send()
+            .await;
+
+        assert_eq!(res.status(), StatusCode::CREATED);
+
+        res.json().await
+    }
+
     #[allow(dead_code)]
     pub fn post(&self, url: &str) -> RequestBuilder {
         RequestBuilder {
             builder: self.client.post(format!("http://{}{}", self.addr, url)),
         }
+    }
+
+    #[allow(unused)]
+    pub fn socket(&self, url: &str) -> SocketRequestBuilder {
+        let uri = format!("ws://{}{}", self.addr, url);
+
+        SocketRequestBuilder {
+            builder: http::request::Builder::new()
+                .method("GET")
+                .header(http::header::HOST, self.addr.to_string())
+                .header(http::header::CONNECTION, "Upgrade")
+                .header(http::header::UPGRADE, "websocket")
+                .header(http::header::SEC_WEBSOCKET_VERSION, "13")
+                .header(
+                    http::header::SEC_WEBSOCKET_KEY,
+                    tokio_tungstenite::tungstenite::handshake::client::generate_key(),
+                )
+                .uri(uri),
+        }
+    }
+}
+
+#[derive(Debug)]
+pub struct SocketRequestBuilder {
+    builder: http::request::Builder,
+}
+
+#[allow(unused)]
+impl SocketRequestBuilder {
+    pub fn user(mut self, user: &iam::User) -> SocketRequestBuilder {
+        self.builder = self.builder.header(
+            http::header::AUTHORIZATION,
+            format!("Bearer {}", &user.access_token),
+        );
+        self
+    }
+
+    pub async fn start(mut self) -> WebSocketStream<MaybeTlsStream<TcpStream>> {
+        let request = self.builder.body(()).expect("failed to create request");
+        // let (stream, _response) =tokio_tungstenite::client_async(request,)
+        let (stream, _reponse) = tokio_tungstenite::connect_async(request)
+            .await
+            .expect("failed to create websocket");
+        stream
     }
 }
 
@@ -116,6 +189,7 @@ pub struct RequestBuilder {
     builder: reqwest::RequestBuilder,
 }
 
+#[allow(unused)]
 impl RequestBuilder {
     pub async fn send(self) -> TestResponse {
         TestResponse {
@@ -154,6 +228,7 @@ pub struct TestResponse {
     response: reqwest::Response,
 }
 
+#[allow(unused)]
 impl TestResponse {
     pub async fn json<T: DeserializeOwned>(self) -> T {
         self.response
