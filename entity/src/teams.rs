@@ -1,3 +1,4 @@
+use super::users;
 use sea_orm::entity::prelude::*;
 
 #[derive(Clone, Debug, PartialEq, Eq, DeriveEntityModel)]
@@ -22,5 +23,10 @@ impl ActiveModelBehavior for ActiveModel {}
 impl Entity {
     pub fn find_by_join_code(code: &str) -> Select<Entity> {
         Self::find().filter(Column::JoinCode.eq(code))
+    }
+
+    #[inline]
+    pub fn select_users(id: &str) -> Select<users::Entity> {
+        users::Entity::find().filter(users::Column::Team.eq(id))
     }
 }

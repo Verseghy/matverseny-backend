@@ -37,3 +37,10 @@ impl Related<teams::Entity> for Entity {
 }
 
 impl ActiveModelBehavior for ActiveModel {}
+
+impl Entity {
+    #[inline]
+    pub fn select_team(user_id: &str) -> Select<teams::Entity> {
+        Self::find_related().filter(Column::Id.eq(user_id))
+    }
+}
