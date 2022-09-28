@@ -15,8 +15,8 @@ pub struct Model {
 #[derive(
     EnumIter, DeriveActiveEnum, PartialEq, Eq, Clone, Debug, Serialize_repr, Deserialize_repr,
 )]
-#[repr(u8)]
-#[sea_orm(rs_type = "u8", db_type = "TinyUnsigned")]
+#[repr(i16)]
+#[sea_orm(rs_type = "i16", db_type = "TinyInteger")]
 pub enum Class {
     Nine = 9,
     Ten = 10,

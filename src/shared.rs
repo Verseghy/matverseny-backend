@@ -1,11 +1,11 @@
 use crate::iam::{Iam, IamTrait};
 use rand::{rngs::StdRng, Rng, SeedableRng};
-use sea_orm::{ConnectOptions, ConnectionTrait, Database, DbConn};
 use std::sync::Arc;
+use sea_orm::{ConnectOptions, ConnectionTrait, Database, DbConn, TransactionTrait};
 use tracing::log::LevelFilter;
 
 pub trait SharedTrait: Send + Sync + Clone + 'static {
-    type Db: ConnectionTrait + Clone;
+    type Db: ConnectionTrait + TransactionTrait + Clone;
     type Iam: IamTrait;
     type Rand: Rng + Clone;
 
