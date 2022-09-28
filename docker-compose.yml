@@ -11,6 +11,31 @@ services:
     ports:
       - 5432:5432
 
+  kafka:
+    image: bitnami/kafka:latest
+    restart: always
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_CFG_LISTENERS: PLAINTEXT://:9092
+      KAFKA_CFG_ADVERTISED_LISTENERS: PLAINTEXT://127.0.0.1:9092
+      KAFKA_CFG_ZOOKEEPER_CONNECT: zookeeper:2181
+      ALLOW_PLAINTEXT_LISTENER: yes
+    networks:
+      - default
+      - kafka
+    ports:
+      - 9092:9092
+    depends_on:
+      - zookeeper
+
+  zookeeper:
+    image: bitnami/zookeeper:latest
+    restart: always
+    environment:
+      ALLOW_ANONYMOUS_LOGIN: yes
+    networks:
+      - kafka
+
   iam:
     image: verseghy/iam
     restart: always
@@ -57,3 +82,4 @@ services:
 
 networks:
   iam:
+  kafka:
