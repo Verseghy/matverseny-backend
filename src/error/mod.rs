@@ -10,64 +10,58 @@ use axum::{
 use sea_orm::DbErr;
 use serde_json::json;
 
-pub enum Error {
-    Internal(Box<dyn std::error::Error>),
-    Other(StatusCode, u32, &'static str),
+#[derive(Debug)]
+pub struct Error {
+    status: StatusCode,
+    code: u32,
+    message: &'static str,
 }
 
 pub type Result<T> = std::result::Result<T, Error>;
 
 impl Error {
+    #[inline]
     pub fn internal<E: Into<Box<dyn std::error::Error>>>(error: E) -> Self {
-        let error = error.into();
-        tracing::error!("internal error: {}", error);
-        Error::Internal(error)
+        tracing::error!("internal error: {}", error.into());
+        constants::INTERNAL
     }
 
-    pub(self) const fn new(status: StatusCode, code: u32, msg: &'static str) -> Self {
-        Error::Other(status, code, msg)
+    #[inline]
+    const fn new(status: StatusCode, code: u32, message: &'static str) -> Self {
+        Error {
+            status,
+            code,
+            message,
+        }
     }
 
+    #[inline]
     pub const fn code(&self) -> u32 {
-        match self {
-            Error::Other(_, code, _) => *code,
-            Error::Internal(_) => 0,
-        }
+        self.code
     }
 
+    #[inline]
     pub const fn status(&self) -> StatusCode {
-        match self {
-            Error::Other(status, _, _) => *status,
-            Error::Internal(_) => StatusCode::INTERNAL_SERVER_ERROR,
-        }
+        self.status
     }
 }
 
 impl IntoResponse for Error {
+    #[inline]
     fn into_response(self) -> Response {
-        fn response_with_msg(status: StatusCode, code: u32, msg: &'static str) -> Response {
-            (
-                status,
-                Json(json!({
-                    "code": code,
-                    "error": msg,
-                })),
-            )
-                .into_response()
-        }
-
-        match self {
-            Self::Internal(_) => response_with_msg(
-                StatusCode::INTERNAL_SERVER_ERROR,
-                0,
-                "internal server error",
-            ),
-            Self::Other(status, code, msg) => response_with_msg(status, code, msg),
-        }
+        (
+            self.status,
+            Json(json!({
+                "code": self.code,
+                "error": self.message,
+            })),
+        )
+            .into_response()
     }
 }
 
 impl From<DbErr> for Error {
+    #[inline]
     fn from(error: DbErr) -> Self {
         Error::internal(error)
     }

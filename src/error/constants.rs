@@ -1,6 +1,6 @@
 use super::error;
 
-// id 0: internal error
+error!(INTERNAL, INTERNAL_SERVER_ERROR, 0, "internal server error");
 error!(JSON_MISSING_FIELDS, BAD_REQUEST, 1, "missing fields");
 error!(JSON_SYNTAX_ERROR, BAD_REQUEST, 2, "syntax error");
 error!(
