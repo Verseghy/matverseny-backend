@@ -131,11 +131,9 @@ impl RequestBuilder {
         self
     }
 
-    pub fn user(self, user: &iam::User) -> RequestBuilder {
-        self.header(
-            http::header::AUTHORIZATION,
-            format!("Bearer {}", user.access_token),
-        )
+    pub fn user(mut self, user: &iam::User) -> RequestBuilder {
+        self.builder = self.builder.bearer_auth(&user.access_token);
+        self
     }
 
     #[allow(dead_code)]
