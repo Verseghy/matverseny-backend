@@ -1,9 +1,6 @@
 mod utils;
 
-use http::StatusCode;
-use matverseny_backend::error;
-use serde_json::{json, Value};
-use utils::{assert_error, App};
+use utils::prelude::*;
 
 #[tokio::test]
 async fn success() {

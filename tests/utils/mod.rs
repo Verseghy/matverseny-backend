@@ -1,5 +1,13 @@
 pub mod iam;
 
+#[allow(unused_imports)]
+pub(crate) mod prelude {
+    pub(crate) use super::{assert_error, App};
+    pub use http::StatusCode;
+    pub use matverseny_backend::error;
+    pub use serde_json::{json, Value};
+}
+
 use dotenvy::dotenv;
 use http::StatusCode;
 use iam::User;
