@@ -11,7 +11,6 @@ pub(crate) mod prelude {
 
 use dotenvy::dotenv;
 use http::StatusCode;
-use iam::User;
 use matverseny_backend::Shared;
 use migration::MigratorTrait;
 use reqwest::{
@@ -31,7 +30,7 @@ use uuid::Uuid;
 
 const DEFAULT_URL: &str = "postgres://matverseny:secret@127.0.0.1:5432";
 
-pub struct App {
+pub struct AppInner {
     _database: String,
     _db_conn: DbConn,
     _join_handle: JoinHandle<()>,
@@ -39,10 +38,49 @@ pub struct App {
     addr: SocketAddr,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Clone)]
+pub struct App {
+    inner: Arc<AppInner>,
+}
+
 pub struct Team {
-    #[allow(unused)]
     id: String,
+    owner: User,
+    app: App,
+}
+
+#[derive(Clone)]
+pub struct User {
+    pub id: String,
+    pub email: String,
+    pub access_token: String,
+    app: App,
+}
+
+impl User {
+    pub async fn join(&self, code: &str) {
+        let res = self
+            .app
+            .post("/team/join")
+            .user(self)
+            .json(&json!({
+                "code": code,
+            }))
+            .send()
+            .await;
+
+        assert_eq!(res.status(), StatusCode::OK);
+    }
+}
+
+pub trait UserLike {
+    fn access_token(&self) -> &String;
+}
+
+impl UserLike for User {
+    fn access_token(&self) -> &String {
+        &self.access_token
+    }
 }
 
 impl App {
@@ -58,12 +96,16 @@ impl App {
 
         let join_handle = tokio::spawn(matverseny_backend::run(listener, shared));
 
-        App {
+        let inner = AppInner {
             _database: database,
             _db_conn: conn,
             _join_handle: join_handle,
             client: Client::new(),
             addr,
+        };
+
+        App {
+            inner: Arc::new(inner),
         }
     }
 
@@ -111,7 +153,12 @@ impl App {
 
         assert_eq!(res.status(), StatusCode::CREATED);
 
-        user
+        User {
+            id: user.id,
+            email: user.email,
+            access_token: user.access_token,
+            app: self.clone(),
+        }
     }
 
     #[allow(unused)]
@@ -135,18 +182,21 @@ impl App {
     #[allow(dead_code)]
     pub fn post(&self, url: &str) -> RequestBuilder {
         RequestBuilder {
-            builder: self.client.post(format!("http://{}{}", self.addr, url)),
+            builder: self
+                .inner
+                .client
+                .post(format!("http://{}{}", self.inner.addr, url)),
         }
     }
 
     #[allow(unused)]
     pub fn socket(&self, url: &str) -> SocketRequestBuilder {
-        let uri = format!("ws://{}{}", self.addr, url);
+        let uri = format!("ws://{}{}", self.inner.addr, url);
 
         SocketRequestBuilder {
             builder: http::request::Builder::new()
                 .method("GET")
-                .header(http::header::HOST, self.addr.to_string())
+                .header(http::header::HOST, self.inner.addr.to_string())
                 .header(http::header::CONNECTION, "Upgrade")
                 .header(http::header::UPGRADE, "websocket")
                 .header(http::header::SEC_WEBSOCKET_VERSION, "13")
@@ -166,10 +216,10 @@ pub struct SocketRequestBuilder {
 
 #[allow(unused)]
 impl SocketRequestBuilder {
-    pub fn user(mut self, user: &iam::User) -> SocketRequestBuilder {
+    pub fn user(mut self, user: &impl UserLike) -> SocketRequestBuilder {
         self.builder = self.builder.header(
             http::header::AUTHORIZATION,
-            format!("Bearer {}", &user.access_token),
+            format!("Bearer {}", user.access_token()),
         );
         self
     }
@@ -205,8 +255,8 @@ impl RequestBuilder {
         self
     }
 
-    pub fn user(mut self, user: &iam::User) -> RequestBuilder {
-        self.builder = self.builder.bearer_auth(&user.access_token);
+    pub fn user(mut self, user: &impl UserLike) -> RequestBuilder {
+        self.builder = self.builder.bearer_auth(user.access_token());
         self
     }
 

@@ -1,3 +1,4 @@
+use super::UserLike;
 use once_cell::sync::Lazy;
 use reqwest::Client;
 use serde::Deserialize;
@@ -13,6 +14,12 @@ pub struct User {
     pub id: String,
     pub email: String,
     pub access_token: String,
+}
+
+impl UserLike for User {
+    fn access_token(&self) -> &String {
+        &self.access_token
+    }
 }
 
 static TEST_ID: Lazy<String> = Lazy::new(|| {
