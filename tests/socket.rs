@@ -21,15 +21,9 @@ async fn team_info() {
     let _team = app.create_team(&user).await;
 
     let mut socket = app.socket("/ws").user(&user).start().await;
-    let message = socket.next().await;
+    let message = utils::get_socket_message(socket.next().await);
 
-    if let Some(Ok(Message::Text(message))) = message {
-        let value: Value = serde_json::from_str(&message).expect("not json");
-
-        assert!(value.is_object());
-        assert!(value["event"].is_string());
-        assert_eq!(value["event"].as_str().unwrap(), "TEAM_INFO");
-    } else {
-        panic!("not text");
-    }
+    assert!(message.is_object());
+    assert!(message["event"].is_string());
+    assert_eq!(message["event"].as_str().unwrap(), "TEAM_INFO");
 }

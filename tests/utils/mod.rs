@@ -47,12 +47,14 @@ pub struct App {
     inner: Arc<AppInner>,
 }
 
+#[allow(unused)]
 pub struct Team {
     id: String,
     owner: User,
     app: App,
 }
 
+#[allow(unused)]
 #[derive(Clone)]
 pub struct User {
     pub id: String,
@@ -62,6 +64,7 @@ pub struct User {
 }
 
 impl User {
+    #[allow(unused)]
     pub async fn join(&self, code: &str) {
         let res = self
             .app
@@ -91,19 +94,13 @@ impl Team {
     #[allow(unused)]
     pub async fn get_code(&self) -> String {
         let mut socket = self.app.socket("/ws").user(&self.owner).start().await;
-        let message = socket.next().await;
+        let message = get_socket_message(socket.next().await);
 
-        if let Some(Ok(Message::Text(message))) = message {
-            let value: Value = serde_json::from_str(&message).expect("not json");
+        assert!(message.is_object());
+        assert!(message["event"].is_string());
+        assert_eq!(message["event"].as_str().unwrap(), "TEAM_INFO");
 
-            assert!(value.is_object());
-            assert!(value["event"].is_string());
-            assert_eq!(value["event"].as_str().unwrap(), "TEAM_INFO");
-
-            value["data"]["code"].as_str().expect("no code").to_owned()
-        } else {
-            panic!("not text");
-        }
+        message["data"]["code"].as_str().expect("no code").to_owned()
     }
 }
 
@@ -332,3 +329,14 @@ macro_rules! assert_error {
 }
 
 pub(crate) use assert_error;
+
+#[allow(unused)]
+pub fn get_socket_message(
+    message: Option<Result<Message, tokio_tungstenite::tungstenite::Error>>,
+) -> Value {
+    if let Some(Ok(Message::Text(message))) = message {
+        serde_json::from_str(&message).expect("not json")
+    } else {
+        panic!("not text");
+    }
+}
