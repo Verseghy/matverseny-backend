@@ -12,10 +12,10 @@ error!(DUPLICATE_TEAM_NAME, BAD_REQUEST, 5, "team name exists");
 error!(JOIN_CODE_NOT_FOUND, BAD_REQUEST, 6, "join code not found");
 error!(LOCKED_TEAM, BAD_REQUEST, 7, "locked team");
 error!(ALREADY_IN_TEAM, BAD_REQUEST, 8, "already in team");
-error!(COULD_NOT_GET_CLAIMS, BAD_REQUEST, 9, "could not get claims");
+error!(
+    COULD_NOT_GET_CLAIMS,
+    UNAUTHORIZED, 9, "could not get claims"
+);
 error!(USER_ALREADY_EXISTS, BAD_REQUEST, 10, "user already exists");
 error!(USER_NOT_IN_TEAM, BAD_REQUEST, 11, "user is not in a team");
-error!(
-    USER_NOT_REGISTERED,
-    BAD_REQUEST, 12, "user is not registered"
-);
+error!(USER_NOT_REGISTERED, FORBIDDEN, 12, "user is not registered");
