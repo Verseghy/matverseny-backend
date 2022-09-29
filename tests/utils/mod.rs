@@ -10,6 +10,7 @@ pub(crate) mod prelude {
 }
 
 use dotenvy::dotenv;
+use futures::StreamExt;
 use http::StatusCode;
 use matverseny_backend::Shared;
 use migration::MigratorTrait;
@@ -18,14 +19,17 @@ use reqwest::{
     Client,
 };
 use sea_orm::{ConnectionTrait, Database, DbConn, Statement};
-use serde::{de::DeserializeOwned, Deserialize, Serialize};
-use serde_json::json;
+use serde::{de::DeserializeOwned, Serialize};
+use serde_json::{json, Value};
 use std::{
     net::{Ipv4Addr, SocketAddr, TcpListener},
-    sync::atomic::{AtomicU64, Ordering},
+    sync::{
+        atomic::{AtomicU64, Ordering},
+        Arc,
+    },
 };
 use tokio::{net::TcpStream, task::JoinHandle};
-use tokio_tungstenite::{MaybeTlsStream, WebSocketStream};
+use tokio_tungstenite::{tungstenite::Message, MaybeTlsStream, WebSocketStream};
 use uuid::Uuid;
 
 const DEFAULT_URL: &str = "postgres://matverseny:secret@127.0.0.1:5432";
@@ -80,6 +84,26 @@ pub trait UserLike {
 impl UserLike for User {
     fn access_token(&self) -> &String {
         &self.access_token
+    }
+}
+
+impl Team {
+    #[allow(unused)]
+    pub async fn get_code(&self) -> String {
+        let mut socket = self.app.socket("/ws").user(&self.owner).start().await;
+        let message = socket.next().await;
+
+        if let Some(Ok(Message::Text(message))) = message {
+            let value: Value = serde_json::from_str(&message).expect("not json");
+
+            assert!(value.is_object());
+            assert!(value["event"].is_string());
+            assert_eq!(value["event"].as_str().unwrap(), "TEAM_INFO");
+
+            value["data"]["code"].as_str().expect("no code").to_owned()
+        } else {
+            panic!("not text");
+        }
     }
 }
 
@@ -176,7 +200,13 @@ impl App {
 
         assert_eq!(res.status(), StatusCode::CREATED);
 
-        res.json().await
+        let json: Value = res.json().await;
+
+        Team {
+            id: json["id"].as_str().expect("no id").to_owned(),
+            owner: owner.clone(),
+            app: self.clone(),
+        }
     }
 
     #[allow(dead_code)]
@@ -226,7 +256,6 @@ impl SocketRequestBuilder {
 
     pub async fn start(mut self) -> WebSocketStream<MaybeTlsStream<TcpStream>> {
         let request = self.builder.body(()).expect("failed to create request");
-        // let (stream, _response) =tokio_tungstenite::client_async(request,)
         let (stream, _reponse) = tokio_tungstenite::connect_async(request)
             .await
             .expect("failed to create websocket");
