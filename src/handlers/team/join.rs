@@ -29,7 +29,7 @@ pub async fn join_team<S: SharedTrait>(
         .await?;
 
     if let Some(team) = team {
-        if !team.locked {
+        if team.locked {
             return Err(error::LOCKED_TEAM);
         }
 
