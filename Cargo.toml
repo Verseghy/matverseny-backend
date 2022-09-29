@@ -29,6 +29,7 @@ dotenvy = "0.15.5"
 uuid = { version = "1.1.2", features = ["v4"] }
 rand = "0.8.5"
 futures = "0.3.24"
+rand_chacha = { version = "0.3.1", features = ["simd"] }
 
 [dev-dependencies]
 http = "0.2.8"

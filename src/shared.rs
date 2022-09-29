@@ -1,23 +1,26 @@
 use crate::iam::{Iam, IamTrait};
-use rand::{rngs::StdRng, Rng, SeedableRng};
 use std::sync::Arc;
+use rand::{
+    rngs::{adapter::ReseedingRng, OsRng},
+    Rng, SeedableRng,
+};
+use rand_chacha::ChaCha20Core;
 use sea_orm::{ConnectOptions, ConnectionTrait, Database, DbConn, TransactionTrait};
 use tracing::log::LevelFilter;
 
 pub trait SharedTrait: Send + Sync + Clone + 'static {
     type Db: ConnectionTrait + TransactionTrait + Clone;
     type Iam: IamTrait;
-    type Rand: Rng + Clone;
+    type Rand: Rng;
 
     fn db(&self) -> &Self::Db;
     fn iam(&self) -> &Self::Iam;
-    fn rng(&self) -> &Self::Rand;
+    fn rng(&self) -> Self::Rand;
 }
 
 pub struct Shared {
     database: DbConn,
     iam: Iam,
-    rand: StdRng,
 }
 
 impl Shared {
@@ -29,7 +32,6 @@ impl Shared {
         Arc::new(Self {
             database: conn,
             iam: Iam::new(),
-            rand: StdRng::from_entropy(),
         })
     }
 
@@ -48,10 +50,17 @@ impl Shared {
     }
 }
 
+thread_local! {
+    static CHACHA_THREAD_RNG: ReseedingRng<ChaCha20Core, OsRng> = {
+        let rng = ChaCha20Core::from_entropy();
+        ReseedingRng::new(rng, 1024*64, OsRng)
+    }
+}
+
 impl SharedTrait for Arc<Shared> {
     type Db = DbConn;
     type Iam = Iam;
-    type Rand = StdRng;
+    type Rand = ReseedingRng<ChaCha20Core, OsRng>;
 
     fn db(&self) -> &Self::Db {
         &self.database
@@ -61,7 +70,8 @@ impl SharedTrait for Arc<Shared> {
         &self.iam
     }
 
-    fn rng(&self) -> &Self::Rand {
-        &self.rand
+    fn rng(&self) -> Self::Rand {
+        CHACHA_THREAD_RNG.with(|x| x.clone())
     }
+
 }

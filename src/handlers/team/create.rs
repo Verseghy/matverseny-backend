@@ -53,7 +53,7 @@ pub async fn create_team<S: SharedTrait>(
         owner: Set(claims.subject.clone()),
         locked: Set(false),
         // TODO: handle clash
-        join_code: Set(generate_join_code(&mut shared.rng().clone())),
+        join_code: Set(generate_join_code(&mut shared.rng())),
         ..Default::default()
     };
 
