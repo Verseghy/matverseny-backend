@@ -1,11 +1,14 @@
 use crate::iam::{Iam, IamTrait};
-use std::sync::Arc;
 use rand::{
     rngs::{adapter::ReseedingRng, OsRng},
     Rng, SeedableRng,
 };
 use rand_chacha::ChaCha20Core;
+use rdkafka::{
+    admin::AdminClient, client::DefaultClientContext, producer::FutureProducer, ClientConfig,
+};
 use sea_orm::{ConnectOptions, ConnectionTrait, Database, DbConn, TransactionTrait};
+use std::{env, sync::Arc};
 use tracing::log::LevelFilter;
 
 pub trait SharedTrait: Send + Sync + Clone + 'static {
@@ -16,11 +19,15 @@ pub trait SharedTrait: Send + Sync + Clone + 'static {
     fn db(&self) -> &Self::Db;
     fn iam(&self) -> &Self::Iam;
     fn rng(&self) -> Self::Rand;
+    fn kafka_producer(&self) -> &FutureProducer;
+    fn kafka_admin(&self) -> &AdminClient<DefaultClientContext>;
 }
 
 pub struct Shared {
     database: DbConn,
     iam: Iam,
+    kafka_producer: FutureProducer,
+    kafka_admin: AdminClient<DefaultClientContext>,
 }
 
 impl Shared {
@@ -32,13 +39,39 @@ impl Shared {
         Arc::new(Self {
             database: conn,
             iam: Iam::new(),
+            kafka_producer: Self::create_kafka_producer(),
+            kafka_admin: Self::create_kafka_admin(),
         })
+    }
+
+    fn create_kafka_producer() -> FutureProducer {
+        tracing::info!("Creating kafka producer");
+
+        let bootstrap_servers =
+            env::var("KAFKA_BOOTSTRAP_SERVERS").expect("KAFKA_BOOTSRAP_SERVERS not set");
+
+        ClientConfig::new()
+            .set("bootstrap.servers", bootstrap_servers)
+            .create()
+            .expect("failed to create kafka producer")
+    }
+
+    fn create_kafka_admin() -> AdminClient<DefaultClientContext> {
+        tracing::info!("Creating kafka admin client");
+
+        let bootstrap_servers =
+            env::var("KAFKA_BOOTSTRAP_SERVERS").expect("KAFKA_BOOTSRAP_SERVERS not set");
+
+        ClientConfig::new()
+            .set("bootstrap.servers", bootstrap_servers)
+            .create()
+            .expect("failed to create kafka admin client")
     }
 
     async fn connect_database() -> DbConn {
         tracing::info!("Trying to connect to database");
 
-        let url = std::env::var("DATABASE_URL").expect("DATABASE_URL is not set");
+        let url = env::var("DATABASE_URL").expect("DATABASE_URL is not set");
         let mut opts = ConnectOptions::new(url);
         opts.sqlx_logging_level(LevelFilter::Debug);
 
@@ -74,4 +107,11 @@ impl SharedTrait for Arc<Shared> {
         CHACHA_THREAD_RNG.with(|x| x.clone())
     }
 
+    fn kafka_producer(&self) -> &FutureProducer {
+        &self.kafka_producer
+    }
+
+    fn kafka_admin(&self) -> &AdminClient<DefaultClientContext> {
+        &self.kafka_admin
+    }
 }

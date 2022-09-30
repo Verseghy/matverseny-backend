@@ -1,8 +1,10 @@
-use crate::{error, iam::Claims, Json, Result, SharedTrait};
+use crate::{error, handlers::socket::Event, iam::Claims, Error, Json, Result, SharedTrait};
 use axum::{http::StatusCode, Extension};
 use entity::{teams, users};
-use sea_orm::{EntityTrait, FromQueryResult, IntoActiveModel, QuerySelect, Set};
+use rdkafka::producer::FutureRecord;
+use sea_orm::{EntityTrait, FromQueryResult, IntoActiveModel, QuerySelect, Set, TransactionTrait};
 use serde::Deserialize;
+use std::time::Duration;
 
 #[derive(Deserialize)]
 pub struct Request {
@@ -20,12 +22,14 @@ pub async fn join_team<S: SharedTrait>(
     claims: Claims,
     Json(request): Json<Request>,
 ) -> Result<StatusCode> {
+    let txn = shared.db().begin().await?;
+
     let team = teams::Entity::find_by_join_code(&request.code)
         .select_only()
         .column(teams::Column::Id)
         .column(teams::Column::Locked)
         .into_model::<Team>()
-        .one(shared.db())
+        .one(&txn)
         .await?;
 
     if let Some(team) = team {
@@ -34,7 +38,7 @@ pub async fn join_team<S: SharedTrait>(
         }
 
         let user = users::Entity::find_by_id(claims.subject)
-            .one(shared.db())
+            .one(&txn)
             .await?
             .ok_or_else(|| {
                 // this is suspicious so log it
@@ -46,12 +50,28 @@ pub async fn join_team<S: SharedTrait>(
             return Err(error::ALREADY_IN_TEAM);
         }
 
-        let mut active_model = user.into_active_model();
-        active_model.team = Set(Some(team.id));
+        let kafka_payload = serde_json::to_string(&Event::JoinTeam {
+            user: user.id.clone(),
+        })
+        .unwrap();
 
-        users::Entity::update(active_model)
-            .exec(shared.db())
-            .await?;
+        let mut active_model = user.into_active_model();
+        active_model.team = Set(Some(team.id.clone()));
+
+        users::Entity::update(active_model).exec(&txn).await?;
+
+        shared
+            .kafka_producer()
+            .send(
+                FutureRecord::to(&super::get_kafka_topic(&team.id))
+                    .key("team")
+                    .payload(&kafka_payload),
+                Duration::from_secs(5),
+            )
+            .await
+            .map_err(|(err, _)| Error::internal(err))?;
+
+        txn.commit().await?;
 
         Ok(StatusCode::OK)
     } else {

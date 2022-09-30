@@ -6,6 +6,7 @@ use crate::{
 };
 use axum::{http::StatusCode, Extension};
 use entity::{teams, users};
+use rdkafka::admin::{AdminOptions, NewTopic, TopicReplication};
 use sea_orm::{DbErr, EntityTrait, IntoActiveModel, Set, TransactionTrait};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
@@ -73,6 +74,14 @@ pub async fn create_team<S: SharedTrait>(
             active_model.team = Set(Some(id.clone()));
 
             users::Entity::update(active_model).exec(&txn).await?;
+
+            shared.kafka_admin()
+                .create_topics(
+                    &[NewTopic::new(&super::get_kafka_topic(&id), 1, TopicReplication::Fixed(1))],
+                    &AdminOptions::new(),
+                )
+                .await
+                .map_err(Error::internal)?;
 
             txn.commit().await?;
 

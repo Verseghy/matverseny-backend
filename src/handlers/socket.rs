@@ -8,6 +8,8 @@ use entity::{
     teams,
     users::{self, Class},
 };
+use futures::StreamExt;
+use rdkafka::{consumer::Consumer, consumer::StreamConsumer, ClientConfig, Message as _};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -32,6 +34,8 @@ pub enum Event {
         user: String,
     },
     TeamInfo {
+        #[serde(skip)]
+        id: String,
         name: String,
         code: String,
         locked: bool,
@@ -53,7 +57,10 @@ pub async fn ws_handler<S: SharedTrait>(
     })
 }
 
-async fn get_initial_team_info<S: SharedTrait>(shared: &S, user_id: &str) -> Result<Option<Event>> {
+async fn get_initial_team_info<S: SharedTrait>(
+    shared: &S,
+    user_id: &str,
+) -> Result<Option<(teams::Model, Vec<Member>)>> {
     let result = users::Entity::select_team(user_id).one(shared.db()).await?;
 
     if let Some(result) = result {
@@ -81,12 +88,7 @@ async fn get_initial_team_info<S: SharedTrait>(shared: &S, user_id: &str) -> Res
             })
             .collect();
 
-        Ok(Some(Event::TeamInfo {
-            name: result.name,
-            code: result.join_code,
-            locked: result.locked,
-            members,
-        }))
+        Ok(Some((result, members)))
     } else {
         tracing::debug!("didn't found team");
         Ok(None)
@@ -96,16 +98,63 @@ async fn get_initial_team_info<S: SharedTrait>(shared: &S, user_id: &str) -> Res
 async fn handler<S: SharedTrait>(shared: &S, claims: &Claims, mut socket: WebSocket) -> Result<()> {
     let info = get_initial_team_info(shared, &claims.subject).await?;
 
-    if let Some(info) = info {
-        tracing::debug!("info: {:?}", info);
+    if let Some((team, members)) = info {
+        tracing::debug!("got team info: {:?}, members: {:?}", team, members);
 
         socket
-            .send(Message::Text(serde_json::to_string(&info).unwrap()))
+            .send(Message::Text(
+                serde_json::to_string(&Event::TeamInfo {
+                    id: team.id.clone(),
+                    name: team.name,
+                    code: team.join_code,
+                    locked: team.locked,
+                    members,
+                })
+                .unwrap(),
+            ))
             .await
             .map_err(Error::internal)?;
 
+        let bootstrap_servers =
+            std::env::var("KAFKA_BOOTSTRAP_SERVERS").map_err(Error::internal)?;
+
+        let consumer: StreamConsumer = ClientConfig::new()
+            .set("bootstrap.servers", bootstrap_servers)
+            .set("group.id", "asd")
+            .create()
+            .map_err(Error::internal)?;
+
+        consumer
+            .subscribe(&[&crate::handlers::team::get_kafka_topic(&team.id)])
+            // This shouldn't happend because creating team should also create the kafka topic
+            .map_err(Error::internal)?;
+
+        let mut stream = consumer.stream();
+
         loop {
-            tokio::time::sleep(std::time::Duration::from_secs(5)).await;
+            if let Some(message) = stream.next().await {
+                let payload = message
+                    .map_err(Error::internal)?
+                    .payload()
+                    // SAFETY: the backend will always send a payload
+                    // NOTE: this could be handled without panicing
+                    .expect("no payload")
+                    .to_vec();
+
+                // SAFETY: the backend will always send valid utf-8
+                let payload = unsafe { String::from_utf8_unchecked(payload) };
+
+                tracing::debug!("event: {:?}", payload);
+
+                socket
+                    .send(Message::Text(payload))
+                    .await
+                    .map_err(Error::internal)?;
+            } else {
+                // kafka connection closed
+                socket.close().await.map_err(Error::internal)?;
+                break Ok(());
+            }
         }
     } else {
         // If the user is not in a team, then close the websocket, because there won't be any

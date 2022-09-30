@@ -28,3 +28,8 @@ pub fn routes<S: SharedTrait>() -> Router {
         .route("/join", post(join::join_team::<S>))
         .route("/leave", post(leave::leave_team::<S>))
 }
+
+#[inline]
+pub(super) fn get_kafka_topic(team_id: &str) -> String {
+    format!("Team-{}", team_id)
+}

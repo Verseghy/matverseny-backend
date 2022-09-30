@@ -100,7 +100,10 @@ impl Team {
         assert!(message["event"].is_string());
         assert_eq!(message["event"].as_str().unwrap(), "TEAM_INFO");
 
-        message["data"]["code"].as_str().expect("no code").to_owned()
+        message["data"]["code"]
+            .as_str()
+            .expect("no code")
+            .to_owned()
     }
 }
 
@@ -331,6 +334,7 @@ macro_rules! assert_error {
 pub(crate) use assert_error;
 
 #[allow(unused)]
+#[track_caller]
 pub fn get_socket_message(
     message: Option<Result<Message, tokio_tungstenite::tungstenite::Error>>,
 ) -> Value {
