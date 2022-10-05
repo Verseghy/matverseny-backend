@@ -100,10 +100,14 @@ impl Team {
         assert!(message["event"].is_string());
         assert_eq!(message["event"].as_str().unwrap(), "TEAM_INFO");
 
-        message["data"]["code"]
+        let code = message["data"]["code"]
             .as_str()
             .expect("no code")
-            .to_owned()
+            .to_owned();
+
+        socket.close(None).await;
+
+        code
     }
 }
 
