@@ -177,3 +177,36 @@ mod join {
 
     //TODO: test locked team
 }
+
+mod leave {
+    use super::*;
+
+    #[tokio::test]
+    async fn success() {
+        let app = App::new().await;
+        let user1 = app.register_user().await;
+        let team = app.create_team(&user1).await;
+
+        let user2 = app.register_user().await;
+        user2.join(&team.get_code().await).await;
+
+        let res = app.post("/team/leave").user(&user2).send().await;
+
+        assert_eq!(res.status(), StatusCode::OK);
+    }
+
+    #[tokio::test]
+    async fn not_in_team() {
+        let app = App::new().await;
+        let user1 = app.register_user().await;
+        let _team1 = app.create_team(&user1).await;
+
+        let user2 = app.register_user().await;
+
+        let res = app.post("/team/leave").user(&user2).send().await;
+
+        assert_error!(res, error::USER_NOT_IN_TEAM);
+    }
+
+    //TODO: test locked team
+}
