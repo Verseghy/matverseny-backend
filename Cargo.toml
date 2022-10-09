@@ -3,10 +3,13 @@ name = "matverseny-backend"
 version.workspace = true
 edition.workspace = true
 publish.workspace = true
+license-file.workspace = true
+
 [workspace.package]
 version = "0.1.0"
 edition = "2021"
 publish = false
+license-file = "LICENSE"
 
 [profile.release]
 strip = true
