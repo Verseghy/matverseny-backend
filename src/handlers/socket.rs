@@ -9,7 +9,9 @@ use entity::{
     users::{self, Class},
 };
 use futures::StreamExt;
-use rdkafka::{consumer::Consumer, consumer::StreamConsumer, ClientConfig, Message as _};
+use rdkafka::{
+    consumer::Consumer, consumer::StreamConsumer, ClientConfig, Message as _, TopicPartitionList,
+};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -118,14 +120,23 @@ async fn handler<S: SharedTrait>(shared: &S, claims: &Claims, mut socket: WebSoc
         let bootstrap_servers =
             std::env::var("KAFKA_BOOTSTRAP_SERVERS").map_err(Error::internal)?;
 
+        // TODO: create a global singleton consumer for performance reasons
         let consumer: StreamConsumer = ClientConfig::new()
             .set("bootstrap.servers", bootstrap_servers)
-            .set("group.id", "asd")
+            .set("group.id", "socket")
             .create()
             .map_err(Error::internal)?;
 
         consumer
-            .subscribe(&[&crate::handlers::team::get_kafka_topic(&team.id)])
+            .assign(&{
+                let mut list = TopicPartitionList::new();
+                list.add_partition(
+                    &crate::handlers::team::get_kafka_topic(&team.id),
+                    // TODO: research if this is reliable
+                    0,
+                );
+                list
+            })
             // This shouldn't happend because creating team should also create the kafka topic
             .map_err(Error::internal)?;
 
