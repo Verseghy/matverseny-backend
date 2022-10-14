@@ -18,7 +18,8 @@ use reqwest::{
     header::{HeaderName, HeaderValue},
     Client,
 };
-use sea_orm::{ConnectionTrait, Database, DbConn, Statement};
+use sea_orm::{ConnectionTrait, Database, DbConn, Statement, ConnectOptions};
+use tracing::log::LevelFilter;
 use serde::{de::DeserializeOwned, Serialize};
 use serde_json::{json, Value};
 use std::{
@@ -138,7 +139,10 @@ impl App {
     }
 
     async fn setup_database() -> (DbConn, DbConn, String) {
-        let conn = Database::connect(DEFAULT_URL)
+        let mut opts = ConnectOptions::new(DEFAULT_URL.to_owned());
+        opts.sqlx_logging_level(LevelFilter::Debug);
+
+        let conn = Database::connect(opts)
             .await
             .expect("failed to connect to database");
 
@@ -154,7 +158,10 @@ impl App {
         .await
         .expect("failed to create database");
 
-        let conn2 = Database::connect(format!("{}/{}", DEFAULT_URL, database))
+        let mut opts = ConnectOptions::new(format!("{}/{}", DEFAULT_URL, database));
+        opts.sqlx_logging_level(LevelFilter::Debug);
+
+        let conn2 = Database::connect(opts)
             .await
             .expect("failed to connect to database");
 
