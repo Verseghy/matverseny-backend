@@ -1,12 +1,9 @@
-use dotenvy::dotenv;
 use matverseny_backend::Shared;
 use std::net::{Ipv4Addr, SocketAddr, TcpListener};
 use tracing::level_filters::LevelFilter;
 
 #[tokio::main]
 async fn main() {
-    dotenv().ok();
-
     tracing_subscriber::fmt()
         .with_max_level(LevelFilter::DEBUG)
         .with_line_number(true)
