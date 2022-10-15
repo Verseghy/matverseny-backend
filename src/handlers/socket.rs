@@ -13,6 +13,8 @@ use rdkafka::{
     consumer::Consumer, consumer::StreamConsumer, ClientConfig, Message as _, TopicPartitionList,
 };
 use serde::{Deserialize, Serialize};
+use std::error::Error as _;
+use tokio_tungstenite::tungstenite::error::Error as TungsteniteError;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub enum Rank {
@@ -42,6 +44,20 @@ pub enum Event {
         code: String,
         locked: bool,
         members: Vec<Member>,
+    },
+    UpdateTeam {
+        #[serde(skip_serializing_if = "Option::is_none")]
+        name: Option<String>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        owner: Option<String>,
+        #[serde(
+            default,
+            skip_serializing_if = "Option::is_none",
+            with = "::serde_with::rust::double_option"
+        )]
+        coowner: Option<Option<String>>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        locked: Option<bool>,
     },
 }
 
@@ -103,6 +119,8 @@ async fn handler<S: SharedTrait>(shared: &S, claims: &Claims, mut socket: WebSoc
     if let Some((team, members)) = info {
         tracing::debug!("got team info: {:?}, members: {:?}", team, members);
 
+        tokio::spawn(async {});
+
         socket
             .send(Message::Text(
                 serde_json::to_string(&Event::TeamInfo {
@@ -120,10 +138,13 @@ async fn handler<S: SharedTrait>(shared: &S, claims: &Claims, mut socket: WebSoc
         let bootstrap_servers =
             std::env::var("KAFKA_BOOTSTRAP_SERVERS").map_err(Error::internal)?;
 
+        use rand::Rng;
+
         // TODO: create a global singleton consumer for performance reasons
         let consumer: StreamConsumer = ClientConfig::new()
             .set("bootstrap.servers", bootstrap_servers)
-            .set("group.id", "socket")
+            // .set("group.id", "socket")
+            .set("group.id", rand::thread_rng().gen::<u64>().to_string())
             .create()
             .map_err(Error::internal)?;
 
@@ -143,28 +164,42 @@ async fn handler<S: SharedTrait>(shared: &S, claims: &Claims, mut socket: WebSoc
         let mut stream = consumer.stream();
 
         loop {
-            if let Some(message) = stream.next().await {
-                let payload = message
-                    .map_err(Error::internal)?
-                    .payload()
-                    // SAFETY: the backend will always send a payload
-                    // NOTE: this could be handled without panicing
-                    .expect("no payload")
-                    .to_vec();
+            tokio::select! {
+                message = stream.next() => {
+                    if let Some(message) = message {
+                        let payload = message
+                            .map_err(Error::internal)?
+                            .payload()
+                            // SAFETY: the backend will always send a payload
+                            // NOTE: this could be handled without panicing
+                            .expect("no payload")
+                            .to_vec();
 
-                // SAFETY: the backend will always send valid utf-8
-                let payload = unsafe { String::from_utf8_unchecked(payload) };
+                        // SAFETY: the backend will always send valid utf-8
+                        let payload = unsafe { String::from_utf8_unchecked(payload) };
 
-                tracing::debug!("event: {:?}", payload);
+                        tracing::debug!("event: {:?}", payload);
 
-                socket
-                    .send(Message::Text(payload))
-                    .await
-                    .map_err(Error::internal)?;
-            } else {
-                // kafka connection closed
-                socket.close().await.map_err(Error::internal)?;
-                break Ok(());
+                        if let Err(err) = socket.send(Message::Text(payload)).await {
+                            let tungstenite_error = err.source().unwrap().downcast_ref::<TungsteniteError>().unwrap();
+                            tracing::error!("error: {:?}", tungstenite_error);
+                            break Err(Error::internal(err))
+                        }
+                    } else {
+                        // kafka connection closed
+                        socket.close().await.map_err(Error::internal)?;
+                        break Ok(());
+                    }
+                }
+                message = socket.recv() => {
+                    if let Some(Ok(Message::Close(_))) = message {
+                        tracing::debug!("socket closed by client");
+                        break Ok(())
+                    } else {
+                        // socket is closed
+                        break Ok(())
+                    }
+                }
             }
         }
     } else {

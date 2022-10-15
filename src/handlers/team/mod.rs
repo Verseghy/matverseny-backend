@@ -1,9 +1,13 @@
 mod create;
 mod join;
 mod leave;
+mod update;
 
 use crate::shared::SharedTrait;
-use axum::{routing::post, Router};
+use axum::{
+    routing::{patch, post},
+    Router,
+};
 
 /// Routes for team management
 ///
@@ -11,7 +15,6 @@ use axum::{routing::post, Router};
 /// POST  /team/create
 /// POST  /team/join
 /// POST  /team/leave
-/// GET   /team
 ///
 /// # Owner actions
 /// PATCH /team
@@ -27,6 +30,7 @@ pub fn routes<S: SharedTrait>() -> Router {
         .route("/create", post(create::create_team::<S>))
         .route("/join", post(join::join_team::<S>))
         .route("/leave", post(leave::leave_team::<S>))
+        .route("/", patch(update::update_team::<S>))
 }
 
 #[inline]

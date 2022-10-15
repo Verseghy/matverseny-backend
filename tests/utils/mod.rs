@@ -2,7 +2,9 @@ pub mod iam;
 
 #[allow(unused_imports)]
 pub(crate) mod prelude {
-    pub(crate) use super::{assert_error, App};
+    pub(crate) use super::{
+        assert_error, assert_event_type, assert_team_info, enable_logging, App,
+    };
     pub use futures::{Stream, StreamExt};
     pub use http::StatusCode;
     pub use matverseny_backend::error;
@@ -18,8 +20,7 @@ use reqwest::{
     header::{HeaderName, HeaderValue},
     Client,
 };
-use sea_orm::{ConnectionTrait, Database, DbConn, Statement, ConnectOptions};
-use tracing::log::LevelFilter;
+use sea_orm::{ConnectOptions, ConnectionTrait, Database, DbConn, Statement};
 use serde::{de::DeserializeOwned, Serialize};
 use serde_json::{json, Value};
 use std::{
@@ -31,6 +32,7 @@ use std::{
 };
 use tokio::{net::TcpStream, task::JoinHandle};
 use tokio_tungstenite::{tungstenite::Message, MaybeTlsStream, WebSocketStream};
+use tracing::log::LevelFilter;
 use uuid::Uuid;
 
 const DEFAULT_URL: &str = "postgres://matverseny:secret@127.0.0.1:5432";
@@ -230,6 +232,16 @@ impl App {
         }
     }
 
+    #[allow(dead_code)]
+    pub fn patch(&self, url: &str) -> RequestBuilder {
+        RequestBuilder {
+            builder: self
+                .inner
+                .client
+                .patch(format!("http://{}{}", self.inner.addr, url)),
+        }
+    }
+
     #[allow(unused)]
     pub fn socket(&self, url: &str) -> SocketRequestBuilder {
         let uri = format!("ws://{}{}", self.inner.addr, url);
@@ -355,3 +367,37 @@ pub fn get_socket_message(
         panic!("not text");
     }
 }
+
+#[allow(unused_macros)]
+macro_rules! assert_team_info {
+    ($socket:expr) => {{
+        let message = utils::get_socket_message((&mut $socket).next().await);
+
+        utils::assert_event_type!(message, "TEAM_INFO");
+    }};
+}
+
+pub(crate) use assert_team_info;
+
+#[allow(unused_macros)]
+macro_rules! assert_event_type {
+    ($message:expr, $ty:literal) => {{
+        assert!($message.is_object());
+        assert!($message["event"].is_string());
+        assert_eq!($message["event"].as_str().unwrap(), $ty);
+    }};
+}
+
+pub(crate) use assert_event_type;
+
+#[allow(unused_macros)]
+macro_rules! enable_logging {
+    ($level:ident) => {
+        ::tracing_subscriber::fmt()
+            .with_max_level(::tracing::level_filters::LevelFilter::$level)
+            .with_line_number(true)
+            .init();
+    };
+}
+
+pub(crate) use enable_logging;

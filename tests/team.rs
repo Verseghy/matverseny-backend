@@ -210,3 +210,343 @@ mod leave {
 
     //TODO: test locked team
 }
+
+mod update {
+    use super::*;
+
+    #[tokio::test]
+    async fn should_not_error_when_empty_json() {
+        let app = App::new().await;
+        let user = app.register_user().await;
+        let _team = app.create_team(&user).await;
+
+        let res = app.patch("/team").user(&user).json(&json!({})).send().await;
+
+        assert_eq!(res.status(), StatusCode::NO_CONTENT);
+    }
+
+    #[tokio::test]
+    async fn must_be_owner() {
+        let app = App::new().await;
+        let owner = app.register_user().await;
+        let team = app.create_team(&owner).await;
+
+        let member = app.register_user().await;
+        member.join(&team.get_code().await).await;
+
+        let res = app
+            .patch("/team")
+            .user(&member)
+            .json(&json!({
+                "owner": member.id,
+            }))
+            .send()
+            .await;
+
+        assert_error!(res, error::USER_NOT_OWNER);
+
+        let res = app
+            .patch("/team")
+            .user(&member)
+            .json(&json!({
+                "coowner": member.id,
+            }))
+            .send()
+            .await;
+
+        assert_error!(res, error::USER_NOT_OWNER);
+    }
+
+    #[tokio::test]
+    async fn non_existing_user() {
+        let app = App::new().await;
+        let owner = app.register_user().await;
+        let _team = app.create_team(&owner).await;
+
+        let res = app
+            .patch("/team")
+            .user(&owner)
+            .json(&json!({
+                "coowner": format!("UserID-{}", uuid::Uuid::nil()),
+            }))
+            .send()
+            .await;
+
+        assert_error!(res, error::NO_SUCH_MEMBER);
+
+        let res = app
+            .patch("/team")
+            .user(&owner)
+            .json(&json!({
+                "owner": format!("UserID-{}", uuid::Uuid::nil()),
+            }))
+            .send()
+            .await;
+
+        assert_error!(res, error::NO_SUCH_MEMBER);
+    }
+
+    #[tokio::test]
+    async fn existing_user_but_not_a_team_member() {
+        let app = App::new().await;
+        let owner = app.register_user().await;
+        let _team = app.create_team(&owner).await;
+
+        let user = app.register_user().await;
+
+        let res = app
+            .patch("/team")
+            .user(&owner)
+            .json(&json!({
+                "coowner": user.id,
+            }))
+            .send()
+            .await;
+
+        assert_error!(res, error::NO_SUCH_MEMBER);
+
+        let res = app
+            .patch("/team")
+            .user(&owner)
+            .json(&json!({
+                "owner": user.id,
+            }))
+            .send()
+            .await;
+
+        assert_error!(res, error::NO_SUCH_MEMBER);
+    }
+
+    #[tokio::test]
+    async fn not_in_team() {
+        let app = App::new().await;
+        let user = app.register_user().await;
+
+        let res = app
+            .patch("/team")
+            .user(&user)
+            .json(&json!({
+                "name": "some cool team name",
+            }))
+            .send()
+            .await;
+
+        assert_error!(res, error::USER_NOT_IN_TEAM);
+    }
+
+    #[tokio::test]
+    async fn update_while_locking() {
+        let app = App::new().await;
+        let user = app.register_user().await;
+        let _team = app.create_team(&user).await;
+
+        let res = app
+            .patch("/team")
+            .user(&user)
+            .json(&json!({
+                "name": "best team name ever",
+                "locked": true,
+            }))
+            .send()
+            .await;
+
+        assert_eq!(res.status(), StatusCode::NO_CONTENT);
+    }
+
+    #[tokio::test]
+    async fn locked_team() {
+        let app = App::new().await;
+        let user = app.register_user().await;
+        let _team = app.create_team(&user).await;
+
+        let res = app
+            .patch("/team")
+            .user(&user)
+            .json(&json!({
+                "locked": true,
+            }))
+            .send()
+            .await;
+
+        assert_eq!(res.status(), StatusCode::NO_CONTENT);
+
+        let res = app
+            .patch("/team")
+            .user(&user)
+            .json(&json!({
+                "name": "the worst team name ever",
+            }))
+            .send()
+            .await;
+
+        assert_error!(res, error::LOCKED_TEAM);
+    }
+
+    #[tokio::test]
+    async fn update_while_unlocking() {
+        let app = App::new().await;
+        let user = app.register_user().await;
+        let _team = app.create_team(&user).await;
+
+        let res = app
+            .patch("/team")
+            .user(&user)
+            .json(&json!({
+                "locked": true,
+            }))
+            .send()
+            .await;
+
+        assert_eq!(res.status(), StatusCode::NO_CONTENT);
+
+        let res = app
+            .patch("/team")
+            .user(&user)
+            .json(&json!({
+                "name": "the worst team name ever",
+                "locked": false,
+            }))
+            .send()
+            .await;
+
+        assert_eq!(res.status(), StatusCode::NO_CONTENT);
+    }
+
+    #[tokio::test]
+    async fn success_name() {
+        let app = App::new().await;
+        let user = app.register_user().await;
+        let _team = app.create_team(&user).await;
+
+        let mut socket = app.socket("/ws").user(&user).start().await;
+        assert_team_info!(socket);
+
+        let res = app
+            .patch("/team")
+            .user(&user)
+            .json(&json!({
+                "name": "new name",
+            }))
+            .send()
+            .await;
+
+        assert_eq!(res.status(), StatusCode::NO_CONTENT);
+
+        let message = utils::get_socket_message(socket.next().await);
+
+        assert_eq!(
+            message,
+            json!({
+                "event": "UPDATE_TEAM",
+                "data": {
+                    "name": "new name",
+                }
+            })
+        );
+    }
+
+    // #[tokio::test]
+    // async fn success_owner() {
+    //     let app = App::new().await;
+    //     let owner = app.register_user().await;
+    //     let team = app.create_team(&owner).await;
+    //
+    //     let member = app.register_user().await;
+    //     member.join(&team.get_code().await).await;
+    //
+    //     // enable_logging!(DEBUG);
+    //
+    //     let mut socket = app.socket("/ws").user(&owner).start().await;
+    //     assert_team_info!(socket);
+    //
+    //     let res = app
+    //         .patch("/team")
+    //         .user(&owner)
+    //         .json(&json!({
+    //             "owner": member.id,
+    //         }))
+    //         .send()
+    //         .await;
+    //
+    //     assert_eq!(res.status(), StatusCode::NO_CONTENT);
+    //
+    //     let message = utils::get_socket_message(socket.next().await);
+    //
+    //     assert_eq!(
+    //         message,
+    //         json!({
+    //             "event": "UPDATE_TEAM",
+    //             "data": {
+    //                 "owner": member.id,
+    //             }
+    //         })
+    //     );
+    // }
+
+    // #[tokio::test]
+    // async fn success_coowner() {
+    //     let app = App::new().await;
+    //     let owner = app.register_user().await;
+    //     let team = app.create_team(&owner).await;
+    //
+    //     let member = app.register_user().await;
+    //     member.join(&team.get_code().await).await;
+    //
+    //     let mut socket = app.socket("/ws").user(&owner).start().await;
+    //     assert_team_info!(socket);
+    //
+    //     let res = app
+    //         .patch("/team")
+    //         .user(&owner)
+    //         .json(&json!({
+    //             "coowner": member.id,
+    //         }))
+    //         .send()
+    //         .await;
+    //
+    //     assert_eq!(res.status(), StatusCode::NO_CONTENT);
+    //
+    //     let message = utils::get_socket_message(socket.next().await);
+    //
+    //     assert_eq!(
+    //         message,
+    //         json!({
+    //             "event": "UPDATE_TEAM",
+    //             "data": {
+    //                 "coowner": member.id,
+    //             }
+    //         })
+    //     );
+    // }
+
+    #[tokio::test]
+    async fn delete_coowner() {
+        let app = App::new().await;
+        let owner = app.register_user().await;
+        let _team = app.create_team(&owner).await;
+
+        let mut socket = app.socket("/ws").user(&owner).start().await;
+        assert_team_info!(socket);
+
+        let res = app
+            .patch("/team")
+            .user(&owner)
+            .json(&json!({ "coowner": null }))
+            .send()
+            .await;
+
+        assert_eq!(res.status(), StatusCode::NO_CONTENT);
+
+        let message = utils::get_socket_message(socket.next().await);
+
+        assert_eq!(
+            message,
+            json!({
+                "event": "UPDATE_TEAM",
+                "data": {
+                    "coowner": null,
+                }
+            })
+        );
+    }
+}

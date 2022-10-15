@@ -19,3 +19,11 @@ error!(
 error!(USER_ALREADY_EXISTS, BAD_REQUEST, 10, "user already exists");
 error!(USER_NOT_IN_TEAM, BAD_REQUEST, 11, "user is not in a team");
 error!(USER_NOT_REGISTERED, FORBIDDEN, 12, "user is not registered");
+error!(
+    USER_NOT_OWNER,
+    FORBIDDEN, 13, "user must be the owner of the team"
+);
+error!(
+    NO_SUCH_MEMBER,
+    BAD_REQUEST, 14, "user is not a member of the team"
+);
