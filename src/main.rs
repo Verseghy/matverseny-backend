@@ -5,7 +5,7 @@ use tracing::level_filters::LevelFilter;
 #[tokio::main]
 async fn main() {
     tracing_subscriber::fmt()
-        .with_max_level(LevelFilter::DEBUG)
+        .with_max_level(LevelFilter::INFO)
         .with_line_number(true)
         .init();
 
