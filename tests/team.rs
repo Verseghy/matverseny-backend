@@ -671,7 +671,12 @@ mod disband {
             message,
             CloseFrame {
                 code: CloseCode::Normal,
-                reason: Cow::Borrowed("team disbanded"),
+                reason: Cow::Owned(
+                    serde_json::to_string(&json!({
+                        "event": "DISBAND_TEAM",
+                    }))
+                    .unwrap()
+                ),
             }
         );
 
@@ -682,7 +687,12 @@ mod disband {
             message,
             CloseFrame {
                 code: CloseCode::Normal,
-                reason: Cow::Borrowed("team disbanded"),
+                reason: Cow::Owned(
+                    serde_json::to_string(&json!({
+                        "event": "DISBAND_TEAM",
+                    }))
+                    .unwrap()
+                ),
             }
         );
 
@@ -693,8 +703,254 @@ mod disband {
             message,
             CloseFrame {
                 code: CloseCode::Normal,
-                reason: Cow::Borrowed("team disbanded"),
+                reason: Cow::Owned(
+                    serde_json::to_string(&json!({
+                        "event": "DISBAND_TEAM",
+                    }))
+                    .unwrap()
+                ),
             }
         );
+    }
+}
+
+mod kick {
+    use super::*;
+
+    #[tokio::test]
+    async fn member_cannot_kick() {
+        let app = App::new().await;
+        let owner = app.register_user().await;
+        let team = app.create_team(&owner).await;
+
+        let member1 = app.register_user().await;
+        member1.join(&team.get_code().await).await;
+
+        let member2 = app.register_user().await;
+        member2.join(&team.get_code().await).await;
+
+        let res = app
+            .post("/team/kick")
+            .user(&member1)
+            .json(&json!({
+                "user": member2.id,
+            }))
+            .send()
+            .await;
+
+        assert_error!(res, error::USER_NOT_COOWNER)
+    }
+
+    #[tokio::test]
+    async fn locked_team() {
+        let app = App::new().await;
+        let owner = app.register_user().await;
+        let team = app.create_team(&owner).await;
+
+        let member = app.register_user().await;
+        member.join(&team.get_code().await).await;
+
+        team.lock().await;
+
+        let res = app
+            .post("/team/kick")
+            .user(&owner)
+            .json(&json!({
+                "user": member.id,
+            }))
+            .send()
+            .await;
+
+        assert_error!(res, error::LOCKED_TEAM);
+    }
+
+    #[tokio::test]
+    async fn cannot_kick_owner() {
+        let app = App::new().await;
+        let owner = app.register_user().await;
+        let team = app.create_team(&owner).await;
+
+        let member = app.register_user().await;
+        member.join(&team.get_code().await).await;
+
+        let res = app
+            .patch("/team")
+            .user(&owner)
+            .json(&json!({
+                "coowner": member.id,
+            }))
+            .send()
+            .await;
+
+        assert_eq!(res.status(), StatusCode::NO_CONTENT);
+
+        let res = app
+            .post("/team/kick")
+            .user(&member)
+            .json(&json!({
+                "user": owner.id,
+            }))
+            .send()
+            .await;
+
+        assert_error!(res, error::CANNOT_KICK_OWNER);
+    }
+
+    #[tokio::test]
+    async fn cannot_kick_themself() {
+        let app = App::new().await;
+        let owner = app.register_user().await;
+        let team = app.create_team(&owner).await;
+
+        let member = app.register_user().await;
+        member.join(&team.get_code().await).await;
+
+        let res = app
+            .patch("/team")
+            .user(&owner)
+            .json(&json!({
+                "coowner": member.id,
+            }))
+            .send()
+            .await;
+
+        assert_eq!(res.status(), StatusCode::NO_CONTENT);
+
+        let res = app
+            .post("/team/kick")
+            .user(&member)
+            .json(&json!({
+                "user": member.id,
+            }))
+            .send()
+            .await;
+
+        assert_error!(res, error::CANNOT_KICK_THEMSELF);
+    }
+
+    #[tokio::test]
+    async fn not_member() {
+        let app = App::new().await;
+        let owner = app.register_user().await;
+        let _team = app.create_team(&owner).await;
+
+        let member = app.register_user().await;
+
+        let res = app
+            .post("/team/kick")
+            .user(&owner)
+            .json(&json!({
+                "user": member.id,
+            }))
+            .send()
+            .await;
+
+        assert_error!(res, error::NO_SUCH_MEMBER);
+    }
+
+    #[tokio::test]
+    async fn user_not_exists() {
+        let app = App::new().await;
+        let owner = app.register_user().await;
+        let _team = app.create_team(&owner).await;
+
+        let res = app
+            .post("/team/kick")
+            .user(&owner)
+            .json(&json!({
+                "user": "UserID-test",
+            }))
+            .send()
+            .await;
+
+        assert_error!(res, error::NO_SUCH_MEMBER);
+    }
+
+    #[tokio::test]
+    async fn success_owner_kick_member() {
+        let app = App::new().await;
+        let owner = app.register_user().await;
+        let team = app.create_team(&owner).await;
+
+        let member = app.register_user().await;
+        member.join(&team.get_code().await).await;
+
+        let res = app
+            .post("/team/kick")
+            .user(&owner)
+            .json(&json!({
+                "user": member.id,
+            }))
+            .send()
+            .await;
+
+        assert_eq!(res.status(), StatusCode::NO_CONTENT);
+    }
+
+    #[tokio::test]
+    async fn success_owner_kick_coowner() {
+        let app = App::new().await;
+        let owner = app.register_user().await;
+        let team = app.create_team(&owner).await;
+
+        let member = app.register_user().await;
+        member.join(&team.get_code().await).await;
+
+        let res = app
+            .patch("/team")
+            .user(&owner)
+            .json(&json!({
+                "coowner": member.id,
+            }))
+            .send()
+            .await;
+
+        assert_eq!(res.status(), StatusCode::NO_CONTENT);
+
+        let res = app
+            .post("/team/kick")
+            .user(&owner)
+            .json(&json!({
+                "user": member.id,
+            }))
+            .send()
+            .await;
+
+        assert_eq!(res.status(), StatusCode::NO_CONTENT);
+    }
+
+    #[tokio::test]
+    async fn success_coowner_kick_member() {
+        let app = App::new().await;
+        let owner = app.register_user().await;
+        let team = app.create_team(&owner).await;
+
+        let coowner = app.register_user().await;
+        coowner.join(&team.get_code().await).await;
+
+        let member = app.register_user().await;
+        member.join(&team.get_code().await).await;
+
+        let res = app
+            .patch("/team")
+            .user(&owner)
+            .json(&json!({
+                "coowner": coowner.id,
+            }))
+            .send()
+            .await;
+
+        assert_eq!(res.status(), StatusCode::NO_CONTENT);
+
+        let res = app
+            .post("/team/kick")
+            .user(&coowner)
+            .json(&json!({
+                "user": member.id,
+            }))
+            .send()
+            .await;
+
+        assert_eq!(res.status(), StatusCode::NO_CONTENT);
     }
 }

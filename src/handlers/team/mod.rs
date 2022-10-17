@@ -1,6 +1,7 @@
 mod create;
 mod disband;
 mod join;
+mod kick;
 mod leave;
 mod update;
 
@@ -31,6 +32,7 @@ pub fn routes<S: SharedTrait>() -> Router {
         .route("/leave", post(leave::leave_team::<S>))
         .route("/", patch(update::update_team::<S>))
         .route("/disband", post(disband::disband_team::<S>))
+        .route("/kick", post(kick::kick_user::<S>))
 }
 
 #[inline]

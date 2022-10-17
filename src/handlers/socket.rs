@@ -64,6 +64,9 @@ pub enum Event {
         locked: Option<bool>,
     },
     DisbandTeam,
+    KickUser {
+        user: String,
+    },
 }
 
 pub async fn ws_handler<S: SharedTrait>(
@@ -191,18 +194,18 @@ async fn handler(
                         .expect("no payload")
                         .to_vec();
 
-                    if let Event::DisbandTeam = serde_json::from_slice(&payload).unwrap() {
+                    // SAFETY: the backend will always send valid utf-8
+                    let payload = unsafe { String::from_utf8_unchecked(payload) };
+
+                    if let Event::DisbandTeam | Event::KickUser { .. } = serde_json::from_str(&payload).unwrap() {
                         let _ = socket.send(Message::Close(Some(CloseFrame {
                             code: close_code::NORMAL,
-                            // TODO: maybe json?
-                            reason: Cow::Borrowed("team disbanded"),
+                            reason: Cow::Owned(payload),
                         }))).await;
 
                         return Ok(())
                     }
 
-                    // SAFETY: the backend will always send valid utf-8
-                    let payload = unsafe { String::from_utf8_unchecked(payload) };
 
                     tracing::debug!("event: {:?}", payload);
 

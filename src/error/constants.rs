@@ -27,3 +27,12 @@ error!(
     NO_SUCH_MEMBER,
     BAD_REQUEST, 14, "user is not a member of the team"
 );
+error!(
+    USER_NOT_COOWNER,
+    FORBIDDEN, 15, "user must be the owner or the coowner of the team"
+);
+error!(
+    CANNOT_KICK_OWNER,
+    FORBIDDEN, 16, "cannot kick the owner of a team"
+);
+error!(CANNOT_KICK_THEMSELF, FORBIDDEN, 17, "cannot kick yourself");
