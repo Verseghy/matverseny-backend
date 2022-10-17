@@ -189,7 +189,36 @@ mod join {
         assert_error!(res, error::ALREADY_IN_TEAM);
     }
 
-    //TODO: test locked team
+    #[tokio::test]
+    async fn locked_team() {
+        let app = App::new().await;
+        let owner = app.register_user().await;
+        let team = app.create_team(&owner).await;
+
+        let res = app
+            .patch("/team")
+            .user(&owner)
+            .json(&json!({
+                "locked": true,
+            }))
+            .send()
+            .await;
+
+        assert_eq!(res.status(), StatusCode::NO_CONTENT);
+
+        let user = app.register_user().await;
+
+        let res = app
+            .post("/team/join")
+            .user(&user)
+            .json(&json!({
+                "code": team.get_code().await,
+            }))
+            .send()
+            .await;
+
+        assert_error!(res, error::LOCKED_TEAM);
+    }
 }
 
 mod leave {
