@@ -121,8 +121,10 @@ mod join {
         let owner = app.register_user().await;
         let team = app.create_team(&owner).await;
 
-        let join_code = team.get_code().await;
+        let mut socket = app.socket("/ws").user(&owner).start().await;
+        assert_team_info!(socket);
 
+        let join_code = team.get_code().await;
         let user = app.register_user().await;
 
         let res = app
@@ -135,6 +137,18 @@ mod join {
             .await;
 
         assert_eq!(res.status(), StatusCode::OK);
+
+        let message = utils::get_socket_message(socket.next().await);
+
+        assert_eq!(
+            message,
+            json!({
+                "event": "JOIN_TEAM",
+                "data": {
+                    "user": user.id,
+                }
+            })
+        );
     }
 
     #[tokio::test]
