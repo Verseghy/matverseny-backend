@@ -38,6 +38,9 @@ pub enum Event {
     JoinTeam {
         user: String,
     },
+    LeaveTeam {
+        user: String,
+    },
     TeamInfo {
         #[serde(skip)]
         id: String,

@@ -198,31 +198,66 @@ mod leave {
     #[tokio::test]
     async fn success() {
         let app = App::new().await;
-        let user1 = app.register_user().await;
-        let team = app.create_team(&user1).await;
+        let owner = app.register_user().await;
+        let team = app.create_team(&owner).await;
 
-        let user2 = app.register_user().await;
-        user2.join(&team.get_code().await).await;
+        let member = app.register_user().await;
+        member.join(&team.get_code().await).await;
 
-        let res = app.post("/team/leave").user(&user2).send().await;
+        let mut socket = app.socket("/ws").user(&owner).start().await;
+        assert_team_info!(socket);
 
+        let res = app.post("/team/leave").user(&member).send().await;
         assert_eq!(res.status(), StatusCode::OK);
+
+        let message = utils::get_socket_message(socket.next().await);
+
+        assert_eq!(
+            message,
+            json!({
+                "event": "LEAVE_TEAM",
+                "data": {
+                    "user": member.id,
+                }
+            })
+        );
     }
 
     #[tokio::test]
     async fn not_in_team() {
         let app = App::new().await;
-        let user1 = app.register_user().await;
-        let _team1 = app.create_team(&user1).await;
+        let owner = app.register_user().await;
+        let _team = app.create_team(&owner).await;
 
-        let user2 = app.register_user().await;
+        let user = app.register_user().await;
 
-        let res = app.post("/team/leave").user(&user2).send().await;
+        let res = app.post("/team/leave").user(&user).send().await;
 
         assert_error!(res, error::USER_NOT_IN_TEAM);
     }
 
-    //TODO: test locked team
+    #[tokio::test]
+    async fn locked_team() {
+        let app = App::new().await;
+        let owner = app.register_user().await;
+        let team = app.create_team(&owner).await;
+
+        let member = app.register_user().await;
+        member.join(&team.get_code().await).await;
+
+        let res = app
+            .patch("/team")
+            .user(&owner)
+            .json(&json!({
+                "locked": true,
+            }))
+            .send()
+            .await;
+        assert_eq!(res.status(), StatusCode::NO_CONTENT);
+
+        let res = app.post("/team/leave").user(&member).send().await;
+        assert_error!(res, error::LOCKED_TEAM);
+    }
 }
 
 mod update {
