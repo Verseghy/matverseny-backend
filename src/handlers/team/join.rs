@@ -63,8 +63,8 @@ pub async fn join_team<S: SharedTrait>(
         shared
             .kafka_producer()
             .send(
-                FutureRecord::to(&super::get_kafka_topic(&team.id))
-                    .key("team")
+                FutureRecord::<(), String>::to(&super::get_kafka_topic(&team.id))
+                    .partition(0)
                     .payload(&kafka_payload),
                 Duration::from_secs(5),
             )
