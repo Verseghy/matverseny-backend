@@ -459,79 +459,77 @@ mod update {
         );
     }
 
-    // #[tokio::test]
-    // async fn success_owner() {
-    //     let app = App::new().await;
-    //     let owner = app.register_user().await;
-    //     let team = app.create_team(&owner).await;
-    //
-    //     let member = app.register_user().await;
-    //     member.join(&team.get_code().await).await;
-    //
-    //     // enable_logging!(DEBUG);
-    //
-    //     let mut socket = app.socket("/ws").user(&owner).start().await;
-    //     assert_team_info!(socket);
-    //
-    //     let res = app
-    //         .patch("/team")
-    //         .user(&owner)
-    //         .json(&json!({
-    //             "owner": member.id,
-    //         }))
-    //         .send()
-    //         .await;
-    //
-    //     assert_eq!(res.status(), StatusCode::NO_CONTENT);
-    //
-    //     let message = utils::get_socket_message(socket.next().await);
-    //
-    //     assert_eq!(
-    //         message,
-    //         json!({
-    //             "event": "UPDATE_TEAM",
-    //             "data": {
-    //                 "owner": member.id,
-    //             }
-    //         })
-    //     );
-    // }
+    #[tokio::test]
+    async fn success_owner() {
+        let app = App::new().await;
+        let owner = app.register_user().await;
+        let team = app.create_team(&owner).await;
 
-    // #[tokio::test]
-    // async fn success_coowner() {
-    //     let app = App::new().await;
-    //     let owner = app.register_user().await;
-    //     let team = app.create_team(&owner).await;
-    //
-    //     let member = app.register_user().await;
-    //     member.join(&team.get_code().await).await;
-    //
-    //     let mut socket = app.socket("/ws").user(&owner).start().await;
-    //     assert_team_info!(socket);
-    //
-    //     let res = app
-    //         .patch("/team")
-    //         .user(&owner)
-    //         .json(&json!({
-    //             "coowner": member.id,
-    //         }))
-    //         .send()
-    //         .await;
-    //
-    //     assert_eq!(res.status(), StatusCode::NO_CONTENT);
-    //
-    //     let message = utils::get_socket_message(socket.next().await);
-    //
-    //     assert_eq!(
-    //         message,
-    //         json!({
-    //             "event": "UPDATE_TEAM",
-    //             "data": {
-    //                 "coowner": member.id,
-    //             }
-    //         })
-    //     );
-    // }
+        let member = app.register_user().await;
+        member.join(&team.get_code().await).await;
+
+        let mut socket = app.socket("/ws").user(&owner).start().await;
+        assert_team_info!(socket);
+
+        let res = app
+            .patch("/team")
+            .user(&owner)
+            .json(&json!({
+                "owner": member.id,
+            }))
+            .send()
+            .await;
+
+        assert_eq!(res.status(), StatusCode::NO_CONTENT);
+
+        let message = utils::get_socket_message(socket.next().await);
+
+        assert_eq!(
+            message,
+            json!({
+                "event": "UPDATE_TEAM",
+                "data": {
+                    "owner": member.id,
+                }
+            })
+        );
+    }
+
+    #[tokio::test]
+    async fn success_coowner() {
+        let app = App::new().await;
+        let owner = app.register_user().await;
+        let team = app.create_team(&owner).await;
+
+        let member = app.register_user().await;
+        member.join(&team.get_code().await).await;
+
+        let mut socket = app.socket("/ws").user(&owner).start().await;
+        assert_team_info!(socket);
+
+        let res = app
+            .patch("/team")
+            .user(&owner)
+            .json(&json!({
+                "coowner": member.id,
+            }))
+            .send()
+            .await;
+
+        assert_eq!(res.status(), StatusCode::NO_CONTENT);
+
+        let message = utils::get_socket_message(socket.next().await);
+
+        assert_eq!(
+            message,
+            json!({
+                "event": "UPDATE_TEAM",
+                "data": {
+                    "coowner": member.id,
+                }
+            })
+        );
+    }
 
     #[tokio::test]
     async fn delete_coowner() {

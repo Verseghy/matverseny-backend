@@ -284,6 +284,10 @@ impl SocketRequestBuilder {
             .expect("failed to create websocket");
         stream
     }
+
+    pub fn into_inner(self) -> http::request::Builder {
+        self.builder
+    }
 }
 
 #[derive(Debug)]

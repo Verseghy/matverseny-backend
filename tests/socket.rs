@@ -1,16 +1,30 @@
 mod utils;
 
-use tokio_tungstenite::tungstenite::Message;
+use tokio_tungstenite::tungstenite::Error;
 use utils::prelude::*;
 
 #[tokio::test]
-async fn close_when_no_team() {
+async fn no_team() {
     let app = App::new().await;
     let user = app.register_user().await;
 
-    let mut socket = app.socket("/ws").user(&user).start().await;
+    let request = app
+        .socket("/ws")
+        .user(&user)
+        .into_inner()
+        .body(())
+        .expect("failed to create request");
 
-    assert!(matches!(socket.next().await, Some(Ok(Message::Close(_)))));
+    let socket = tokio_tungstenite::connect_async(request).await;
+
+    if let Err(Error::Http(response)) = socket {
+        assert_eq!(response.status(), error::USER_NOT_IN_TEAM.status());
+        // TODO: verify body when https://github.com/snapview/tungstenite-rs/pull/298 lands
+        // this is should break when the PR gets merged
+        assert_eq!(response.body(), &None);
+    } else {
+        assert!(false);
+    }
 }
 
 #[tokio::test]
