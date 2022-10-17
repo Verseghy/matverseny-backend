@@ -1,6 +1,6 @@
 use crate::{error, iam::Claims, Error, Result, SharedTrait};
 use axum::{
-    extract::ws::{Message, WebSocket, WebSocketUpgrade},
+    extract::ws::{close_code, CloseFrame, Message, WebSocket, WebSocketUpgrade},
     response::IntoResponse,
     Extension,
 };
@@ -14,7 +14,7 @@ use rdkafka::{
     ClientConfig, Message as _, TopicPartitionList,
 };
 use serde::{Deserialize, Serialize};
-use std::error::Error as _;
+use std::{borrow::Cow, error::Error as _};
 use tokio_tungstenite::tungstenite::error::Error as TungsteniteError;
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -63,6 +63,7 @@ pub enum Event {
         #[serde(skip_serializing_if = "Option::is_none")]
         locked: Option<bool>,
     },
+    DisbandTeam,
 }
 
 pub async fn ws_handler<S: SharedTrait>(
@@ -189,6 +190,16 @@ async fn handler(
                         // NOTE: this could be handled without panicing
                         .expect("no payload")
                         .to_vec();
+
+                    if let Event::DisbandTeam = serde_json::from_slice(&payload).unwrap() {
+                        let _ = socket.send(Message::Close(Some(CloseFrame {
+                            code: close_code::NORMAL,
+                            // TODO: maybe json?
+                            reason: Cow::Borrowed("team disbanded"),
+                        }))).await;
+
+                        return Ok(())
+                    }
 
                     // SAFETY: the backend will always send valid utf-8
                     let payload = unsafe { String::from_utf8_unchecked(payload) };

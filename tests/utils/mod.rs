@@ -3,7 +3,7 @@ pub mod iam;
 #[allow(unused_imports)]
 pub(crate) mod prelude {
     pub(crate) use super::{
-        assert_error, assert_event_type, assert_team_info, enable_logging, App,
+        assert_close_frame, assert_error, assert_event_type, assert_team_info, enable_logging, App,
     };
     pub use futures::{Stream, StreamExt};
     pub use http::StatusCode;
@@ -111,6 +111,21 @@ impl Team {
         socket.close(None).await;
 
         code
+    }
+
+    #[allow(unused)]
+    pub async fn lock(&self) {
+        let res = self
+            .app
+            .patch("/team")
+            .user(&self.owner)
+            .json(&json!({
+                "locked": true,
+            }))
+            .send()
+            .await;
+
+        assert_eq!(res.status(), StatusCode::NO_CONTENT);
     }
 }
 
@@ -405,3 +420,16 @@ macro_rules! enable_logging {
 }
 
 pub(crate) use enable_logging;
+
+#[allow(unused_macros)]
+macro_rules! assert_close_frame {
+    ($expr:expr, $frame:expr) => {
+        if let Some(Ok(::tokio_tungstenite::tungstenite::Message::Close(Some(frame)))) = $expr {
+            assert_eq!(frame, $frame);
+        } else {
+            assert!(false, "no close frame");
+        }
+    };
+}
+
+pub(crate) use assert_close_frame;

@@ -195,16 +195,7 @@ mod join {
         let owner = app.register_user().await;
         let team = app.create_team(&owner).await;
 
-        let res = app
-            .patch("/team")
-            .user(&owner)
-            .json(&json!({
-                "locked": true,
-            }))
-            .send()
-            .await;
-
-        assert_eq!(res.status(), StatusCode::NO_CONTENT);
+        team.lock().await;
 
         let user = app.register_user().await;
 
@@ -274,15 +265,7 @@ mod leave {
         let member = app.register_user().await;
         member.join(&team.get_code().await).await;
 
-        let res = app
-            .patch("/team")
-            .user(&owner)
-            .json(&json!({
-                "locked": true,
-            }))
-            .send()
-            .await;
-        assert_eq!(res.status(), StatusCode::NO_CONTENT);
+        team.lock().await;
 
         let res = app.post("/team/leave").user(&member).send().await;
         assert_error!(res, error::LOCKED_TEAM);
@@ -623,6 +606,95 @@ mod update {
                     "coowner": null,
                 }
             })
+        );
+    }
+}
+
+mod disband {
+    use super::*;
+    use std::borrow::Cow;
+    use tokio_tungstenite::tungstenite::protocol::{frame::coding::CloseCode, CloseFrame};
+
+    #[tokio::test]
+    async fn not_owner() {
+        let app = App::new().await;
+        let owner = app.register_user().await;
+        let team = app.create_team(&owner).await;
+
+        let member = app.register_user().await;
+        member.join(&team.get_code().await).await;
+
+        let res = app.post("/team/disband").user(&member).send().await;
+
+        assert_error!(res, error::USER_NOT_OWNER);
+    }
+
+    #[tokio::test]
+    async fn locked_team() {
+        let app = App::new().await;
+        let owner = app.register_user().await;
+        let team = app.create_team(&owner).await;
+
+        team.lock().await;
+
+        let res = app.post("/team/disband").user(&owner).send().await;
+
+        assert_error!(res, error::LOCKED_TEAM);
+    }
+
+    #[tokio::test]
+    async fn success() {
+        let app = App::new().await;
+        let owner = app.register_user().await;
+        let team = app.create_team(&owner).await;
+
+        let member1 = app.register_user().await;
+        member1.join(&team.get_code().await).await;
+
+        let member2 = app.register_user().await;
+        member2.join(&team.get_code().await).await;
+
+        let mut socket1 = app.socket("/ws").user(&owner).start().await;
+        assert_team_info!(socket1);
+        let mut socket2 = app.socket("/ws").user(&member1).start().await;
+        assert_team_info!(socket2);
+        let mut socket3 = app.socket("/ws").user(&member2).start().await;
+        assert_team_info!(socket3);
+
+        let res = app.post("/team/disband").user(&owner).send().await;
+        assert_eq!(res.status(), StatusCode::NO_CONTENT);
+
+        let res = app.post("/team/leave").user(&owner).send().await;
+        assert_error!(res, error::USER_NOT_IN_TEAM);
+        let message = socket1.next().await;
+        assert_close_frame!(
+            message,
+            CloseFrame {
+                code: CloseCode::Normal,
+                reason: Cow::Borrowed("team disbanded"),
+            }
+        );
+
+        let res = app.post("/team/leave").user(&member1).send().await;
+        assert_error!(res, error::USER_NOT_IN_TEAM);
+        let message = socket2.next().await;
+        assert_close_frame!(
+            message,
+            CloseFrame {
+                code: CloseCode::Normal,
+                reason: Cow::Borrowed("team disbanded"),
+            }
+        );
+
+        let res = app.post("/team/leave").user(&member2).send().await;
+        assert_error!(res, error::USER_NOT_IN_TEAM);
+        let message = socket3.next().await;
+        assert_close_frame!(
+            message,
+            CloseFrame {
+                code: CloseCode::Normal,
+                reason: Cow::Borrowed("team disbanded"),
+            }
         );
     }
 }

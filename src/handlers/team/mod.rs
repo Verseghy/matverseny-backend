@@ -1,4 +1,5 @@
 mod create;
+mod disband;
 mod join;
 mod leave;
 mod update;
@@ -19,8 +20,6 @@ use axum::{
 /// # Owner actions
 /// PATCH /team
 /// POST  /team/disband
-/// POST  /team/lock
-/// POST  /team/coowner
 ///
 /// # Co-Owner actions
 /// POST  /team/kick
@@ -31,6 +30,7 @@ pub fn routes<S: SharedTrait>() -> Router {
         .route("/join", post(join::join_team::<S>))
         .route("/leave", post(leave::leave_team::<S>))
         .route("/", patch(update::update_team::<S>))
+        .route("/disband", post(disband::disband_team::<S>))
 }
 
 #[inline]
