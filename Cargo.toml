@@ -28,7 +28,7 @@ tracing = "0.1.36"
 tracing-subscriber = "0.3.15"
 entity = { path = "./entity" }
 sea-orm = { version = "0.9.2", default-features = false, features = ["runtime-tokio-rustls", "sqlx-postgres"] }
-serde_json = "1.0.85"
+serde_json = { version = "1.0.85", features = ["preserve_order"] }
 validator = { version = "0.16.0", features = ["derive"] }
 pin-project = "1.0.12"
 jsonwebtoken = "8.1.1"

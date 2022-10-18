@@ -716,6 +716,8 @@ mod disband {
 
 mod kick {
     use super::*;
+    use std::borrow::Cow;
+    use tokio_tungstenite::tungstenite::protocol::{frame::coding::CloseCode, CloseFrame};
 
     #[tokio::test]
     async fn member_cannot_kick() {
@@ -875,6 +877,11 @@ mod kick {
         let member = app.register_user().await;
         member.join(&team.get_code().await).await;
 
+        let mut socket1 = app.socket("/ws").user(&owner).start().await;
+        assert_team_info!(socket1);
+        let mut socket2 = app.socket("/ws").user(&member).start().await;
+        assert_team_info!(socket2);
+
         let res = app
             .post("/team/kick")
             .user(&owner)
@@ -885,6 +892,32 @@ mod kick {
             .await;
 
         assert_eq!(res.status(), StatusCode::NO_CONTENT);
+
+        assert_eq!(
+            utils::get_socket_message(socket1.next().await),
+            json!({
+                "event": "KICK_USER",
+                "data": {
+                    "user": member.id,
+                }
+            })
+        );
+
+        assert_close_frame!(
+            socket2.next().await,
+            CloseFrame {
+                code: CloseCode::Normal,
+                reason: Cow::Owned(
+                    serde_json::to_string(&json!({
+                        "event": "KICK_USER",
+                        "data": {
+                            "user": member.id,
+                        }
+                    }))
+                    .unwrap()
+                ),
+            }
+        );
     }
 
     #[tokio::test]
@@ -907,6 +940,11 @@ mod kick {
 
         assert_eq!(res.status(), StatusCode::NO_CONTENT);
 
+        let mut socket1 = app.socket("/ws").user(&owner).start().await;
+        assert_team_info!(socket1);
+        let mut socket2 = app.socket("/ws").user(&member).start().await;
+        assert_team_info!(socket2);
+
         let res = app
             .post("/team/kick")
             .user(&owner)
@@ -917,6 +955,32 @@ mod kick {
             .await;
 
         assert_eq!(res.status(), StatusCode::NO_CONTENT);
+
+        assert_eq!(
+            utils::get_socket_message(socket1.next().await),
+            json!({
+                "event": "KICK_USER",
+                "data": {
+                    "user": member.id,
+                }
+            })
+        );
+
+        assert_close_frame!(
+            socket2.next().await,
+            CloseFrame {
+                code: CloseCode::Normal,
+                reason: Cow::Owned(
+                    serde_json::to_string(&json!({
+                        "event": "KICK_USER",
+                        "data": {
+                            "user": member.id,
+                        }
+                    }))
+                    .unwrap()
+                ),
+            }
+        );
     }
 
     #[tokio::test]
@@ -942,6 +1006,13 @@ mod kick {
 
         assert_eq!(res.status(), StatusCode::NO_CONTENT);
 
+        let mut socket1 = app.socket("/ws").user(&owner).start().await;
+        assert_team_info!(socket1);
+        let mut socket2 = app.socket("/ws").user(&coowner).start().await;
+        assert_team_info!(socket2);
+        let mut socket3 = app.socket("/ws").user(&member).start().await;
+        assert_team_info!(socket3);
+
         let res = app
             .post("/team/kick")
             .user(&coowner)
@@ -952,5 +1023,41 @@ mod kick {
             .await;
 
         assert_eq!(res.status(), StatusCode::NO_CONTENT);
+
+        assert_eq!(
+            utils::get_socket_message(socket1.next().await),
+            json!({
+                "event": "KICK_USER",
+                "data": {
+                    "user": member.id,
+                }
+            })
+        );
+
+        assert_eq!(
+            utils::get_socket_message(socket2.next().await),
+            json!({
+                "event": "KICK_USER",
+                "data": {
+                    "user": member.id,
+                }
+            })
+        );
+
+        assert_close_frame!(
+            socket3.next().await,
+            CloseFrame {
+                code: CloseCode::Normal,
+                reason: Cow::Owned(
+                    serde_json::to_string(&json!({
+                        "event": "KICK_USER",
+                        "data": {
+                            "user": member.id,
+                        }
+                    }))
+                    .unwrap()
+                ),
+            }
+        );
     }
 }

@@ -83,7 +83,7 @@ pub async fn ws_handler<S: SharedTrait>(
         tokio::time::sleep(std::time::Duration::from_millis(100)).await;
 
         Ok(ws.on_upgrade(move |socket: WebSocket| async move {
-            if let Err(err) = handler(socket, consumer, team_info).await {
+            if let Err(err) = handler(socket, consumer, claims, team_info).await {
                 tracing::error!("socket failed with: {:?}", err);
             }
         }))
@@ -162,6 +162,7 @@ async fn get_initial_team_info<S: SharedTrait>(
 async fn handler(
     mut socket: WebSocket,
     consumer: StreamConsumer,
+    claims: Claims,
     (team, members): TeamInfo,
 ) -> Result<()> {
     let mut stream = consumer.stream();
@@ -197,7 +198,13 @@ async fn handler(
                     // SAFETY: the backend will always send valid utf-8
                     let payload = unsafe { String::from_utf8_unchecked(payload) };
 
-                    if let Event::DisbandTeam | Event::KickUser { .. } = serde_json::from_str(&payload).unwrap() {
+                    let event = serde_json::from_str(&payload).unwrap();
+
+                    tracing::debug!("subject: {}, event: {:?}", claims.subject, event);
+
+                    if matches!(event, Event::DisbandTeam)
+                        || matches!(event, Event::KickUser { user } if user == claims.subject)
+                    {
                         let _ = socket.send(Message::Close(Some(CloseFrame {
                             code: close_code::NORMAL,
                             reason: Cow::Owned(payload),
@@ -205,7 +212,6 @@ async fn handler(
 
                         return Ok(())
                     }
-
 
                     tracing::debug!("event: {:?}", payload);
 
