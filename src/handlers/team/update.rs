@@ -30,6 +30,7 @@ pub async fn update_team<S: SharedTrait>(
     let txn = shared.db().begin().await?;
 
     let team = users::Entity::select_team(&claims.subject)
+        .lock_exclusive()
         .one(&txn)
         .await?;
 

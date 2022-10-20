@@ -25,6 +25,9 @@ pub async fn join_team<S: SharedTrait>(
     let txn = shared.db().begin().await?;
 
     let team = teams::Entity::find_by_join_code(&request.code)
+        // NOTE: maybe not neccessary because locking the team (in the application and not in the database)
+        //       while this handler is running shouldn't make invalid state in the database
+        .lock_shared()
         .select_only()
         .column(teams::Column::Id)
         .column(teams::Column::Locked)
@@ -38,6 +41,7 @@ pub async fn join_team<S: SharedTrait>(
         }
 
         let user = users::Entity::find_by_id(claims.subject)
+            .lock_exclusive()
             .one(&txn)
             .await?
             .ok_or_else(|| {

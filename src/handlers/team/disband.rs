@@ -7,7 +7,7 @@ use crate::{
 use axum::{http::StatusCode, Extension};
 use entity::{teams, users};
 use rdkafka::producer::FutureRecord;
-use sea_orm::{ColumnTrait, EntityTrait, IntoActiveModel, QueryFilter, Set, TransactionTrait};
+use sea_orm::{ColumnTrait, EntityTrait, IntoActiveModel, QueryFilter, Set, TransactionTrait, QuerySelect};
 use std::time::Duration;
 
 pub async fn disband_team<S: SharedTrait>(
@@ -17,6 +17,7 @@ pub async fn disband_team<S: SharedTrait>(
     let txn = shared.db().begin().await?;
 
     let team = users::Entity::select_team(&claims.subject)
+        .lock_exclusive()
         .one(&txn)
         .await?
         .ok_or_else(|| {
@@ -34,6 +35,7 @@ pub async fn disband_team<S: SharedTrait>(
     }
 
     let users = users::Entity::find()
+        .lock_exclusive()
         .filter(users::Column::Team.eq(&*team.id))
         .all(&txn)
         .await?;

@@ -7,7 +7,7 @@ use crate::{
 use axum::{http::StatusCode, Extension};
 use entity::{teams, users};
 use rdkafka::admin::{AdminOptions, NewTopic, TopicReplication};
-use sea_orm::{DbErr, EntityTrait, IntoActiveModel, Set, TransactionTrait};
+use sea_orm::{DbErr, EntityTrait, IntoActiveModel, Set, TransactionTrait, QuerySelect};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 use validator::Validate;
@@ -31,6 +31,7 @@ pub async fn create_team<S: SharedTrait>(
     let txn = shared.db().begin().await?;
 
     let user = users::Entity::find_by_id(claims.subject.clone())
+        .lock_exclusive()
         .one(&txn)
         .await?
         .ok_or_else(|| {
