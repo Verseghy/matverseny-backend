@@ -7,7 +7,7 @@ use crate::{
 use axum::{http::StatusCode, Extension};
 use entity::{teams, users};
 use rdkafka::admin::{AdminOptions, NewTopic, TopicReplication};
-use sea_orm::{DbErr, EntityTrait, IntoActiveModel, Set, TransactionTrait, QuerySelect};
+use sea_orm::{DbErr, EntityTrait, IntoActiveModel, QuerySelect, Set, TransactionTrait};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 use validator::Validate;

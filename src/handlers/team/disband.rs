@@ -7,7 +7,9 @@ use crate::{
 use axum::{http::StatusCode, Extension};
 use entity::{teams, users};
 use rdkafka::producer::FutureRecord;
-use sea_orm::{ColumnTrait, EntityTrait, IntoActiveModel, QueryFilter, Set, TransactionTrait, QuerySelect};
+use sea_orm::{
+    ColumnTrait, EntityTrait, IntoActiveModel, QueryFilter, QuerySelect, Set, TransactionTrait,
+};
 use std::time::Duration;
 
 pub async fn disband_team<S: SharedTrait>(
