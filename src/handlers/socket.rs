@@ -32,6 +32,7 @@ pub struct Member {
     rank: Rank,
 }
 
+#[serde_with::skip_serializing_none]
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(tag = "event", content = "data", rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum Event {
@@ -50,17 +51,10 @@ pub enum Event {
         members: Vec<Member>,
     },
     UpdateTeam {
-        #[serde(skip_serializing_if = "Option::is_none")]
         name: Option<String>,
-        #[serde(skip_serializing_if = "Option::is_none")]
         owner: Option<String>,
-        #[serde(
-            default,
-            skip_serializing_if = "Option::is_none",
-            with = "::serde_with::rust::double_option"
-        )]
+        #[serde(default, with = "::serde_with::rust::double_option")]
         coowner: Option<Option<String>>,
-        #[serde(skip_serializing_if = "Option::is_none")]
         locked: Option<bool>,
     },
     DisbandTeam,
