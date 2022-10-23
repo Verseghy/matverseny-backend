@@ -76,6 +76,7 @@ pub async fn update_team<S: SharedTrait>(
             owner: request.owner.clone(),
             coowner: request.coowner.clone(),
             locked: request.locked,
+            code: None,
         })
         .unwrap();
 

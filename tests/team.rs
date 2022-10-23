@@ -1061,3 +1061,55 @@ mod kick {
         );
     }
 }
+
+mod code {
+    use super::*;
+
+    #[tokio::test]
+    async fn not_coowner() {
+        let app = App::new().await;
+        let owner = app.register_user().await;
+        let team = app.create_team(&owner).await;
+
+        let member = app.register_user().await;
+        member.join(&team.get_code().await).await;
+
+        let res = app.post("/team/code").user(&member).send().await;
+
+        assert_error!(res, error::USER_NOT_COOWNER);
+    }
+
+    #[tokio::test]
+    async fn locked_team() {
+        let app = App::new().await;
+        let owner = app.register_user().await;
+        let team = app.create_team(&owner).await;
+
+        team.lock().await;
+
+        let res = app.post("/team/code").user(&owner).send().await;
+
+        assert_error!(res, error::LOCKED_TEAM);
+    }
+
+    #[tokio::test]
+    async fn success() {
+        let app = App::new().await;
+        let owner = app.register_user().await;
+        let _team = app.create_team(&owner).await;
+
+        let mut socket = app.socket("/ws").user(&owner).start().await;
+        assert_team_info!(socket);
+
+        let res = app.post("/team/code").user(&owner).send().await;
+
+        assert_eq!(res.status(), StatusCode::NO_CONTENT);
+
+        let message = utils::get_socket_message(socket.next().await);
+
+        assert_eq!(message["event"].as_str().unwrap(), "UPDATE_TEAM");
+        assert!(!message["data"]["code"].as_str().unwrap().is_empty());
+    }
+
+    // TODO: test join code clash
+}

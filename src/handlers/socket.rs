@@ -56,6 +56,7 @@ pub enum Event {
         #[serde(default, with = "::serde_with::rust::double_option")]
         coowner: Option<Option<String>>,
         locked: Option<bool>,
+        code: Option<String>,
     },
     DisbandTeam,
     KickUser {

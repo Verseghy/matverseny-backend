@@ -1,3 +1,4 @@
+mod code;
 mod create;
 mod disband;
 mod join;
@@ -33,6 +34,7 @@ pub fn routes<S: SharedTrait>() -> Router {
         .route("/", patch(update::update_team::<S>))
         .route("/disband", post(disband::disband_team::<S>))
         .route("/kick", post(kick::kick_user::<S>))
+        .route("/code", post(code::regenerate_code::<S>))
 }
 
 #[inline]

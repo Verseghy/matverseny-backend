@@ -36,3 +36,7 @@ error!(
     FORBIDDEN, 16, "cannot kick the owner of a team"
 );
 error!(CANNOT_KICK_THEMSELF, FORBIDDEN, 17, "cannot kick yourself");
+error!(
+    FAILED_TO_GENERATE_JOIN_CODE,
+    INTERNAL_SERVER_ERROR, 18, "failed to generate join code"
+);
