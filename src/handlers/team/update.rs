@@ -114,7 +114,7 @@ struct User {
 // This also checks if the user is actually exists, but does not differentiate
 // between non-existing and not in team for security reasons
 async fn is_user_in_team(db: &impl ConnectionTrait, user: &str, team: &str) -> Result<bool> {
-    let res = users::Entity::find_by_id(user.to_string())
+    let res = users::Entity::find_by_id(user.to_owned())
         .select_only()
         .column(users::Column::Team)
         .into_model::<User>()
