@@ -68,10 +68,13 @@ pub async fn create_team<S: SharedTrait>(
 
         return match result.map_err(ToPgError::to_pg_error) {
             Err(Ok(pg_error)) => {
-                if pg_error.unique_violation("join_code_key") {
+                if pg_error.unique_violation("teams_name_key") {
+                    Err(error::DUPLICATE_TEAM_NAME)
+                } else if pg_error.unique_violation("join_code_key") {
                     continue;
+                } else {
+                    Err(Error::internal(pg_error))
                 }
-                Err(Error::internal(pg_error))
             }
             Err(Err(error)) => Err(Error::internal(error)),
             Ok(_) => {
