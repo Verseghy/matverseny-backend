@@ -1,5 +1,7 @@
 use super::teams;
 use sea_orm::entity::prelude::*;
+// wtf?
+use sea_orm::sea_query;
 use serde_repr::{Deserialize_repr, Serialize_repr};
 
 #[derive(Clone, Debug, PartialEq, Eq, DeriveEntityModel)]

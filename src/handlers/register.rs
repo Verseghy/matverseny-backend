@@ -1,8 +1,9 @@
 use crate::{error, iam::Claims, Error, Json, Result, SharedTrait};
 use axum::{http::StatusCode, Extension};
 use entity::users::{self, Class};
-use sea_orm::{DbErr, EntityTrait, Set};
+use sea_orm::{DbErr, EntityTrait, Set, RuntimeErr};
 use serde::Deserialize;
+use sqlx::Error as SqlxError;
 
 #[derive(Deserialize)]
 pub struct Request {
@@ -25,8 +26,8 @@ pub async fn register<S: SharedTrait>(
     let result = users::Entity::insert(user).exec(shared.db()).await;
 
     match result {
-        Err(DbErr::Query(error)) => {
-            if &error[..] == "error returned from database: duplicate key value violates unique constraint \"users_pkey\"" {
+        Err(DbErr::Query(RuntimeErr::SqlxError(SqlxError::Database(error)))) => {
+            if error.message() == "duplicate key value violates unique constraint \"users_pkey\"" {
                 Err(error::USER_ALREADY_EXISTS)
             } else {
                 Err(Error::internal(error))

@@ -7,10 +7,11 @@ use crate::{
 use axum::{http::StatusCode, Extension};
 use entity::{teams, users};
 use rdkafka::admin::{AdminOptions, NewTopic, TopicReplication};
-use sea_orm::{DbErr, EntityTrait, IntoActiveModel, QuerySelect, Set, TransactionTrait};
+use sea_orm::{DbErr, EntityTrait, IntoActiveModel, QuerySelect, Set, TransactionTrait, RuntimeErr};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 use validator::Validate;
+use sqlx::Error as SqlxError;
 
 #[derive(Deserialize, Validate)]
 pub struct Request {
@@ -62,8 +63,8 @@ pub async fn create_team<S: SharedTrait>(
     let result = teams::Entity::insert(team).exec(&txn).await;
 
     match result {
-        Err(DbErr::Query(error)) => {
-            if &error[..] == "error returned from database: duplicate key value violates unique constraint \"teams_name_key\"" {
+        Err(DbErr::Query(RuntimeErr::SqlxError(SqlxError::Database(error)))) => {
+            if error.message() == "duplicate key value violates unique constraint \"teams_name_key\"" {
                 Err(error::DUPLICATE_TEAM_NAME)
             } else {
                 Err(Error::internal(error))

@@ -7,8 +7,9 @@ use crate::{
 use axum::{http::StatusCode, Extension};
 use entity::{teams, users};
 use rdkafka::producer::FutureRecord;
-use sea_orm::{DbErr, EntityTrait, IntoActiveModel, QuerySelect, Set, TransactionTrait};
+use sea_orm::{DbErr, EntityTrait, IntoActiveModel, QuerySelect, Set, TransactionTrait, RuntimeErr};
 use std::time::Duration;
+use sqlx::Error as SqlxError;
 
 pub async fn regenerate_code<S: SharedTrait>(
     Extension(shared): Extension<S>,
@@ -42,9 +43,9 @@ pub async fn regenerate_code<S: SharedTrait>(
         let res = teams::Entity::update(model).exec(&txn).await;
 
         return match res {
-            Err(DbErr::Query(error)) => {
+            Err(DbErr::Query(RuntimeErr::SqlxError(SqlxError::Database(error)))) => {
                 // TODO: get correct message
-                if &error[..] == "error returned from database: duplicate key value violates unique constraint \"join_code_key\"" {
+                if error.message() == "duplicate key value violates unique constraint \"join_code_key\"" {
                     continue
                 }
                 Err(Error::internal(error))
