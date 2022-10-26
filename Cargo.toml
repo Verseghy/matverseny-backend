@@ -40,7 +40,7 @@ rdkafka = "0.28.0"
 rand_chacha = "0.3.1"
 serde_with = "2.0.1"
 tokio-tungstenite = "0.17.2"
-sqlx = { version = "0.6.2", default-features = false }
+sqlx = { version = "0.6.2", default-features = false, features = ["postgres"] }
 
 [dev-dependencies]
 dotenvy = "0.15.6"

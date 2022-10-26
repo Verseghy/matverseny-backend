@@ -1,5 +1,5 @@
 use crate::{
-    error::{self, Error, Result},
+    error::{self, DatabaseError, Error, Result, ToPgError},
     iam::Claims,
     utils::generate_join_code,
     Json, SharedTrait, ValidatedJson,
@@ -7,11 +7,10 @@ use crate::{
 use axum::{http::StatusCode, Extension};
 use entity::{teams, users};
 use rdkafka::admin::{AdminOptions, NewTopic, TopicReplication};
-use sea_orm::{DbErr, EntityTrait, IntoActiveModel, QuerySelect, Set, TransactionTrait, RuntimeErr};
+use sea_orm::{EntityTrait, IntoActiveModel, QuerySelect, Set, TransactionTrait};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 use validator::Validate;
-use sqlx::Error as SqlxError;
 
 #[derive(Deserialize, Validate)]
 pub struct Request {
@@ -62,24 +61,29 @@ pub async fn create_team<S: SharedTrait>(
 
     let result = teams::Entity::insert(team).exec(&txn).await;
 
-    match result {
-        Err(DbErr::Query(RuntimeErr::SqlxError(SqlxError::Database(error)))) => {
-            if error.message() == "duplicate key value violates unique constraint \"teams_name_key\"" {
+    match result.map_err(ToPgError::to_pg_error) {
+        Err(Ok(pg_error)) => {
+            if pg_error.unique_violation("teams_name_key") {
                 Err(error::DUPLICATE_TEAM_NAME)
             } else {
-                Err(Error::internal(error))
+                Err(Error::internal(pg_error))
             }
         }
-        Err(error) => Err(Error::internal(error)),
+        Err(Err(error)) => Err(Error::internal(error)),
         Ok(_) => {
             let mut active_model = user.into_active_model();
             active_model.team = Set(Some(id.clone()));
 
             users::Entity::update(active_model).exec(&txn).await?;
 
-            shared.kafka_admin()
+            shared
+                .kafka_admin()
                 .create_topics(
-                    &[NewTopic::new(&super::get_kafka_topic(&id), 1, TopicReplication::Fixed(1))],
+                    &[NewTopic::new(
+                        &super::get_kafka_topic(&id),
+                        1,
+                        TopicReplication::Fixed(1),
+                    )],
                     &AdminOptions::new(),
                 )
                 .await

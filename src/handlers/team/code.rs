@@ -1,5 +1,5 @@
 use crate::{
-    error::{self, Error, Result},
+    error::{self, DatabaseError, Error, Result, ToPgError},
     handlers::socket::Event,
     iam::Claims,
     utils, SharedTrait,
@@ -7,9 +7,8 @@ use crate::{
 use axum::{http::StatusCode, Extension};
 use entity::{teams, users};
 use rdkafka::producer::FutureRecord;
-use sea_orm::{DbErr, EntityTrait, IntoActiveModel, QuerySelect, Set, TransactionTrait, RuntimeErr};
+use sea_orm::{EntityTrait, IntoActiveModel, QuerySelect, Set, TransactionTrait};
 use std::time::Duration;
-use sqlx::Error as SqlxError;
 
 pub async fn regenerate_code<S: SharedTrait>(
     Extension(shared): Extension<S>,
@@ -42,15 +41,14 @@ pub async fn regenerate_code<S: SharedTrait>(
 
         let res = teams::Entity::update(model).exec(&txn).await;
 
-        return match res {
-            Err(DbErr::Query(RuntimeErr::SqlxError(SqlxError::Database(error)))) => {
-                // TODO: get correct message
-                if error.message() == "duplicate key value violates unique constraint \"join_code_key\"" {
-                    continue
+        return match res.map_err(ToPgError::to_pg_error) {
+            Err(Ok(pg_error)) => {
+                if pg_error.unique_violation("join_code_key") {
+                    continue;
                 }
-                Err(Error::internal(error))
+                Err(Error::internal(pg_error))
             }
-            Err(error) => Err(Error::internal(error)),
+            Err(Err(error)) => Err(Error::internal(error)),
             Ok(_) => {
                 let kafka_payload = serde_json::to_string(&Event::UpdateTeam {
                     name: None,

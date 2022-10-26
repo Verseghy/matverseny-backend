@@ -60,3 +60,33 @@ async fn success() {
 
     assert_eq!(res.status(), StatusCode::CREATED);
 }
+
+#[tokio::test]
+async fn already_registered() {
+    let app = App::new().await;
+    let user = utils::iam::register_user().await;
+
+    let res = app
+        .post("/register")
+        .user(&user)
+        .json(&json!({
+            "school": "Test School",
+            "class": 9,
+        }))
+        .send()
+        .await;
+
+    assert_eq!(res.status(), StatusCode::CREATED);
+
+    let res = app
+        .post("/register")
+        .user(&user)
+        .json(&json!({
+            "school": "Test School",
+            "class": 9,
+        }))
+        .send()
+        .await;
+
+    assert_error!(res, error::USER_ALREADY_EXISTS);
+}
