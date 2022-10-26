@@ -54,44 +54,51 @@ pub async fn create_team<S: SharedTrait>(
         name: Set(request.name),
         owner: Set(claims.subject.clone()),
         locked: Set(false),
-        // TODO: handle clash
-        join_code: Set(generate_join_code(&mut shared.rng())),
         ..Default::default()
     };
 
-    let result = teams::Entity::insert(team).exec(&txn).await;
+    for _ in 0..16 {
+        let model = {
+            let mut model = team.clone();
+            model.join_code = Set(generate_join_code(&mut shared.rng()));
+            model
+        };
 
-    match result.map_err(ToPgError::to_pg_error) {
-        Err(Ok(pg_error)) => {
-            if pg_error.unique_violation("teams_name_key") {
-                Err(error::DUPLICATE_TEAM_NAME)
-            } else {
+        let result = teams::Entity::insert(model).exec(&txn).await;
+
+        return match result.map_err(ToPgError::to_pg_error) {
+            Err(Ok(pg_error)) => {
+                if pg_error.unique_violation("join_code_key") {
+                    continue;
+                }
                 Err(Error::internal(pg_error))
             }
-        }
-        Err(Err(error)) => Err(Error::internal(error)),
-        Ok(_) => {
-            let mut active_model = user.into_active_model();
-            active_model.team = Set(Some(id.clone()));
+            Err(Err(error)) => Err(Error::internal(error)),
+            Ok(_) => {
+                let mut active_model = user.into_active_model();
+                active_model.team = Set(Some(id.clone()));
 
-            users::Entity::update(active_model).exec(&txn).await?;
+                users::Entity::update(active_model).exec(&txn).await?;
 
-            shared
-                .kafka_admin()
-                .create_topics(
-                    &[NewTopic::new(
-                        &super::get_kafka_topic(&id),
-                        1,
-                        TopicReplication::Fixed(1),
-                    )],
-                    &AdminOptions::new(),
-                )
-                .await
-                .map_err(Error::internal)?;
+                shared
+                    .kafka_admin()
+                    .create_topics(
+                        &[NewTopic::new(
+                            &super::get_kafka_topic(&id),
+                            1,
+                            TopicReplication::Fixed(1),
+                        )],
+                        &AdminOptions::new(),
+                    )
+                    .await
+                    .map_err(Error::internal)?;
 
-            txn.commit().await?;
+                txn.commit().await?;
 
-            Ok((StatusCode::CREATED, Json(Response { id })))
-        }
+                Ok((StatusCode::CREATED, Json(Response { id })))
+            }
+        };
     }
+
+    Err(error::FAILED_TO_GENERATE_JOIN_CODE)
 }
