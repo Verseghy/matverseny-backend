@@ -620,10 +620,7 @@ mod disband {
         let app = App::new().await;
         let user = app.register_user().await;
 
-        let res = app.post("/team/disband")
-            .user(&user)
-            .send()
-            .await;
+        let res = app.post("/team/disband").user(&user).send().await;
 
         assert_error!(res, error::USER_NOT_IN_TEAM);
     }

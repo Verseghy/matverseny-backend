@@ -23,7 +23,7 @@ async fn no_team() {
         // this is should break when the PR gets merged
         assert_eq!(response.body(), &None);
     } else {
-        assert!(false);
+        unreachable!();
     }
 }
 
