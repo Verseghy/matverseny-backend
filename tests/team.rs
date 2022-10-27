@@ -616,6 +616,19 @@ mod disband {
     use tokio_tungstenite::tungstenite::protocol::{frame::coding::CloseCode, CloseFrame};
 
     #[tokio::test]
+    async fn not_in_team() {
+        let app = App::new().await;
+        let user = app.register_user().await;
+
+        let res = app.post("/team/disband")
+            .user(&user)
+            .send()
+            .await;
+
+        assert_error!(res, error::USER_NOT_IN_TEAM);
+    }
+
+    #[tokio::test]
     async fn not_owner() {
         let app = App::new().await;
         let owner = app.register_user().await;
