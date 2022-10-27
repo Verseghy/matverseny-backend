@@ -38,40 +38,36 @@ pub async fn leave_team<S: SharedTrait>(
         .column(teams::Column::Locked)
         .into_model::<Team>()
         .one(&txn)
-        .await?;
+        .await?
+        .ok_or(error::USER_NOT_IN_TEAM)?;
 
-    if let Some(team) = team {
-        if team.locked {
-            return Err(error::LOCKED_TEAM);
-        }
-
-        let kafka_payload = serde_json::to_string(&Event::LeaveTeam {
-            user: user.id.clone(),
-        })
-        .unwrap();
-        let kafka_topic = super::get_kafka_topic(user.team.as_ref().unwrap());
-
-        let mut active_model = user.into_active_model();
-        active_model.team = Set(None);
-
-        users::Entity::update(active_model).exec(&txn).await?;
-
-        shared
-            .kafka_producer()
-            .send(
-                FutureRecord::<(), String>::to(&kafka_topic)
-                    .partition(0)
-                    .payload(&kafka_payload),
-                Duration::from_secs(5),
-            )
-            .await
-            .map_err(|(err, _)| Error::internal(err))?;
-
-        txn.commit().await?;
-
-        Ok(StatusCode::OK)
-    } else {
-        // wtf?
-        Err(error::USER_NOT_IN_TEAM)
+    if team.locked {
+        return Err(error::LOCKED_TEAM);
     }
+
+    let kafka_payload = serde_json::to_string(&Event::LeaveTeam {
+        user: user.id.clone(),
+    })
+    .unwrap();
+    let kafka_topic = super::get_kafka_topic(user.team.as_ref().unwrap());
+
+    let mut active_model = user.into_active_model();
+    active_model.team = Set(None);
+
+    users::Entity::update(active_model).exec(&txn).await?;
+
+    shared
+        .kafka_producer()
+        .send(
+            FutureRecord::<(), String>::to(&kafka_topic)
+                .partition(0)
+                .payload(&kafka_payload),
+            Duration::from_secs(5),
+        )
+        .await
+        .map_err(|(err, _)| Error::internal(err))?;
+
+    txn.commit().await?;
+
+    Ok(StatusCode::OK)
 }

@@ -71,21 +71,17 @@ pub async fn ws_handler<S: SharedTrait>(
 ) -> Result<impl IntoResponse> {
     tracing::debug!("ws connection");
 
-    if let Some(team_info) = get_initial_team_info(&shared, &claims.subject).await? {
-        let consumer = create_consumer(&team_info.0.id)?;
+    let team_info = get_initial_team_info(&shared, &claims.subject).await?;
+    let consumer = create_consumer(&team_info.0.id)?;
 
-        // TODO: this seem to work reliably, but it is not a bullet proof solution
-        tokio::time::sleep(std::time::Duration::from_millis(100)).await;
+    // TODO: this seem to work reliably, but it is not a bullet proof solution
+    tokio::time::sleep(std::time::Duration::from_millis(100)).await;
 
-        Ok(ws.on_upgrade(move |socket: WebSocket| async move {
-            if let Err(err) = handler(socket, consumer, claims, team_info).await {
-                tracing::error!("socket failed with: {:?}", err);
-            }
-        }))
-    } else {
-        tracing::warn!("started websocket without a team");
-        Err(error::USER_NOT_IN_TEAM)
-    }
+    Ok(ws.on_upgrade(move |socket: WebSocket| async move {
+        if let Err(err) = handler(socket, consumer, claims, team_info).await {
+            tracing::error!("socket failed with: {:?}", err);
+        }
+    }))
 }
 
 // TODO: create a global singleton consumer for performance reasons
@@ -116,42 +112,37 @@ fn create_consumer(team_id: &str) -> Result<StreamConsumer> {
 
 type TeamInfo = (teams::Model, Vec<Member>);
 
-async fn get_initial_team_info<S: SharedTrait>(
-    shared: &S,
-    user_id: &str,
-) -> Result<Option<TeamInfo>> {
-    let result = users::Entity::select_team(user_id).one(shared.db()).await?;
+async fn get_initial_team_info<S: SharedTrait>(shared: &S, user_id: &str) -> Result<TeamInfo> {
+    let result = users::Entity::select_team(user_id)
+        .one(shared.db())
+        .await?
+        .ok_or(error::USER_NOT_IN_TEAM)?;
 
-    if let Some(result) = result {
-        tracing::debug!("found team");
+    tracing::debug!("found team");
 
-        let members = teams::Entity::select_users(&result.id)
-            .all(shared.db())
-            .await?
-            .into_iter()
-            .map(|user| Member {
-                class: user.class,
-                rank: {
-                    if user.id == result.owner {
-                        Rank::Owner
-                    // NOTE: use `Option::is_some_and` when it gets stabilized (#93050)
-                    } else if matches!(&result.coowner, Some(coowner) if coowner.as_str() == user.id) {
-                        Rank::CoOwner
-                    } else {
-                        Rank::Member
-                    }
-                },
-                id: user.id.clone(),
-                // TODO: get the actual name of the user
-                name: user.id,
-            })
-            .collect();
+    let members = teams::Entity::select_users(&result.id)
+        .all(shared.db())
+        .await?
+        .into_iter()
+        .map(|user| Member {
+            class: user.class,
+            rank: {
+                if user.id == result.owner {
+                    Rank::Owner
+                // NOTE: use `Option::is_some_and` when it gets stabilized (#93050)
+                } else if matches!(&result.coowner, Some(coowner) if coowner.as_str() == user.id) {
+                    Rank::CoOwner
+                } else {
+                    Rank::Member
+                }
+            },
+            id: user.id.clone(),
+            // TODO: get the actual name of the user
+            name: user.id,
+        })
+        .collect();
 
-        Ok(Some((result, members)))
-    } else {
-        tracing::debug!("didn't found team");
-        Ok(None)
-    }
+    Ok((result, members))
 }
 
 async fn handler(

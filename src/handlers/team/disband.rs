@@ -22,11 +22,7 @@ pub async fn disband_team<S: SharedTrait>(
         .lock_exclusive()
         .one(&txn)
         .await?
-        .ok_or_else(|| {
-            // this is suspicious so log it
-            tracing::warn!("tried to disband a team without registration");
-            error::USER_NOT_REGISTERED
-        })?;
+        .ok_or(error::USER_NOT_IN_TEAM)?;
 
     if team.owner != claims.subject {
         return Err(error::USER_NOT_OWNER);
