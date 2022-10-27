@@ -8,7 +8,7 @@ use crate::{
 use axum::{http::StatusCode, Extension};
 use entity::{teams, users};
 use rdkafka::producer::FutureRecord;
-use sea_orm::{EntityTrait, IntoActiveModel, Set, TransactionTrait};
+use sea_orm::{EntityTrait, IntoActiveModel, QuerySelect, Set, TransactionTrait};
 use serde::Deserialize;
 use std::time::Duration;
 
@@ -25,6 +25,7 @@ pub async fn kick_user<S: SharedTrait>(
     let txn = shared.db().begin().await?;
 
     let team = users::Entity::select_team(&claims.subject)
+        .lock_exclusive()
         .one(&txn)
         .await?
         .ok_or(error::USER_NOT_IN_TEAM)?;
@@ -46,6 +47,7 @@ pub async fn kick_user<S: SharedTrait>(
     }
 
     let user = users::Entity::find_by_id(request.user.clone())
+        .lock_exclusive()
         .one(&txn)
         .await?
         .ok_or(error::NO_SUCH_MEMBER)?;
