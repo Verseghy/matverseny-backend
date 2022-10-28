@@ -2,7 +2,7 @@ use crate::{
     error::{self, Error, Result},
     handlers::socket::Event,
     iam::Claims,
-    SharedTrait,
+    StateTrait,
 };
 use axum::{http::StatusCode, Extension};
 use entity::{teams, users};
@@ -12,11 +12,11 @@ use sea_orm::{
 };
 use std::time::Duration;
 
-pub async fn disband_team<S: SharedTrait>(
-    Extension(shared): Extension<S>,
+pub async fn disband_team<S: StateTrait>(
+    Extension(state): Extension<S>,
     claims: Claims,
 ) -> Result<StatusCode> {
-    let txn = shared.db().begin().await?;
+    let txn = state.db().begin().await?;
 
     let team = users::Entity::select_team(&claims.subject)
         .lock_exclusive()
@@ -49,7 +49,7 @@ pub async fn disband_team<S: SharedTrait>(
         .exec(&txn)
         .await?;
 
-    shared
+    state
         .kafka_producer()
         .send(
             FutureRecord::<(), String>::to(&super::get_kafka_topic(&team.id))

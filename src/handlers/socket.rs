@@ -1,4 +1,4 @@
-use crate::{error, iam::Claims, Error, Result, SharedTrait};
+use crate::{error, iam::Claims, Error, Result, StateTrait};
 use axum::{
     extract::ws::{close_code, CloseFrame, Message, WebSocket, WebSocketUpgrade},
     response::IntoResponse,
@@ -64,14 +64,14 @@ pub enum Event {
     },
 }
 
-pub async fn ws_handler<S: SharedTrait>(
-    Extension(shared): Extension<S>,
+pub async fn ws_handler<S: StateTrait>(
+    Extension(state): Extension<S>,
     claims: Claims,
     ws: WebSocketUpgrade,
 ) -> Result<impl IntoResponse> {
     tracing::debug!("ws connection");
 
-    let team_info = get_initial_team_info(&shared, &claims.subject).await?;
+    let team_info = get_initial_team_info(&state, &claims.subject).await?;
     let consumer = create_consumer(&team_info.0.id)?;
 
     // TODO: this seem to work reliably, but it is not a bullet proof solution
@@ -112,16 +112,16 @@ fn create_consumer(team_id: &str) -> Result<StreamConsumer> {
 
 type TeamInfo = (teams::Model, Vec<Member>);
 
-async fn get_initial_team_info<S: SharedTrait>(shared: &S, user_id: &str) -> Result<TeamInfo> {
+async fn get_initial_team_info<S: StateTrait>(state: &S, user_id: &str) -> Result<TeamInfo> {
     let result = users::Entity::select_team(user_id)
-        .one(shared.db())
+        .one(state.db())
         .await?
         .ok_or(error::USER_NOT_IN_TEAM)?;
 
     tracing::debug!("found team");
 
     let members = teams::Entity::select_users(&result.id)
-        .all(shared.db())
+        .all(state.db())
         .await?
         .into_iter()
         .map(|user| Member {

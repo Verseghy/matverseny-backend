@@ -1,4 +1,4 @@
-use crate::{iam::IamTrait, SharedTrait};
+use crate::{iam::IamTrait, StateTrait};
 use axum::{
     headers::{
         authorization::{Authorization, Bearer},
@@ -16,11 +16,11 @@ use tower::{Layer, Service};
 use tracing::Span;
 
 #[derive(Debug, Clone)]
-pub struct GetClaimsLayer<SH> {
-    _marker: PhantomData<*const SH>,
+pub struct GetClaimsLayer<ST> {
+    _marker: PhantomData<*const ST>,
 }
 
-impl<SH> GetClaimsLayer<SH> {
+impl<ST> GetClaimsLayer<ST> {
     pub fn new() -> Self {
         Self {
             _marker: PhantomData,
@@ -28,8 +28,8 @@ impl<SH> GetClaimsLayer<SH> {
     }
 }
 
-impl<S, SH> Layer<S> for GetClaimsLayer<SH> {
-    type Service = GetClaims<S, SH>;
+impl<S, ST> Layer<S> for GetClaimsLayer<ST> {
+    type Service = GetClaims<S, ST>;
 
     fn layer(&self, inner: S) -> Self::Service {
         GetClaims::new(inner)
@@ -37,14 +37,14 @@ impl<S, SH> Layer<S> for GetClaimsLayer<SH> {
 }
 
 #[derive(Debug, Clone)]
-pub struct GetClaims<S, SH> {
+pub struct GetClaims<S, ST> {
     inner: S,
-    _marker: PhantomData<*const SH>,
+    _marker: PhantomData<*const ST>,
 }
 
-unsafe impl<S, SH> Send for GetClaims<S, SH> where S: Send {}
+unsafe impl<S, ST> Send for GetClaims<S, ST> where S: Send {}
 
-impl<S, SH> GetClaims<S, SH> {
+impl<S, ST> GetClaims<S, ST> {
     fn new(inner: S) -> Self {
         GetClaims {
             inner,
@@ -53,10 +53,10 @@ impl<S, SH> GetClaims<S, SH> {
     }
 }
 
-impl<S, B, SH> Service<Request<B>> for GetClaims<S, SH>
+impl<S, B, ST> Service<Request<B>> for GetClaims<S, ST>
 where
     S: Service<Request<B>>,
-    SH: SharedTrait,
+    ST: StateTrait,
 {
     type Response = S::Response;
     type Error = S::Error;
@@ -67,7 +67,7 @@ where
     }
 
     fn call(&mut self, mut request: Request<B>) -> Self::Future {
-        let shared = request.extensions().get::<SH>().expect("no Shared");
+        let state = request.extensions().get::<ST>().expect("no State");
 
         let header = match request.headers().typed_get::<Authorization<Bearer>>() {
             Some(header) => header,
@@ -79,7 +79,7 @@ where
             }
         };
 
-        let span = match shared.iam().get_claims(header.token()) {
+        let span = match state.iam().get_claims(header.token()) {
             Ok(claims) => {
                 let span = Some(tracing::info_span!("claims", user_id = claims.subject));
                 request.extensions_mut().insert(claims);

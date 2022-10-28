@@ -6,7 +6,7 @@ mod kick;
 mod leave;
 mod update;
 
-use crate::shared::SharedTrait;
+use crate::state::StateTrait;
 use axum::{
     routing::{patch, post},
     Router,
@@ -26,7 +26,7 @@ use axum::{
 /// # Co-Owner actions
 /// POST  /team/kick
 /// POST  /team/code
-pub fn routes<S: SharedTrait>() -> Router {
+pub fn routes<S: StateTrait>() -> Router {
     Router::new()
         .route("/create", post(create::create_team::<S>))
         .route("/join", post(join::join_team::<S>))

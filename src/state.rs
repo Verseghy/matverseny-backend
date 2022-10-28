@@ -11,7 +11,7 @@ use sea_orm::{ConnectOptions, ConnectionTrait, Database, DbConn, TransactionTrai
 use std::{env, sync::Arc};
 use tracing::log::LevelFilter;
 
-pub trait SharedTrait: Send + Sync + Clone + 'static {
+pub trait StateTrait: Send + Sync + Clone + 'static {
     type Db: ConnectionTrait + TransactionTrait + Clone;
     type Iam: IamTrait;
     type Rand: Rng;
@@ -23,14 +23,14 @@ pub trait SharedTrait: Send + Sync + Clone + 'static {
     fn kafka_admin(&self) -> &AdminClient<DefaultClientContext>;
 }
 
-pub struct Shared {
+pub struct State {
     database: DbConn,
     iam: Iam,
     kafka_producer: FutureProducer,
     kafka_admin: AdminClient<DefaultClientContext>,
 }
 
-impl Shared {
+impl State {
     pub async fn new() -> Arc<Self> {
         Self::with_database(Self::connect_database().await).await
     }
@@ -90,7 +90,7 @@ thread_local! {
     }
 }
 
-impl SharedTrait for Arc<Shared> {
+impl StateTrait for Arc<State> {
     type Db = DbConn;
     type Iam = Iam;
     type Rand = ReseedingRng<ChaCha20Core, OsRng>;

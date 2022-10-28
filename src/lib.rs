@@ -36,12 +36,12 @@ mod handlers;
 mod iam;
 mod json;
 mod middlewares;
-mod shared;
+mod state;
 mod utils;
 
 use error::{Error, Result};
 use json::*;
-pub use shared::*;
+pub use state::*;
 
 use axum::{http::header::AUTHORIZATION, Router};
 use std::{iter::once, net::TcpListener};
@@ -76,7 +76,7 @@ async fn shutdown_signal() {
     };
 }
 
-fn app<S: SharedTrait>(shared: S) -> Router {
+fn app<S: StateTrait>(state: S) -> Router {
     let cors_layer = CorsLayer::new()
         .allow_origin(Any)
         .allow_methods(Any)
@@ -86,7 +86,7 @@ fn app<S: SharedTrait>(shared: S) -> Router {
         .catch_panic()
         .sensitive_headers(once(AUTHORIZATION))
         .propagate_x_request_id()
-        .add_extension(shared)
+        .add_extension(state)
         .layer(middlewares::GetClaimsLayer::<S>::new())
         .compression()
         .decompression()
@@ -96,7 +96,7 @@ fn app<S: SharedTrait>(shared: S) -> Router {
     handlers::routes::<S>().layer(middlewares)
 }
 
-pub async fn run(listener: TcpListener, shared: impl SharedTrait) {
+pub async fn run(listener: TcpListener, state: impl StateTrait) {
     tracing::info!(
         "listening on port {}",
         listener.local_addr().unwrap().port()
@@ -104,7 +104,7 @@ pub async fn run(listener: TcpListener, shared: impl SharedTrait) {
 
     axum::Server::from_tcp(listener)
         .expect("failed to start server")
-        .serve(app(shared).into_make_service())
+        .serve(app(state).into_make_service())
         .with_graceful_shutdown(shutdown_signal())
         .await
         .unwrap()

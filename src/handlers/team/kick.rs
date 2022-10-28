@@ -3,7 +3,7 @@ use crate::{
     handlers::socket::Event,
     iam::Claims,
     json::Json,
-    SharedTrait,
+    StateTrait,
 };
 use axum::{http::StatusCode, Extension};
 use entity::{teams, users};
@@ -17,12 +17,12 @@ pub struct Request {
     user: String,
 }
 
-pub async fn kick_user<S: SharedTrait>(
-    Extension(shared): Extension<S>,
+pub async fn kick_user<S: StateTrait>(
+    Extension(state): Extension<S>,
     claims: Claims,
     Json(request): Json<Request>,
 ) -> Result<StatusCode> {
-    let txn = shared.db().begin().await?;
+    let txn = state.db().begin().await?;
 
     let team = users::Entity::select_team(&claims.subject)
         .lock_exclusive()
@@ -69,7 +69,7 @@ pub async fn kick_user<S: SharedTrait>(
 
     users::Entity::update(model).exec(&txn).await?;
 
-    shared
+    state
         .kafka_producer()
         .send(
             FutureRecord::<(), String>::to(&kafka_topic)

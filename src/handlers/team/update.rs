@@ -1,6 +1,6 @@
 use crate::{
     error, error::Error, error::Result, handlers::socket::Event, iam::Claims, utils::set_option,
-    SharedTrait, ValidatedJson,
+    StateTrait, ValidatedJson,
 };
 use axum::{http::StatusCode, Extension};
 use entity::{teams, users};
@@ -22,12 +22,12 @@ pub struct Request {
     locked: Option<bool>,
 }
 
-pub async fn update_team<S: SharedTrait>(
-    Extension(shared): Extension<S>,
+pub async fn update_team<S: StateTrait>(
+    Extension(state): Extension<S>,
     claims: Claims,
     ValidatedJson(request): ValidatedJson<Request>,
 ) -> Result<StatusCode> {
-    let txn = shared.db().begin().await?;
+    let txn = state.db().begin().await?;
 
     let team = users::Entity::select_team(&claims.subject)
         .lock_exclusive()
@@ -88,7 +88,7 @@ pub async fn update_team<S: SharedTrait>(
 
     teams::Entity::update(active_model).exec(&txn).await?;
 
-    shared
+    state
         .kafka_producer()
         .send(
             FutureRecord::<(), String>::to(&kafka_topic)

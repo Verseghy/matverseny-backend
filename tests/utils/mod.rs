@@ -8,7 +8,7 @@ mod user;
 
 use dotenvy::dotenv;
 use http::StatusCode;
-use matverseny_backend::Shared;
+use matverseny_backend::State;
 use migration::MigratorTrait;
 use request::*;
 use reqwest::Client;
@@ -52,9 +52,9 @@ impl App {
         let addr = SocketAddr::from((Ipv4Addr::UNSPECIFIED, 0));
         let listener = TcpListener::bind(addr).expect("failed to bind tcp listener");
         let addr = listener.local_addr().unwrap();
-        let shared = Shared::with_database(conn2).await;
+        let state = State::with_database(conn2).await;
 
-        let join_handle = tokio::spawn(matverseny_backend::run(listener, shared));
+        let join_handle = tokio::spawn(matverseny_backend::run(listener, state));
 
         let inner = AppInner {
             _database: database,

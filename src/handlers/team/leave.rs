@@ -1,4 +1,4 @@
-use crate::{error, error::Error, handlers::socket::Event, iam::Claims, Result, SharedTrait};
+use crate::{error, error::Error, handlers::socket::Event, iam::Claims, Result, StateTrait};
 use axum::{http::StatusCode, Extension};
 use entity::{teams, users};
 use rdkafka::producer::FutureRecord;
@@ -10,11 +10,11 @@ struct Team {
     locked: bool,
 }
 
-pub async fn leave_team<S: SharedTrait>(
-    Extension(shared): Extension<S>,
+pub async fn leave_team<S: StateTrait>(
+    Extension(state): Extension<S>,
     claims: Claims,
 ) -> Result<StatusCode> {
-    let txn = shared.db().begin().await?;
+    let txn = state.db().begin().await?;
 
     let user = users::Entity::find_by_id(claims.subject)
         .lock_exclusive()
@@ -56,7 +56,7 @@ pub async fn leave_team<S: SharedTrait>(
 
     users::Entity::update(active_model).exec(&txn).await?;
 
-    shared
+    state
         .kafka_producer()
         .send(
             FutureRecord::<(), String>::to(&kafka_topic)

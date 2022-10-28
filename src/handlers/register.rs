@@ -2,7 +2,7 @@ use crate::{
     error,
     error::{DatabaseError, Error, ToPgError},
     iam::Claims,
-    Json, Result, SharedTrait,
+    Json, Result, StateTrait,
 };
 use axum::{http::StatusCode, Extension};
 use entity::users::{self, Class};
@@ -15,8 +15,8 @@ pub struct Request {
     pub class: Class,
 }
 
-pub async fn register<S: SharedTrait>(
-    Extension(shared): Extension<S>,
+pub async fn register<S: StateTrait>(
+    Extension(state): Extension<S>,
     claims: Claims,
     Json(request): Json<Request>,
 ) -> Result<StatusCode> {
@@ -27,7 +27,7 @@ pub async fn register<S: SharedTrait>(
         ..Default::default()
     };
 
-    let result = users::Entity::insert(user).exec(shared.db()).await;
+    let result = users::Entity::insert(user).exec(state.db()).await;
 
     match result.map_err(ToPgError::to_pg_error) {
         Err(Ok(pg_error)) => {

@@ -2,7 +2,7 @@ use crate::{
     error::{self, DatabaseError, Error, Result, ToPgError},
     iam::Claims,
     utils::generate_join_code,
-    Json, SharedTrait, ValidatedJson,
+    Json, StateTrait, ValidatedJson,
 };
 use axum::{http::StatusCode, Extension};
 use entity::{teams, users};
@@ -23,12 +23,12 @@ pub struct Response {
     id: String,
 }
 
-pub async fn create_team<S: SharedTrait>(
-    Extension(shared): Extension<S>,
+pub async fn create_team<S: StateTrait>(
+    Extension(state): Extension<S>,
     claims: Claims,
     ValidatedJson(request): ValidatedJson<Request>,
 ) -> Result<(StatusCode, Json<Response>)> {
-    let txn = shared.db().begin().await?;
+    let txn = state.db().begin().await?;
 
     let user = users::Entity::find_by_id(claims.subject.clone())
         .lock_exclusive()
@@ -60,7 +60,7 @@ pub async fn create_team<S: SharedTrait>(
     for _ in 0..16 {
         let model = {
             let mut model = team.clone();
-            model.join_code = Set(generate_join_code(&mut shared.rng()));
+            model.join_code = Set(generate_join_code(&mut state.rng()));
             model
         };
 
@@ -83,7 +83,7 @@ pub async fn create_team<S: SharedTrait>(
 
                 users::Entity::update(active_model).exec(&txn).await?;
 
-                shared
+                state
                     .kafka_admin()
                     .create_topics(
                         &[NewTopic::new(

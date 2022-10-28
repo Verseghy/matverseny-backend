@@ -1,4 +1,4 @@
-use crate::{error, handlers::socket::Event, iam::Claims, Error, Json, Result, SharedTrait};
+use crate::{error, handlers::socket::Event, iam::Claims, Error, Json, Result, StateTrait};
 use axum::{http::StatusCode, Extension};
 use entity::{teams, users};
 use rdkafka::producer::FutureRecord;
@@ -17,12 +17,12 @@ struct Team {
     locked: bool,
 }
 
-pub async fn join_team<S: SharedTrait>(
-    Extension(shared): Extension<S>,
+pub async fn join_team<S: StateTrait>(
+    Extension(state): Extension<S>,
     claims: Claims,
     Json(request): Json<Request>,
 ) -> Result<StatusCode> {
-    let txn = shared.db().begin().await?;
+    let txn = state.db().begin().await?;
 
     let team = teams::Entity::find_by_join_code(&request.code)
         // NOTE: maybe not neccessary because locking the team (in the application and not in the database)
@@ -64,7 +64,7 @@ pub async fn join_team<S: SharedTrait>(
 
         users::Entity::update(active_model).exec(&txn).await?;
 
-        shared
+        state
             .kafka_producer()
             .send(
                 FutureRecord::<(), String>::to(&super::get_kafka_topic(&team.id))

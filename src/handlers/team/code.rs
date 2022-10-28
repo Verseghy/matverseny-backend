@@ -2,7 +2,7 @@ use crate::{
     error::{self, DatabaseError, Error, Result, ToPgError},
     handlers::socket::Event,
     iam::Claims,
-    utils, SharedTrait,
+    utils, StateTrait,
 };
 use axum::{http::StatusCode, Extension};
 use entity::{teams, users};
@@ -10,11 +10,11 @@ use rdkafka::producer::FutureRecord;
 use sea_orm::{EntityTrait, IntoActiveModel, QuerySelect, Set, TransactionTrait};
 use std::time::Duration;
 
-pub async fn regenerate_code<S: SharedTrait>(
-    Extension(shared): Extension<S>,
+pub async fn regenerate_code<S: StateTrait>(
+    Extension(state): Extension<S>,
     claims: Claims,
 ) -> Result<StatusCode> {
-    let txn = shared.db().begin().await?;
+    let txn = state.db().begin().await?;
 
     let team = users::Entity::select_team(&claims.subject)
         .lock_exclusive()
@@ -34,7 +34,7 @@ pub async fn regenerate_code<S: SharedTrait>(
     let model = team.into_active_model();
 
     for _ in 0..16 {
-        let new_code = utils::generate_join_code(&mut shared.rng());
+        let new_code = utils::generate_join_code(&mut state.rng());
 
         let mut model = model.clone();
         model.join_code = Set(new_code.clone());
@@ -59,7 +59,7 @@ pub async fn regenerate_code<S: SharedTrait>(
                 })
                 .unwrap();
 
-                shared
+                state
                     .kafka_producer()
                     .send(
                         FutureRecord::<(), String>::to(&kafka_topic)
