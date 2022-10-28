@@ -1,8 +1,5 @@
 use crate::error;
-use axum::{
-    async_trait,
-    extract::{FromRequest, RequestParts},
-};
+use axum::{async_trait, extract::FromRequestParts, http::request::Parts};
 use jsonwebtoken::{errors::Error, Algorithm, DecodingKey, Validation};
 use once_cell::sync::Lazy;
 use serde::Deserialize;
@@ -25,11 +22,15 @@ pub struct Claims {
 }
 
 #[async_trait]
-impl<B: Send> FromRequest<B> for Claims {
+impl<S> FromRequestParts<S> for Claims
+where
+    S: Send + Sync,
+{
     type Rejection = error::Error;
 
-    async fn from_request(req: &mut RequestParts<B>) -> Result<Self, Self::Rejection> {
-        req.extensions_mut()
+    async fn from_request_parts(parts: &mut Parts, _state: &S) -> Result<Self, Self::Rejection> {
+        parts
+            .extensions
             .remove::<Claims>()
             .ok_or(error::COULD_NOT_GET_CLAIMS)
     }

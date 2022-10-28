@@ -19,7 +19,7 @@ lto = true
 members = [".", "entity", "migration"]
 
 [dependencies]
-axum = { version = "0.5.17", features = ["ws", "http2", "headers"] }
+axum = { version = "0.6.0-rc.2", features = ["ws", "http2", "headers"] }
 serde = { version = "1.0.147", features = ["derive"] }
 tokio = { version = "1.21.2", features = ["macros", "rt-multi-thread", "signal"] }
 tower = "0.4.13"
