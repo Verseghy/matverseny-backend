@@ -120,17 +120,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "atty"
-version = "0.2.14"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d9b39be18770d11421cdb1b9947a45dd3f37e93092cbf377614828a319d5fee8"
-dependencies = [
- "hermit-abi",
- "libc",
- "winapi",
-]
-
-[[package]]
 name = "autocfg"
 version = "1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -283,45 +272,6 @@ dependencies = [
  "num-traits",
  "serde",
  "winapi",
-]
-
-[[package]]
-name = "clap"
-version = "3.2.22"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "86447ad904c7fb335a790c9d7fe3d0d971dc523b8ccd1561a520de9a85302750"
-dependencies = [
- "atty",
- "bitflags",
- "clap_derive",
- "clap_lex",
- "indexmap",
- "once_cell",
- "strsim",
- "termcolor",
- "textwrap",
-]
-
-[[package]]
-name = "clap_derive"
-version = "3.2.18"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ea0c8bce528c4be4da13ea6fead8965e95b6073585a2f05204bd8f4119f82a65"
-dependencies = [
- "heck 0.4.0",
- "proc-macro-error",
- "proc-macro2",
- "quote",
- "syn",
-]
-
-[[package]]
-name = "clap_lex"
-version = "0.2.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2850f2f5a82cbf437dd5af4d49848fbdfc27c157c3d010345776f952765261c5"
-dependencies = [
- "os_str_bytes",
 ]
 
 [[package]]
@@ -1290,12 +1240,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "os_str_bytes"
-version = "6.3.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9ff7415e9ae3fff1225851df9e0d9e4e5479f947619774677a63572e55e80eff"
-
-[[package]]
 name = "ouroboros"
 version = "0.15.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1707,9 +1651,9 @@ dependencies = [
 
 [[package]]
 name = "sea-orm"
-version = "0.10.0"
+version = "0.10.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bcab4b30f6ba8dffa93ebd9ff60fe9f462b1c6729f66acf3f61600be86cfab2c"
+checksum = "c347aacd6bd1b9714fd8b5a6095b7caf4c7d6d3d2fc443c5668512effc52755d"
 dependencies = [
  "async-stream",
  "async-trait",
@@ -1731,25 +1675,10 @@ dependencies = [
 ]
 
 [[package]]
-name = "sea-orm-cli"
-version = "0.10.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "874476cb7e9550e65acdc7deb1df7aeac4bf92ad35c259da0abb5580fab55450"
-dependencies = [
- "chrono",
- "clap",
- "regex",
- "sea-schema",
- "tracing",
- "tracing-subscriber",
- "url",
-]
-
-[[package]]
 name = "sea-orm-macros"
-version = "0.10.0"
+version = "0.10.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8ffc4df1f8caa12f156b57be5d3e32d21c81c8771b44a3a1171cf4f2b1d61355"
+checksum = "51235dc3e7330b241a3ca2fcd00c315feffb3f9e3da193c18c01aca369be7ec7"
 dependencies = [
  "bae",
  "heck 0.3.3",
@@ -1760,15 +1689,12 @@ dependencies = [
 
 [[package]]
 name = "sea-orm-migration"
-version = "0.10.0"
+version = "0.10.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "90d368aa1fef75f0a5b1de62f1f51028d068620c95719b181bdbba0a1e3f3345"
+checksum = "f9cc38a41f49640e5460b806766bea5cf66729ee6da9dab8b111a9cf5f6e57b9"
 dependencies = [
  "async-trait",
- "clap",
- "dotenvy",
  "sea-orm",
- "sea-orm-cli",
  "sea-schema",
  "tracing",
  "tracing-subscriber",
@@ -1810,9 +1736,9 @@ dependencies = [
 
 [[package]]
 name = "sea-schema"
-version = "0.10.1"
+version = "0.10.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9a1b18ed3f8bcadf93ca8b299d7204cd70b5272a52bd80550f2405112bc10db7"
+checksum = "0a2e6fd7fb2c4adc28f1b8fb29944fa5e6a77968df57f32b7146c9ae10fb2f2b"
 dependencies = [
  "futures",
  "sea-query",
@@ -2210,21 +2136,6 @@ dependencies = [
  "remove_dir_all",
  "winapi",
 ]
-
-[[package]]
-name = "termcolor"
-version = "1.1.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bab24d30b911b2376f3a13cc2cd443142f0c81dda04c118693e35b3835757755"
-dependencies = [
- "winapi-util",
-]
-
-[[package]]
-name = "textwrap"
-version = "0.15.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "949517c0cf1bf4ee812e2e07e08ab448e3ae0d23472aee8a06c985f0c8815b16"
 
 [[package]]
 name = "thiserror"
@@ -2794,15 +2705,6 @@ name = "winapi-i686-pc-windows-gnu"
 version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ac3b87c63620426dd9b991e5ce0329eff545bccbbb34f3be09ff6fb6ab51b7b6"
-
-[[package]]
-name = "winapi-util"
-version = "0.1.5"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "70ec6ce85bb158151cae5e5c87f95a8e97d2c0c4b001223f33a334e3ce5de178"
-dependencies = [
- "winapi",
-]
 
 [[package]]
 name = "winapi-x86_64-pc-windows-gnu"

@@ -11,5 +11,5 @@ path = "src/lib.rs"
 
 [dependencies]
 tokio = { version = "1.21.2", features = ["rt", "macros"] }
-sea-orm-migration = { version = "0.10.0", default-features = false, features = ["sqlx-postgres", "runtime-tokio-rustls"] }
+sea-orm-migration = { version = "0.10.1", default-features = false, features = ["sqlx-postgres", "runtime-tokio-rustls"] }
 entity = { path = "../entity" }

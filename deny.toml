@@ -2,10 +2,6 @@
 vulnerability = "deny"
 unmaintained = "warn"
 notice = "deny"
-ignore = [
-    "RUSTSEC-2021-0139", # ansi_term unmaintained
-    "RUSTSEC-2021-0141", # dotenv unmaintained
-]
 
 [licenses]
 unlicensed = "deny"
