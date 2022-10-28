@@ -1,7 +1,10 @@
 use super::error;
 
 error!(INTERNAL, INTERNAL_SERVER_ERROR, 0, "internal server error");
-error!(JSON_MISSING_FIELDS, BAD_REQUEST, 1, "missing fields");
+error!(
+    JSON_MISSING_FIELDS,
+    UNPROCESSABLE_ENTITY, 1, "missing fields"
+);
 error!(JSON_SYNTAX_ERROR, BAD_REQUEST, 2, "syntax error");
 error!(
     JSON_CONTENT_TYPE,
