@@ -612,8 +612,6 @@ mod update {
 
 mod disband {
     use super::*;
-    use std::borrow::Cow;
-    use tokio_tungstenite::tungstenite::protocol::{frame::coding::CloseCode, CloseFrame};
 
     #[tokio::test]
     async fn not_in_team() {
@@ -679,15 +677,10 @@ mod disband {
         let message = socket1.next().await;
         assert_close_frame!(
             message,
-            CloseFrame {
-                code: CloseCode::Normal,
-                reason: Cow::Owned(
-                    serde_json::to_string(&json!({
-                        "event": "DISBAND_TEAM",
-                    }))
-                    .unwrap()
-                ),
-            }
+            Normal,
+            {
+                "event": "DISBAND_TEAM",
+            },
         );
 
         let res = app.post("/team/leave").user(&member1).send().await;
@@ -695,15 +688,10 @@ mod disband {
         let message = socket2.next().await;
         assert_close_frame!(
             message,
-            CloseFrame {
-                code: CloseCode::Normal,
-                reason: Cow::Owned(
-                    serde_json::to_string(&json!({
-                        "event": "DISBAND_TEAM",
-                    }))
-                    .unwrap()
-                ),
-            }
+            Normal,
+            {
+                "event": "DISBAND_TEAM",
+            },
         );
 
         let res = app.post("/team/leave").user(&member2).send().await;
@@ -711,23 +699,16 @@ mod disband {
         let message = socket3.next().await;
         assert_close_frame!(
             message,
-            CloseFrame {
-                code: CloseCode::Normal,
-                reason: Cow::Owned(
-                    serde_json::to_string(&json!({
-                        "event": "DISBAND_TEAM",
-                    }))
-                    .unwrap()
-                ),
-            }
+            Normal,
+            {
+                "event": "DISBAND_TEAM",
+            },
         );
     }
 }
 
 mod kick {
     use super::*;
-    use std::borrow::Cow;
-    use tokio_tungstenite::tungstenite::protocol::{frame::coding::CloseCode, CloseFrame};
 
     #[tokio::test]
     async fn member_cannot_kick() {
@@ -915,18 +896,13 @@ mod kick {
 
         assert_close_frame!(
             socket2.next().await,
-            CloseFrame {
-                code: CloseCode::Normal,
-                reason: Cow::Owned(
-                    serde_json::to_string(&json!({
-                        "event": "KICK_USER",
-                        "data": {
-                            "user": member.id,
-                        }
-                    }))
-                    .unwrap()
-                ),
-            }
+            Normal,
+            {
+                "event": "KICK_USER",
+                "data": {
+                    "user": member.id,
+                }
+            },
         );
     }
 
@@ -978,18 +954,13 @@ mod kick {
 
         assert_close_frame!(
             socket2.next().await,
-            CloseFrame {
-                code: CloseCode::Normal,
-                reason: Cow::Owned(
-                    serde_json::to_string(&json!({
-                        "event": "KICK_USER",
-                        "data": {
-                            "user": member.id,
-                        }
-                    }))
-                    .unwrap()
-                ),
-            }
+            Normal,
+            {
+                "event": "KICK_USER",
+                "data": {
+                    "user": member.id,
+                }
+            },
         );
     }
 
@@ -1056,18 +1027,13 @@ mod kick {
 
         assert_close_frame!(
             socket3.next().await,
-            CloseFrame {
-                code: CloseCode::Normal,
-                reason: Cow::Owned(
-                    serde_json::to_string(&json!({
-                        "event": "KICK_USER",
-                        "data": {
-                            "user": member.id,
-                        }
-                    }))
-                    .unwrap()
-                ),
-            }
+            Normal,
+            {
+                "event": "KICK_USER",
+                "data": {
+                    "user": member.id,
+                }
+            },
         );
     }
 }

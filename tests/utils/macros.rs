@@ -50,13 +50,24 @@ pub(crate) use enable_logging;
 
 #[allow(unused_macros)]
 macro_rules! assert_close_frame {
-    ($expr:expr, $frame:expr) => {
-        if let Some(Ok(::tokio_tungstenite::tungstenite::Message::Close(Some(frame)))) = $expr {
-            assert_eq!(frame, $frame);
+    ($expr:expr, $code:ident, {$($json:tt)+} $(,)?) => {{
+        use ::tokio_tungstenite::tungstenite::{
+            protocol::frame::coding::CloseCode,
+            Message,
+        };
+
+        if let Some(Ok(Message::Close(Some(frame)))) = $expr {
+            assert_eq!(frame.code, CloseCode::$code);
+
+            let reason = frame.reason.into_owned();
+            let reason: ::serde_json::Value = ::serde_json::from_str(&reason).expect("invalid json");
+
+            ::assert_json_diff::assert_json_eq!(reason, ::serde_json::json!({$($json)+}));
         } else {
-            assert!(false, "no close frame");
+            panic!("no or empty close frame");
         }
-    };
+
+    }}
 }
 
 #[allow(unused_imports)]
