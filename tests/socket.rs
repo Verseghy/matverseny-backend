@@ -37,7 +37,23 @@ async fn team_info() {
     let mut socket = app.socket("/ws").user(&user).start().await;
     let message = utils::get_socket_message(socket.next().await);
 
-    assert!(message.is_object());
-    assert!(message["event"].is_string());
-    assert_eq!(message["event"].as_str().unwrap(), "TEAM_INFO");
+    assert_json_include!(
+        actual: message,
+        expected: json!({
+            "event": "TEAM_INFO",
+            "data": {
+                "name": "Team-0",
+                "members": [{
+                    "class": 9,
+                    "id": user.id,
+                    "rank": "Owner",
+                }],
+                "locked": false,
+            },
+        })
+    );
+
+    assert!(message["data"].get("code").is_some());
+    // TODO: this should equal to the name in the iam
+    assert!(message["data"]["members"][0].get("name").is_some());
 }

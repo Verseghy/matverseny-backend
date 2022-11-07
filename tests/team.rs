@@ -140,7 +140,7 @@ mod join {
 
         let message = utils::get_socket_message(socket.next().await);
 
-        assert_eq!(
+        assert_json_eq!(
             message,
             json!({
                 "event": "JOIN_TEAM",
@@ -232,7 +232,7 @@ mod leave {
 
         let message = utils::get_socket_message(socket.next().await);
 
-        assert_eq!(
+        assert_json_eq!(
             message,
             json!({
                 "event": "LEAVE_TEAM",
@@ -495,7 +495,7 @@ mod update {
 
         let message = utils::get_socket_message(socket.next().await);
 
-        assert_eq!(
+        assert_json_eq!(
             message,
             json!({
                 "event": "UPDATE_TEAM",
@@ -531,7 +531,7 @@ mod update {
 
         let message = utils::get_socket_message(socket.next().await);
 
-        assert_eq!(
+        assert_json_eq!(
             message,
             json!({
                 "event": "UPDATE_TEAM",
@@ -567,7 +567,7 @@ mod update {
 
         let message = utils::get_socket_message(socket.next().await);
 
-        assert_eq!(
+        assert_json_eq!(
             message,
             json!({
                 "event": "UPDATE_TEAM",
@@ -598,7 +598,7 @@ mod update {
 
         let message = utils::get_socket_message(socket.next().await);
 
-        assert_eq!(
+        assert_json_eq!(
             message,
             json!({
                 "event": "UPDATE_TEAM",
@@ -903,7 +903,7 @@ mod kick {
 
         assert_eq!(res.status(), StatusCode::NO_CONTENT);
 
-        assert_eq!(
+        assert_json_eq!(
             utils::get_socket_message(socket1.next().await),
             json!({
                 "event": "KICK_USER",
@@ -966,7 +966,7 @@ mod kick {
 
         assert_eq!(res.status(), StatusCode::NO_CONTENT);
 
-        assert_eq!(
+        assert_json_eq!(
             utils::get_socket_message(socket1.next().await),
             json!({
                 "event": "KICK_USER",
@@ -1034,7 +1034,7 @@ mod kick {
 
         assert_eq!(res.status(), StatusCode::NO_CONTENT);
 
-        assert_eq!(
+        assert_json_eq!(
             utils::get_socket_message(socket1.next().await),
             json!({
                 "event": "KICK_USER",
@@ -1044,7 +1044,7 @@ mod kick {
             })
         );
 
-        assert_eq!(
+        assert_json_eq!(
             utils::get_socket_message(socket2.next().await),
             json!({
                 "event": "KICK_USER",
