@@ -1,5 +1,5 @@
 use super::prelude::*;
-use super::{get_socket_message, User};
+use super::{super::utils, User};
 
 #[allow(unused)]
 pub struct Team {
@@ -16,11 +16,7 @@ impl Team {
     #[allow(unused)]
     pub async fn get_code(&self) -> String {
         let mut socket = self.app.socket("/ws").user(&self.owner).start().await;
-        let message = get_socket_message(socket.next().await);
-
-        assert!(message.is_object());
-        assert!(message["event"].is_string());
-        assert_eq!(message["event"].as_str().unwrap(), "TEAM_INFO");
+        let message = assert_team_info!(socket);
 
         let code = message["data"]["code"]
             .as_str()

@@ -15,8 +15,8 @@ pub(crate) use assert_error;
 macro_rules! assert_team_info {
     ($socket:expr) => {{
         let message = utils::get_socket_message((&mut $socket).next().await);
-
         utils::macros::assert_event_type!(message, "TEAM_INFO");
+        message
     }};
 }
 
