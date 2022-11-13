@@ -6,6 +6,6 @@ publish.workspace = true
 license-file.workspace = true
 
 [dependencies]
-sea-orm = { version = "0.10.1", default-features = false, features = ["runtime-tokio-rustls", "sqlx-postgres", "macros", "with-chrono"] }
-serde = { version = "1.0.147", features = ["derive"] }
+sea-orm = { version = "0.10.4", default-features = false, features = ["runtime-tokio-rustls", "sqlx-postgres", "macros", "with-uuid"] }
+serde = { version = "1.0.148", features = ["derive"] }
 serde_repr = "0.1.9"

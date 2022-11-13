@@ -20,6 +20,8 @@ pub struct GetClaimsLayer<ST> {
     _marker: PhantomData<*const ST>,
 }
 
+unsafe impl<ST> Send for GetClaimsLayer<ST> {}
+
 impl<ST> GetClaimsLayer<ST> {
     pub fn new() -> Self {
         Self {
