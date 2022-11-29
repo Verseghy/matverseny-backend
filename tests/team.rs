@@ -6,6 +6,7 @@ mod create {
     use super::*;
 
     #[tokio::test]
+    #[serial]
     async fn success() {
         let app = App::new().await;
         let user = app.register_user().await;
@@ -26,7 +27,9 @@ mod create {
         assert!(body.is_object());
         assert!(body["id"].is_string());
     }
+
     #[tokio::test]
+    #[serial]
     async fn name_already_taken() {
         let app = App::new().await;
         let user = app.register_user().await;
@@ -62,6 +65,7 @@ mod create {
     }
 
     #[tokio::test]
+    #[serial]
     async fn already_in_team() {
         let app = App::new().await;
         let user = app.register_user().await;
@@ -95,6 +99,7 @@ mod create {
     }
 
     #[tokio::test]
+    #[serial]
     async fn not_registered() {
         let app = App::new().await;
         let user = utils::iam::register_user().await;
@@ -116,6 +121,7 @@ mod join {
     use super::*;
 
     #[tokio::test]
+    #[serial]
     async fn success() {
         let app = App::new().await;
         let owner = app.register_user().await;
@@ -152,6 +158,7 @@ mod join {
     }
 
     #[tokio::test]
+    #[serial]
     async fn wrong_code() {
         let app = App::new().await;
         let user = app.register_user().await;
@@ -169,6 +176,7 @@ mod join {
     }
 
     #[tokio::test]
+    #[serial]
     async fn already_in_team() {
         let app = App::new().await;
         let user1 = app.register_user().await;
@@ -190,6 +198,7 @@ mod join {
     }
 
     #[tokio::test]
+    #[serial]
     async fn locked_team() {
         let app = App::new().await;
         let owner = app.register_user().await;
@@ -216,6 +225,7 @@ mod leave {
     use super::*;
 
     #[tokio::test]
+    #[serial]
     async fn success() {
         let app = App::new().await;
         let owner = app.register_user().await;
@@ -244,6 +254,7 @@ mod leave {
     }
 
     #[tokio::test]
+    #[serial]
     async fn not_in_team() {
         let app = App::new().await;
         let owner = app.register_user().await;
@@ -257,6 +268,7 @@ mod leave {
     }
 
     #[tokio::test]
+    #[serial]
     async fn locked_team() {
         let app = App::new().await;
         let owner = app.register_user().await;
@@ -272,6 +284,7 @@ mod leave {
     }
 
     #[tokio::test]
+    #[serial]
     async fn owner_cannot_leave() {
         let app = App::new().await;
         let owner = app.register_user().await;
@@ -287,6 +300,7 @@ mod update {
     use super::*;
 
     #[tokio::test]
+    #[serial]
     async fn should_not_error_when_empty_json() {
         let app = App::new().await;
         let user = app.register_user().await;
@@ -298,6 +312,7 @@ mod update {
     }
 
     #[tokio::test]
+    #[serial]
     async fn must_be_owner() {
         let app = App::new().await;
         let owner = app.register_user().await;
@@ -330,6 +345,7 @@ mod update {
     }
 
     #[tokio::test]
+    #[serial]
     async fn non_existing_user() {
         let app = App::new().await;
         let owner = app.register_user().await;
@@ -359,6 +375,7 @@ mod update {
     }
 
     #[tokio::test]
+    #[serial]
     async fn existing_user_but_not_a_team_member() {
         let app = App::new().await;
         let owner = app.register_user().await;
@@ -390,6 +407,7 @@ mod update {
     }
 
     #[tokio::test]
+    #[serial]
     async fn not_in_team() {
         let app = App::new().await;
         let user = app.register_user().await;
@@ -407,6 +425,7 @@ mod update {
     }
 
     #[tokio::test]
+    #[serial]
     async fn update_while_locking() {
         let app = App::new().await;
         let user = app.register_user().await;
@@ -426,6 +445,7 @@ mod update {
     }
 
     #[tokio::test]
+    #[serial]
     async fn locked_team() {
         let app = App::new().await;
         let user = app.register_user().await;
@@ -455,6 +475,7 @@ mod update {
     }
 
     #[tokio::test]
+    #[serial]
     async fn update_while_unlocking() {
         let app = App::new().await;
         let user = app.register_user().await;
@@ -485,6 +506,7 @@ mod update {
     }
 
     #[tokio::test]
+    #[serial]
     async fn success_name() {
         let app = App::new().await;
         let user = app.register_user().await;
@@ -518,6 +540,7 @@ mod update {
     }
 
     #[tokio::test]
+    #[serial]
     async fn success_owner() {
         let app = App::new().await;
         let owner = app.register_user().await;
@@ -556,6 +579,7 @@ mod update {
     }
 
     #[tokio::test]
+    #[serial]
     async fn success_coowner() {
         let app = App::new().await;
         let owner = app.register_user().await;
@@ -594,6 +618,7 @@ mod update {
     }
 
     #[tokio::test]
+    #[serial]
     async fn delete_coowner() {
         let app = App::new().await;
         let owner = app.register_user().await;
@@ -629,6 +654,7 @@ mod disband {
     use super::*;
 
     #[tokio::test]
+    #[serial]
     async fn not_in_team() {
         let app = App::new().await;
         let user = app.register_user().await;
@@ -639,6 +665,7 @@ mod disband {
     }
 
     #[tokio::test]
+    #[serial]
     async fn not_owner() {
         let app = App::new().await;
         let owner = app.register_user().await;
@@ -653,6 +680,7 @@ mod disband {
     }
 
     #[tokio::test]
+    #[serial]
     async fn locked_team() {
         let app = App::new().await;
         let owner = app.register_user().await;
@@ -666,6 +694,7 @@ mod disband {
     }
 
     #[tokio::test]
+    #[serial]
     async fn success() {
         let app = App::new().await;
         let owner = app.register_user().await;
@@ -726,6 +755,7 @@ mod kick {
     use super::*;
 
     #[tokio::test]
+    #[serial]
     async fn member_cannot_kick() {
         let app = App::new().await;
         let owner = app.register_user().await;
@@ -750,6 +780,7 @@ mod kick {
     }
 
     #[tokio::test]
+    #[serial]
     async fn locked_team() {
         let app = App::new().await;
         let owner = app.register_user().await;
@@ -773,6 +804,7 @@ mod kick {
     }
 
     #[tokio::test]
+    #[serial]
     async fn cannot_kick_owner() {
         let app = App::new().await;
         let owner = app.register_user().await;
@@ -805,6 +837,7 @@ mod kick {
     }
 
     #[tokio::test]
+    #[serial]
     async fn cannot_kick_themself() {
         let app = App::new().await;
         let owner = app.register_user().await;
@@ -837,6 +870,7 @@ mod kick {
     }
 
     #[tokio::test]
+    #[serial]
     async fn not_member() {
         let app = App::new().await;
         let owner = app.register_user().await;
@@ -857,6 +891,7 @@ mod kick {
     }
 
     #[tokio::test]
+    #[serial]
     async fn user_not_exists() {
         let app = App::new().await;
         let owner = app.register_user().await;
@@ -875,6 +910,7 @@ mod kick {
     }
 
     #[tokio::test]
+    #[serial]
     async fn success_owner_kick_member() {
         let app = App::new().await;
         let owner = app.register_user().await;
@@ -922,6 +958,7 @@ mod kick {
     }
 
     #[tokio::test]
+    #[serial]
     async fn success_owner_kick_coowner() {
         let app = App::new().await;
         let owner = app.register_user().await;
@@ -980,6 +1017,7 @@ mod kick {
     }
 
     #[tokio::test]
+    #[serial]
     async fn success_coowner_kick_member() {
         let app = App::new().await;
         let owner = app.register_user().await;
@@ -1057,6 +1095,7 @@ mod code {
     use super::*;
 
     #[tokio::test]
+    #[serial]
     async fn not_coowner() {
         let app = App::new().await;
         let owner = app.register_user().await;
@@ -1071,6 +1110,7 @@ mod code {
     }
 
     #[tokio::test]
+    #[serial]
     async fn locked_team() {
         let app = App::new().await;
         let owner = app.register_user().await;
@@ -1084,6 +1124,7 @@ mod code {
     }
 
     #[tokio::test]
+    #[serial]
     async fn success() {
         let app = App::new().await;
         let owner = app.register_user().await;

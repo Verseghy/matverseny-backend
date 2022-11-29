@@ -12,7 +12,7 @@ use matverseny_backend::State;
 use migration::MigratorTrait;
 use request::*;
 use reqwest::Client;
-use sea_orm::{ConnectOptions, ConnectionTrait, Database, DbConn, Statement};
+use sea_orm::{ConnectOptions, Database, DbConn};
 use serde_json::{json, Value};
 use std::{
     net::{Ipv4Addr, SocketAddr, TcpListener},
@@ -26,13 +26,10 @@ use tokio::task::JoinHandle;
 use tokio_tungstenite::tungstenite::Message;
 use tracing::log::LevelFilter;
 use user::*;
-use uuid::Uuid;
 
-const DEFAULT_URL: &str = "postgres://matverseny:secret@127.0.0.1:5432";
+const DEFAULT_URL: &str = "postgres://matverseny:secret@127.0.0.1:5432/matverseny";
 
 pub struct AppInner {
-    _database: String,
-    _db_conn: DbConn,
     _join_handle: JoinHandle<()>,
     client: Client,
     addr: SocketAddr,
@@ -47,18 +44,16 @@ impl App {
     pub async fn new() -> Self {
         dotenv().ok();
 
-        let (conn, conn2, database) = Self::setup_database().await;
+        let conn = Self::setup_database().await;
 
         let addr = SocketAddr::from((Ipv4Addr::UNSPECIFIED, 0));
         let listener = TcpListener::bind(addr).expect("failed to bind tcp listener");
         let addr = listener.local_addr().unwrap();
-        let state = State::with_database(conn2).await;
+        let state = State::with_database(conn).await;
 
         let join_handle = tokio::spawn(matverseny_backend::run(listener, state));
 
         let inner = AppInner {
-            _database: database,
-            _db_conn: conn,
             _join_handle: join_handle,
             client: Client::new(),
             addr,
@@ -69,7 +64,7 @@ impl App {
         }
     }
 
-    async fn setup_database() -> (DbConn, DbConn, String) {
+    async fn setup_database() -> DbConn {
         let mut opts = ConnectOptions::new(DEFAULT_URL.to_owned());
         opts.sqlx_logging_level(LevelFilter::Debug);
 
@@ -77,30 +72,11 @@ impl App {
             .await
             .expect("failed to connect to database");
 
-        let database = Uuid::new_v4()
-            .hyphenated()
-            .encode_lower(&mut Uuid::encode_buffer())
-            .to_owned();
-
-        conn.execute(Statement::from_string(
-            conn.get_database_backend(),
-            format!("create database \"{}\"", database),
-        ))
-        .await
-        .expect("failed to create database");
-
-        let mut opts = ConnectOptions::new(format!("{}/{}", DEFAULT_URL, database));
-        opts.sqlx_logging_level(LevelFilter::Debug);
-
-        let conn2 = Database::connect(opts)
-            .await
-            .expect("failed to connect to database");
-
-        migration::Migrator::up(&conn2, None)
+        migration::Migrator::fresh(&conn)
             .await
             .expect("failed to apply migrations");
 
-        (conn, conn2, database)
+        conn
     }
 
     #[allow(unused)]

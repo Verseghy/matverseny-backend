@@ -4,6 +4,7 @@ use http::header::AUTHORIZATION;
 use utils::prelude::*;
 
 #[tokio::test]
+#[serial]
 async fn no_claims() {
     let app = App::new().await;
 
@@ -13,6 +14,7 @@ async fn no_claims() {
 }
 
 #[tokio::test]
+#[serial]
 async fn not_bearer_token() {
     let app = App::new().await;
 
@@ -27,6 +29,7 @@ async fn not_bearer_token() {
 }
 
 #[tokio::test]
+#[serial]
 async fn invalid_claims() {
     let app = App::new().await;
 
@@ -43,6 +46,7 @@ async fn invalid_claims() {
 // TODO: test correct jwt body but wrong signature
 
 #[tokio::test]
+#[serial]
 async fn success() {
     let app = App::new().await;
     let user = utils::iam::register_user().await;
@@ -61,6 +65,7 @@ async fn success() {
 }
 
 #[tokio::test]
+#[serial]
 async fn already_registered() {
     let app = App::new().await;
     let user = utils::iam::register_user().await;

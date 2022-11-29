@@ -4,6 +4,7 @@ use tokio_tungstenite::tungstenite::Error;
 use utils::prelude::*;
 
 #[tokio::test]
+#[serial]
 async fn no_team() {
     let app = App::new().await;
     let user = app.register_user().await;
@@ -31,6 +32,7 @@ async fn no_team() {
 }
 
 #[tokio::test]
+#[serial]
 async fn team_info() {
     let app = App::new().await;
     let user = app.register_user().await;
