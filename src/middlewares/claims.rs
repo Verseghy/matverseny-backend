@@ -17,7 +17,7 @@ use tracing::Span;
 
 #[derive(Debug, Clone)]
 pub struct GetClaimsLayer<ST> {
-    _marker: PhantomData<*const ST>,
+    _marker: PhantomData<fn() -> ST>,
 }
 
 unsafe impl<ST> Send for GetClaimsLayer<ST> {}
@@ -41,10 +41,8 @@ impl<S, ST> Layer<S> for GetClaimsLayer<ST> {
 #[derive(Debug, Clone)]
 pub struct GetClaims<S, ST> {
     inner: S,
-    _marker: PhantomData<*const ST>,
+    _marker: PhantomData<fn() -> ST>,
 }
-
-unsafe impl<S, ST> Send for GetClaims<S, ST> where S: Send {}
 
 impl<S, ST> GetClaims<S, ST> {
     fn new(inner: S) -> Self {
