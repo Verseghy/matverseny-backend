@@ -1,14 +1,11 @@
-use crate::{error, error::Error, handlers::socket::Event, iam::Claims, Result, StateTrait};
+use crate::{
+    error, error::Error, handlers::socket::Event, iam::Claims, utils::topics, Result, StateTrait,
+};
 use axum::{http::StatusCode, Extension};
-use entity::{teams, users};
+use entity::{team_members, teams, users};
 use rdkafka::producer::FutureRecord;
-use sea_orm::{EntityTrait, FromQueryResult, IntoActiveModel, QuerySelect, Set, TransactionTrait};
+use sea_orm::{EntityTrait, QuerySelect, TransactionTrait};
 use std::time::Duration;
-
-#[derive(Debug, FromQueryResult)]
-struct Team {
-    locked: bool,
-}
 
 pub async fn leave_team<S: StateTrait>(
     Extension(state): Extension<S>,
@@ -26,17 +23,10 @@ pub async fn leave_team<S: StateTrait>(
             error::USER_NOT_REGISTERED
         })?;
 
-    if user.team.is_none() {
-        return Err(error::USER_NOT_IN_TEAM);
-    }
-
-    let team = users::Entity::select_team(&user.id)
+    let team = teams::Entity::find_from_member(&user.id)
         // NOTE: maybe not neccessary because locking the team (in the application and not in the database)
         //       while this handler is running shouldn't make invalid state in the database
         .lock_shared()
-        .select_only()
-        .column(teams::Column::Locked)
-        .into_model::<Team>()
         .one(&txn)
         .await?
         .ok_or(error::USER_NOT_IN_TEAM)?;
@@ -45,23 +35,20 @@ pub async fn leave_team<S: StateTrait>(
         return Err(error::LOCKED_TEAM);
     }
 
-    let kafka_payload = serde_json::to_string(&Event::LeaveTeam {
-        user: user.id.clone(),
-    })
-    .unwrap();
-    let kafka_topic = super::get_kafka_topic(user.team.as_ref().unwrap());
+    if team.owner == user.id {
+        return Err(error::OWNER_CANNOT_LEAVE);
+    }
 
-    let mut active_model = user.into_active_model();
-    active_model.team = Set(None);
-
-    users::Entity::update(active_model).exec(&txn).await?;
+    team_members::Entity::delete_by_id((user.id, team.id))
+        .exec(&txn)
+        .await?;
 
     state
         .kafka_producer()
         .send(
-            FutureRecord::<(), String>::to(&kafka_topic)
+            FutureRecord::<(), String>::to(&topics::team_info(&team.id))
                 .partition(0)
-                .payload(&kafka_payload),
+                .payload(&serde_json::to_string(&Event::LeaveTeam { user: user.id }).unwrap()),
             Duration::from_secs(5),
         )
         .await

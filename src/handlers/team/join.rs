@@ -1,20 +1,20 @@
-use crate::{error, handlers::socket::Event, iam::Claims, Error, Json, Result, StateTrait};
+use crate::{
+    error::{self, DatabaseError as _},
+    handlers::socket::Event,
+    iam::Claims,
+    utils::topics,
+    Error, Json, Result, StateTrait,
+};
 use axum::{http::StatusCode, Extension};
-use entity::{teams, users};
+use entity::{team_members, teams, users};
 use rdkafka::producer::FutureRecord;
-use sea_orm::{EntityTrait, FromQueryResult, IntoActiveModel, QuerySelect, Set, TransactionTrait};
+use sea_orm::{EntityTrait, QuerySelect, Set, TransactionTrait};
 use serde::Deserialize;
 use std::time::Duration;
 
 #[derive(Deserialize)]
 pub struct Request {
     code: String,
-}
-
-#[derive(Debug, FromQueryResult)]
-struct Team {
-    id: String,
-    locked: bool,
 }
 
 pub async fn join_team<S: StateTrait>(
@@ -28,10 +28,6 @@ pub async fn join_team<S: StateTrait>(
         // NOTE: maybe not neccessary because locking the team (in the application and not in the database)
         //       while this handler is running shouldn't make invalid state in the database
         .lock_shared()
-        .select_only()
-        .column(teams::Column::Id)
-        .column(teams::Column::Locked)
-        .into_model::<Team>()
         .one(&txn)
         .await?;
 
@@ -50,26 +46,25 @@ pub async fn join_team<S: StateTrait>(
                 error::USER_NOT_REGISTERED
             })?;
 
-        if user.team.is_some() {
-            return Err(error::ALREADY_IN_TEAM);
+        let active_model = team_members::ActiveModel {
+            user_id: Set(user.id),
+            team_id: Set(team.id),
+        };
+
+        let result = team_members::Entity::insert(active_model).exec(&txn).await;
+
+        if let Err(err) = result {
+            if err.unique_violation("UC_team_members_user_id") {
+                return Err(error::ALREADY_IN_TEAM);
+            }
         }
-
-        let kafka_payload = serde_json::to_string(&Event::JoinTeam {
-            user: user.id.clone(),
-        })
-        .unwrap();
-
-        let mut active_model = user.into_active_model();
-        active_model.team = Set(Some(team.id.clone()));
-
-        users::Entity::update(active_model).exec(&txn).await?;
 
         state
             .kafka_producer()
             .send(
-                FutureRecord::<(), String>::to(&super::get_kafka_topic(&team.id))
+                FutureRecord::<(), String>::to(&topics::team_info(&team.id))
                     .partition(0)
-                    .payload(&kafka_payload),
+                    .payload(&serde_json::to_string(&Event::JoinTeam { user: user.id }).unwrap()),
                 Duration::from_secs(5),
             )
             .await

@@ -19,9 +19,12 @@ async fn no_team() {
 
     if let Err(Error::Http(response)) = socket {
         assert_eq!(response.status(), error::USER_NOT_IN_TEAM.status());
-        // TODO: verify body when https://github.com/snapview/tungstenite-rs/pull/298 lands
-        // this is should break when the PR gets merged
-        assert_eq!(response.body(), &None);
+
+        let body = response.body();
+        assert!(body.is_some());
+
+        let response: Value = serde_json::from_slice(&body.as_ref().unwrap()).unwrap();
+        assert_eq!(response["code"], error::USER_NOT_IN_TEAM.code());
     } else {
         unreachable!();
     }
@@ -45,7 +48,7 @@ async fn team_info() {
                 "name": "Team-0",
                 "members": [{
                     "class": 9,
-                    "id": user.id,
+                    "id": user.id.strip_prefix("UserID-").unwrap(),
                     "rank": "Owner",
                 }],
                 "locked": false,

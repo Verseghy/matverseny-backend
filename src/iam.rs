@@ -2,15 +2,48 @@ use crate::error;
 use axum::{async_trait, extract::FromRequestParts, http::request::Parts};
 use jsonwebtoken::{errors::Error, Algorithm, DecodingKey, Validation};
 use once_cell::sync::Lazy;
-use serde::Deserialize;
+use serde::{de, Deserialize, Deserializer};
 use std::env;
+use uuid::Uuid;
+
+fn deserialize_subject<'de, D>(deserializer: D) -> Result<Uuid, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    struct Visitor;
+
+    impl<'de> de::Visitor<'de> for Visitor {
+        type Value = Uuid;
+
+        fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
+            write!(formatter, "a uuid prefixed with `UserID-`")
+        }
+
+        fn visit_str<E>(self, v: &str) -> Result<Self::Value, E>
+        where
+            E: de::Error,
+        {
+            if let Some(id) = v.strip_prefix("UserID-") {
+                if let Ok(id) = Uuid::parse_str(id) {
+                    Ok(id)
+                } else {
+                    Err(de::Error::invalid_value(de::Unexpected::Str(id), &self))
+                }
+            } else {
+                Err(de::Error::invalid_value(de::Unexpected::Str(v), &self))
+            }
+        }
+    }
+
+    deserializer.deserialize_str(Visitor)
+}
 
 #[derive(Debug, Deserialize)]
 pub struct Claims {
     #[serde(rename = "iss")]
     pub issuer: String,
-    #[serde(rename = "sub")]
-    pub subject: String,
+    #[serde(rename = "sub", deserialize_with = "deserialize_subject")]
+    pub subject: Uuid,
     #[serde(rename = "aud")]
     pub audience: Vec<String>,
     #[serde(rename = "exp")]
@@ -73,7 +106,7 @@ static VALIDATION: Lazy<Validation> = Lazy::new(|| {
 
 impl IamTrait for Iam {
     fn get_claims(&self, token: &str) -> Result<Claims, Error> {
-        match jsonwebtoken::decode(token, &self.decoding, &*VALIDATION) {
+        match jsonwebtoken::decode(token, &self.decoding, &VALIDATION) {
             Ok(decode) => Ok(decode.claims),
             Err(err) => {
                 tracing::error!("jwt error: {:?}", err);

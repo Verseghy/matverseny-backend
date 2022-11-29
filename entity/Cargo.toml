@@ -9,3 +9,4 @@ license-file.workspace = true
 sea-orm = { version = "0.10.4", default-features = false, features = ["runtime-tokio-rustls", "sqlx-postgres", "macros", "with-uuid"] }
 serde = { version = "1.0.148", features = ["derive"] }
 serde_repr = "0.1.9"
+uuid.workspace = true

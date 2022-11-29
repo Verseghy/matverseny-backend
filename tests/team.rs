@@ -86,7 +86,7 @@ mod create {
             .post("/team/create")
             .user(&user)
             .json(&json!({
-                "name": "Test Team",
+                "name": "Test Team 2",
             }))
             .send()
             .await;
@@ -145,7 +145,7 @@ mod join {
             json!({
                 "event": "JOIN_TEAM",
                 "data": {
-                    "user": user.id,
+                    "user": user.id.strip_prefix("UserID-").unwrap(),
                 }
             })
         );
@@ -237,7 +237,7 @@ mod leave {
             json!({
                 "event": "LEAVE_TEAM",
                 "data": {
-                    "user": member.id,
+                    "user": member.id.strip_prefix("UserID-").unwrap(),
                 }
             })
         );
@@ -270,6 +270,17 @@ mod leave {
         let res = app.post("/team/leave").user(&member).send().await;
         assert_error!(res, error::LOCKED_TEAM);
     }
+
+    #[tokio::test]
+    async fn owner_cannot_leave() {
+        let app = App::new().await;
+        let owner = app.register_user().await;
+        let _team = app.create_team(&owner).await;
+
+        let res = app.post("/team/leave").user(&owner).send().await;
+
+        assert_error!(res, error::OWNER_CANNOT_LEAVE);
+    }
 }
 
 mod update {
@@ -299,7 +310,7 @@ mod update {
             .patch("/team")
             .user(&member)
             .json(&json!({
-                "owner": member.id,
+                "owner": member.id.strip_prefix("UserID-").unwrap(),
             }))
             .send()
             .await;
@@ -328,7 +339,7 @@ mod update {
             .patch("/team")
             .user(&owner)
             .json(&json!({
-                "coowner": format!("UserID-{}", uuid::Uuid::nil()),
+                "co_owner": uuid::Uuid::nil(),
             }))
             .send()
             .await;
@@ -339,7 +350,7 @@ mod update {
             .patch("/team")
             .user(&owner)
             .json(&json!({
-                "owner": format!("UserID-{}", uuid::Uuid::nil()),
+                "owner": uuid::Uuid::nil(),
             }))
             .send()
             .await;
@@ -359,7 +370,7 @@ mod update {
             .patch("/team")
             .user(&owner)
             .json(&json!({
-                "coowner": user.id,
+                "co_owner": user.id.strip_prefix("UserID-").unwrap(),
             }))
             .send()
             .await;
@@ -370,7 +381,7 @@ mod update {
             .patch("/team")
             .user(&owner)
             .json(&json!({
-                "owner": user.id,
+                "owner": user.id.strip_prefix("UserID-").unwrap(),
             }))
             .send()
             .await;
@@ -518,11 +529,13 @@ mod update {
         let mut socket = app.socket("/ws").user(&owner).start().await;
         assert_team_info!(socket);
 
+        let member_uuid = member.id.strip_prefix("UserID-").unwrap();
+
         let res = app
             .patch("/team")
             .user(&owner)
             .json(&json!({
-                "owner": member.id,
+                "owner": member_uuid,
             }))
             .send()
             .await;
@@ -536,7 +549,7 @@ mod update {
             json!({
                 "event": "UPDATE_TEAM",
                 "data": {
-                    "owner": member.id,
+                    "owner": member_uuid,
                 }
             })
         );
@@ -554,11 +567,13 @@ mod update {
         let mut socket = app.socket("/ws").user(&owner).start().await;
         assert_team_info!(socket);
 
+        let member_id = member.id.strip_prefix("UserID-").unwrap();
+
         let res = app
             .patch("/team")
             .user(&owner)
             .json(&json!({
-                "coowner": member.id,
+                "co_owner": member_id,
             }))
             .send()
             .await;
@@ -572,7 +587,7 @@ mod update {
             json!({
                 "event": "UPDATE_TEAM",
                 "data": {
-                    "coowner": member.id,
+                    "co_owner": member_id,
                 }
             })
         );
@@ -590,7 +605,7 @@ mod update {
         let res = app
             .patch("/team")
             .user(&owner)
-            .json(&json!({ "coowner": null }))
+            .json(&json!({ "co_owner": null }))
             .send()
             .await;
 
@@ -603,7 +618,7 @@ mod update {
             json!({
                 "event": "UPDATE_TEAM",
                 "data": {
-                    "coowner": null,
+                    "co_owner": null,
                 }
             })
         );
@@ -726,7 +741,7 @@ mod kick {
             .post("/team/kick")
             .user(&member1)
             .json(&json!({
-                "user": member2.id,
+                "user": member2.id.strip_prefix("UserID-").unwrap(),
             }))
             .send()
             .await;
@@ -749,7 +764,7 @@ mod kick {
             .post("/team/kick")
             .user(&owner)
             .json(&json!({
-                "user": member.id,
+                "user": member.id.strip_prefix("UserID-").unwrap(),
             }))
             .send()
             .await;
@@ -770,7 +785,7 @@ mod kick {
             .patch("/team")
             .user(&owner)
             .json(&json!({
-                "coowner": member.id,
+                "co_owner": member.id.strip_prefix("UserID-").unwrap(),
             }))
             .send()
             .await;
@@ -781,7 +796,7 @@ mod kick {
             .post("/team/kick")
             .user(&member)
             .json(&json!({
-                "user": owner.id,
+                "user": owner.id.strip_prefix("UserID-").unwrap(),
             }))
             .send()
             .await;
@@ -802,7 +817,7 @@ mod kick {
             .patch("/team")
             .user(&owner)
             .json(&json!({
-                "coowner": member.id,
+                "co_owner": member.id.strip_prefix("UserID-").unwrap(),
             }))
             .send()
             .await;
@@ -813,7 +828,7 @@ mod kick {
             .post("/team/kick")
             .user(&member)
             .json(&json!({
-                "user": member.id,
+                "user": member.id.strip_prefix("UserID-").unwrap(),
             }))
             .send()
             .await;
@@ -833,7 +848,7 @@ mod kick {
             .post("/team/kick")
             .user(&owner)
             .json(&json!({
-                "user": member.id,
+                "user": member.id.strip_prefix("UserID-").unwrap(),
             }))
             .send()
             .await;
@@ -851,7 +866,7 @@ mod kick {
             .post("/team/kick")
             .user(&owner)
             .json(&json!({
-                "user": "UserID-test",
+                "user": uuid::Uuid::nil(),
             }))
             .send()
             .await;
@@ -877,7 +892,7 @@ mod kick {
             .post("/team/kick")
             .user(&owner)
             .json(&json!({
-                "user": member.id,
+                "user": member.id.strip_prefix("UserID-").unwrap(),
             }))
             .send()
             .await;
@@ -889,7 +904,7 @@ mod kick {
             json!({
                 "event": "KICK_USER",
                 "data": {
-                    "user": member.id,
+                    "user": member.id.strip_prefix("UserID-").unwrap(),
                 }
             })
         );
@@ -900,7 +915,7 @@ mod kick {
             {
                 "event": "KICK_USER",
                 "data": {
-                    "user": member.id,
+                    "user": member.id.strip_prefix("UserID-").unwrap(),
                 }
             },
         );
@@ -919,7 +934,7 @@ mod kick {
             .patch("/team")
             .user(&owner)
             .json(&json!({
-                "coowner": member.id,
+                "co_owner": member.id.strip_prefix("UserID-").unwrap(),
             }))
             .send()
             .await;
@@ -935,7 +950,7 @@ mod kick {
             .post("/team/kick")
             .user(&owner)
             .json(&json!({
-                "user": member.id,
+                "user": member.id.strip_prefix("UserID-").unwrap(),
             }))
             .send()
             .await;
@@ -947,7 +962,7 @@ mod kick {
             json!({
                 "event": "KICK_USER",
                 "data": {
-                    "user": member.id,
+                    "user": member.id.strip_prefix("UserID-").unwrap(),
                 }
             })
         );
@@ -958,7 +973,7 @@ mod kick {
             {
                 "event": "KICK_USER",
                 "data": {
-                    "user": member.id,
+                    "user": member.id.strip_prefix("UserID-").unwrap(),
                 }
             },
         );
@@ -980,7 +995,7 @@ mod kick {
             .patch("/team")
             .user(&owner)
             .json(&json!({
-                "coowner": coowner.id,
+                "co_owner": coowner.id.strip_prefix("UserID-").unwrap(),
             }))
             .send()
             .await;
@@ -998,7 +1013,7 @@ mod kick {
             .post("/team/kick")
             .user(&coowner)
             .json(&json!({
-                "user": member.id,
+                "user": member.id.strip_prefix("UserID-").unwrap(),
             }))
             .send()
             .await;
@@ -1010,7 +1025,7 @@ mod kick {
             json!({
                 "event": "KICK_USER",
                 "data": {
-                    "user": member.id,
+                    "user": member.id.strip_prefix("UserID-").unwrap(),
                 }
             })
         );
@@ -1020,7 +1035,7 @@ mod kick {
             json!({
                 "event": "KICK_USER",
                 "data": {
-                    "user": member.id,
+                    "user": member.id.strip_prefix("UserID-").unwrap(),
                 }
             })
         );
@@ -1031,7 +1046,7 @@ mod kick {
             {
                 "event": "KICK_USER",
                 "data": {
-                    "user": member.id,
+                    "user": member.id.strip_prefix("UserID-").unwrap(),
                 }
             },
         );

@@ -3,18 +3,20 @@ use crate::{
     handlers::socket::Event,
     iam::Claims,
     json::Json,
+    utils::topics,
     StateTrait,
 };
 use axum::{http::StatusCode, Extension};
-use entity::{teams, users};
+use entity::{team_members, teams, users};
 use rdkafka::producer::FutureRecord;
 use sea_orm::{EntityTrait, IntoActiveModel, QuerySelect, Set, TransactionTrait};
 use serde::Deserialize;
 use std::time::Duration;
+use uuid::Uuid;
 
 #[derive(Deserialize)]
 pub struct Request {
-    user: String,
+    user: Uuid,
 }
 
 pub async fn kick_user<S: StateTrait>(
@@ -24,13 +26,13 @@ pub async fn kick_user<S: StateTrait>(
 ) -> Result<StatusCode> {
     let txn = state.db().begin().await?;
 
-    let team = users::Entity::select_team(&claims.subject)
+    let team = teams::Entity::find_from_member(&claims.subject)
         .lock_exclusive()
         .one(&txn)
         .await?
         .ok_or(error::USER_NOT_IN_TEAM)?;
 
-    if team.owner != claims.subject && team.coowner.as_ref() != Some(&claims.subject) {
+    if team.owner != claims.subject && team.co_owner.as_ref() != Some(&claims.subject) {
         return Err(error::USER_NOT_COOWNER);
     }
 
@@ -46,28 +48,30 @@ pub async fn kick_user<S: StateTrait>(
         return Err(error::CANNOT_KICK_THEMSELF);
     }
 
-    let user = users::Entity::find_by_id(request.user.clone())
+    let user = users::Entity::find_by_id(request.user)
         .lock_exclusive()
         .one(&txn)
         .await?
         .ok_or(error::NO_SUCH_MEMBER)?;
 
-    if user.team.as_ref() != Some(&team.id) {
+    let res = team_members::Entity::delete(team_members::ActiveModel {
+        user_id: Set(user.id),
+        team_id: Set(team.id),
+    })
+    .exec(&txn)
+    .await?;
+
+    if res.rows_affected == 0 {
         return Err(error::NO_SUCH_MEMBER);
     }
 
-    let kafka_topic = super::get_kafka_topic(&team.id);
+    let kafka_topic = topics::team_info(&team.id);
 
-    if Some(&request.user) == team.coowner.as_ref() {
+    if Some(request.user) == team.co_owner {
         let mut model = team.into_active_model();
-        model.coowner = Set(None);
+        model.co_owner = Set(None);
         teams::Entity::update(model).exec(&txn).await?;
     }
-
-    let mut model = user.into_active_model();
-    model.team = Set(None);
-
-    users::Entity::update(model).exec(&txn).await?;
 
     state
         .kafka_producer()

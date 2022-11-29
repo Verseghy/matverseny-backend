@@ -1,13 +1,13 @@
 use crate::{
-    error::{self, DatabaseError, Error, Result, ToPgError},
+    error::{self, DatabaseError, Error, Result},
     iam::Claims,
-    utils::generate_join_code,
+    utils::{generate_join_code, topics},
     Json, StateTrait, ValidatedJson,
 };
 use axum::{http::StatusCode, Extension};
-use entity::{teams, users};
+use entity::{team_members, teams, users};
 use rdkafka::admin::{AdminOptions, NewTopic, TopicReplication};
-use sea_orm::{EntityTrait, IntoActiveModel, QuerySelect, Set, TransactionTrait};
+use sea_orm::{EntityTrait, QuerySelect, Set, TransactionTrait};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 use validator::Validate;
@@ -30,8 +30,8 @@ pub async fn create_team<S: StateTrait>(
 ) -> Result<(StatusCode, Json<Response>)> {
     let txn = state.db().begin().await?;
 
-    let user = users::Entity::find_by_id(claims.subject.clone())
-        .lock_exclusive()
+    let user = users::Entity::find_by_id(claims.subject)
+        .lock_shared()
         .one(&txn)
         .await?
         .ok_or_else(|| {
@@ -40,67 +40,66 @@ pub async fn create_team<S: StateTrait>(
             error::USER_NOT_REGISTERED
         })?;
 
-    if user.team.is_some() {
-        return Err(error::ALREADY_IN_TEAM);
-    }
-
-    let id = Uuid::new_v4()
-        .hyphenated()
-        .encode_lower(&mut Uuid::encode_buffer())
-        .to_owned();
-
     let team = teams::ActiveModel {
-        id: Set(id.clone()),
+        id: Set(Uuid::new_v4()),
         name: Set(request.name),
-        owner: Set(claims.subject.clone()),
+        owner: Set(user.id),
         locked: Set(false),
         ..Default::default()
     };
 
     for _ in 0..16 {
-        let model = {
+        let team_model = {
             let mut model = team.clone();
             model.join_code = Set(generate_join_code(&mut state.rng()));
             model
         };
 
-        let result = teams::Entity::insert(model).exec(&txn).await;
-
-        return match result.map_err(ToPgError::to_pg_error) {
-            Err(Ok(pg_error)) => {
-                if pg_error.unique_violation("teams_name_key") {
-                    Err(error::DUPLICATE_TEAM_NAME)
-                } else if pg_error.unique_violation("join_code_key") {
-                    continue;
-                } else {
-                    Err(Error::internal(pg_error))
-                }
+        let result = match teams::Entity::insert(team_model).exec(&txn).await {
+            Err(err) if err.unique_violation("UC_teams_name") => {
+                return Err(error::DUPLICATE_TEAM_NAME)
             }
-            Err(Err(error)) => Err(Error::internal(error)),
-            Ok(_) => {
-                let mut active_model = user.into_active_model();
-                active_model.team = Set(Some(id.clone()));
-
-                users::Entity::update(active_model).exec(&txn).await?;
-
-                state
-                    .kafka_admin()
-                    .create_topics(
-                        &[NewTopic::new(
-                            &super::get_kafka_topic(&id),
-                            1,
-                            TopicReplication::Fixed(1),
-                        )],
-                        &AdminOptions::new(),
-                    )
-                    .await
-                    .map_err(Error::internal)?;
-
-                txn.commit().await?;
-
-                Ok((StatusCode::CREATED, Json(Response { id })))
-            }
+            Err(err) if err.unique_violation("UC_teams_join_code") => continue,
+            r => r?,
         };
+
+        let team_member_model = team_members::ActiveModel {
+            user_id: Set(user.id),
+            team_id: Set(result.last_insert_id),
+        };
+
+        match team_members::Entity::insert(team_member_model)
+            .exec(&txn)
+            .await
+        {
+            Err(err) if err.unique_violation("UC_team_members_user_id") => {
+                return Err(error::ALREADY_IN_TEAM)
+            }
+            r => r?,
+        };
+
+        state
+            .kafka_admin()
+            .create_topics(
+                &[NewTopic::new(
+                    &topics::team_info(&result.last_insert_id),
+                    1,
+                    TopicReplication::Fixed(1),
+                )],
+                &AdminOptions::new(),
+            )
+            .await
+            .map_err(Error::internal)?;
+
+        txn.commit().await?;
+
+        // TODO: consider returning nothing: the user don't need to know the team id
+        return Ok((
+            StatusCode::CREATED,
+            Json(Response {
+                id: result.last_insert_id.to_string(),
+            }),
+        ));
     }
 
     Err(error::FAILED_TO_GENERATE_JOIN_CODE)

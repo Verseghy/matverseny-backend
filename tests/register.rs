@@ -45,7 +45,6 @@ async fn invalid_claims() {
 #[tokio::test]
 async fn success() {
     let app = App::new().await;
-
     let user = utils::iam::register_user().await;
 
     let res = app

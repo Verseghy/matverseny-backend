@@ -36,8 +36,3 @@ pub fn routes<S: StateTrait>() -> Router {
         .route("/kick", post(kick::kick_user::<S>))
         .route("/code", post(code::regenerate_code::<S>))
 }
-
-#[inline]
-pub(super) fn get_kafka_topic(team_id: &str) -> String {
-    format!("Team-{}", team_id)
-}

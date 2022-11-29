@@ -139,11 +139,7 @@ impl App {
 
         let json: Value = res.json().await;
 
-        Team::new(
-            json["id"].as_str().expect("no id").to_owned(),
-            owner.clone(),
-            self.clone(),
-        )
+        Team::new(owner.clone(), self.clone())
     }
 
     #[allow(dead_code)]

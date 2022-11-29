@@ -1,35 +1,31 @@
 use sea_orm::{DbErr, RuntimeErr};
 use sqlx::{postgres::PgDatabaseError, Error as SqlxError};
+use std::borrow::Cow;
 
 pub trait DatabaseError {
     fn unique_violation(&self, constraint: &str) -> bool;
 }
 
-impl DatabaseError for PgDatabaseError {
+impl DatabaseError for DbErr {
     fn unique_violation(&self, constraint: &str) -> bool {
-        self.code() == "23505" && self.constraint() == Some(constraint)
+        if let Some(db_err) = get_database_error(self) {
+            if db_err.as_error().is::<PgDatabaseError>() {
+                db_err.code() == Some(Cow::Borrowed("23505"))
+                    && db_err.constraint() == Some(constraint)
+            } else {
+                panic!("using not a postgres connection");
+            }
+        } else {
+            false
+        }
     }
 }
 
-pub trait ToPgError<E> {
-    fn to_pg_error(self) -> Result<PgDatabaseError, E>;
-}
-
-impl ToPgError<DbErr> for DbErr {
-    fn to_pg_error(self) -> Result<PgDatabaseError, DbErr> {
-        let mut is_pg_error = false;
-        if let DbErr::Query(RuntimeErr::SqlxError(SqlxError::Database(ref error))) = self {
-            is_pg_error = error.try_downcast_ref::<PgDatabaseError>().is_some();
-        }
-
-        if is_pg_error {
-            if let DbErr::Query(RuntimeErr::SqlxError(SqlxError::Database(error))) = self {
-                Ok(*error.downcast())
-            } else {
-                unreachable!()
-            }
-        } else {
-            Err(self)
-        }
+#[allow(clippy::borrowed_box)]
+fn get_database_error(err: &DbErr) -> Option<&Box<dyn sqlx::error::DatabaseError + 'static>> {
+    match err {
+        DbErr::Query(RuntimeErr::SqlxError(SqlxError::Database(db_err))) => Some(db_err),
+        DbErr::Exec(RuntimeErr::SqlxError(SqlxError::Database(db_err))) => Some(db_err),
+        _ => None,
     }
 }

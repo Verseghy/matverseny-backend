@@ -43,3 +43,7 @@ error!(
     FAILED_TO_GENERATE_JOIN_CODE,
     INTERNAL_SERVER_ERROR, 18, "failed to generate join code"
 );
+error!(
+    OWNER_CANNOT_LEAVE,
+    FORBIDDEN, 19, "the owner cannot leave the team"
+);

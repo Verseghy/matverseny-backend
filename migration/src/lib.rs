@@ -1,10 +1,8 @@
-mod utils;
+mod m20221125_000213_create_users_table;
+mod m20221125_001445_create_teams_table;
+mod m20221125_002951_create_team_members_table;
 
 pub use sea_orm_migration::prelude::*;
-
-mod m20220906_033629_create_users_table;
-mod m20220908_120622_create_teams_table;
-mod m20220909_185939_create_users_table_foreign_key;
 
 pub struct Migrator;
 
@@ -12,9 +10,9 @@ pub struct Migrator;
 impl MigratorTrait for Migrator {
     fn migrations() -> Vec<Box<dyn MigrationTrait>> {
         vec![
-            Box::new(m20220906_033629_create_users_table::Migration),
-            Box::new(m20220908_120622_create_teams_table::Migration),
-            Box::new(m20220909_185939_create_users_table_foreign_key::Migration),
+            Box::new(m20221125_000213_create_users_table::Migration),
+            Box::new(m20221125_001445_create_teams_table::Migration),
+            Box::new(m20221125_002951_create_team_members_table::Migration),
         ]
     }
 }

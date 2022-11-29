@@ -2,14 +2,13 @@ use crate::{
     error::{self, Error, Result},
     handlers::socket::Event,
     iam::Claims,
+    utils::topics,
     StateTrait,
 };
 use axum::{http::StatusCode, Extension};
-use entity::{teams, users};
+use entity::{team_members, teams};
 use rdkafka::producer::FutureRecord;
-use sea_orm::{
-    ColumnTrait, EntityTrait, IntoActiveModel, QueryFilter, QuerySelect, Set, TransactionTrait,
-};
+use sea_orm::{ColumnTrait, EntityTrait, QueryFilter, QuerySelect, TransactionTrait};
 use std::time::Duration;
 
 pub async fn disband_team<S: StateTrait>(
@@ -18,7 +17,7 @@ pub async fn disband_team<S: StateTrait>(
 ) -> Result<StatusCode> {
     let txn = state.db().begin().await?;
 
-    let team = users::Entity::select_team(&claims.subject)
+    let team = teams::Entity::find_from_member(&claims.subject)
         .lock_exclusive()
         .one(&txn)
         .await?
@@ -32,27 +31,17 @@ pub async fn disband_team<S: StateTrait>(
         return Err(error::LOCKED_TEAM);
     }
 
-    let users = users::Entity::find()
-        .lock_exclusive()
-        .filter(users::Column::Team.eq(&*team.id))
-        .all(&txn)
-        .await?;
-
-    for user in users {
-        let mut model = user.into_active_model();
-        model.team = Set(None);
-
-        users::Entity::update(model).exec(&txn).await?;
-    }
-
-    teams::Entity::delete_by_id(team.id.clone())
+    team_members::Entity::delete_many()
+        .filter(team_members::Column::TeamId.eq(team.id))
         .exec(&txn)
         .await?;
+
+    teams::Entity::delete_by_id(team.id).exec(&txn).await?;
 
     state
         .kafka_producer()
         .send(
-            FutureRecord::<(), String>::to(&super::get_kafka_topic(&team.id))
+            FutureRecord::<(), String>::to(&topics::team_info(&team.id))
                 .partition(0)
                 .payload(&serde_json::to_string(&Event::DisbandTeam).unwrap()),
             Duration::from_secs(5),

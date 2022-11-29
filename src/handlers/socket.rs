@@ -1,4 +1,4 @@
-use crate::{error, iam::Claims, Error, Result, StateTrait};
+use crate::{error, iam::Claims, utils::topics, Error, Result, StateTrait};
 use axum::{
     extract::ws::{close_code, CloseFrame, Message, WebSocket, WebSocketUpgrade},
     response::IntoResponse,
@@ -13,9 +13,11 @@ use rdkafka::{
     consumer::{Consumer, StreamConsumer},
     ClientConfig, Message as _, TopicPartitionList,
 };
+use sea_orm::EntityTrait;
 use serde::{Deserialize, Serialize};
 use std::{borrow::Cow, error::Error as _};
 use tokio_tungstenite::tungstenite::error::Error as TungsteniteError;
+use uuid::Uuid;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub enum Rank {
@@ -26,7 +28,7 @@ pub enum Rank {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Member {
-    id: String,
+    id: Uuid,
     name: String,
     class: Class,
     rank: Rank,
@@ -37,14 +39,14 @@ pub struct Member {
 #[serde(tag = "event", content = "data", rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum Event {
     JoinTeam {
-        user: String,
+        user: Uuid,
     },
     LeaveTeam {
-        user: String,
+        user: Uuid,
     },
     TeamInfo {
         #[serde(skip)]
-        id: String,
+        id: Uuid,
         name: String,
         code: String,
         locked: bool,
@@ -52,15 +54,15 @@ pub enum Event {
     },
     UpdateTeam {
         name: Option<String>,
-        owner: Option<String>,
+        owner: Option<Uuid>,
         #[serde(default, with = "::serde_with::rust::double_option")]
-        coowner: Option<Option<String>>,
+        co_owner: Option<Option<Uuid>>,
         locked: Option<bool>,
         code: Option<String>,
     },
     DisbandTeam,
     KickUser {
-        user: String,
+        user: Uuid,
     },
 }
 
@@ -85,7 +87,7 @@ pub async fn ws_handler<S: StateTrait>(
 }
 
 // TODO: create a global singleton consumer for performance reasons
-fn create_consumer(team_id: &str) -> Result<StreamConsumer> {
+fn create_consumer(team_id: &Uuid) -> Result<StreamConsumer> {
     let bootstrap_servers = std::env::var("KAFKA_BOOTSTRAP_SERVERS").map_err(Error::internal)?;
 
     let consumer: StreamConsumer = ClientConfig::new()
@@ -98,7 +100,7 @@ fn create_consumer(team_id: &str) -> Result<StreamConsumer> {
         .assign(&{
             let mut list = TopicPartitionList::new();
             list.add_partition(
-                &crate::handlers::team::get_kafka_topic(team_id),
+                &topics::team_info(team_id),
                 // TODO: research if this is reliable
                 0,
             );
@@ -112,15 +114,20 @@ fn create_consumer(team_id: &str) -> Result<StreamConsumer> {
 
 type TeamInfo = (teams::Model, Vec<Member>);
 
-async fn get_initial_team_info<S: StateTrait>(state: &S, user_id: &str) -> Result<TeamInfo> {
-    let result = users::Entity::select_team(user_id)
+async fn get_initial_team_info<S: StateTrait>(state: &S, user_id: &Uuid) -> Result<TeamInfo> {
+    let user = users::Entity::find_by_id(*user_id)
+        .one(state.db())
+        .await?
+        .ok_or(error::USER_NOT_REGISTERED)?;
+
+    let result = teams::Entity::find_from_member(&user.id)
         .one(state.db())
         .await?
         .ok_or(error::USER_NOT_IN_TEAM)?;
 
     tracing::debug!("found team");
 
-    let members = teams::Entity::select_users(&result.id)
+    let members = users::Entity::find_in_team(&result.id)
         .all(state.db())
         .await?
         .into_iter()
@@ -130,15 +137,15 @@ async fn get_initial_team_info<S: StateTrait>(state: &S, user_id: &str) -> Resul
                 if user.id == result.owner {
                     Rank::Owner
                 // NOTE: use `Option::is_some_and` when it gets stabilized (#93050)
-                } else if matches!(&result.coowner, Some(coowner) if coowner.as_str() == user.id) {
+                } else if matches!(&result.co_owner, Some(co_owner) if *co_owner == user.id) {
                     Rank::CoOwner
                 } else {
                     Rank::Member
                 }
             },
-            id: user.id.clone(),
+            id: user.id,
             // TODO: get the actual name of the user
-            name: user.id,
+            name: user.id.to_string(),
         })
         .collect();
 
@@ -158,7 +165,7 @@ async fn handler(
     socket
         .send(Message::Text(
             serde_json::to_string(&Event::TeamInfo {
-                id: team.id.clone(),
+                id: team.id,
                 name: team.name,
                 code: team.join_code,
                 locked: team.locked,

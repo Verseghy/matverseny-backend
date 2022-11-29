@@ -3,14 +3,13 @@ use super::{super::utils, User};
 
 #[allow(unused)]
 pub struct Team {
-    id: String,
     owner: User,
     app: App,
 }
 
 impl Team {
-    pub(super) fn new(id: String, owner: User, app: App) -> Self {
-        Team { id, owner, app }
+    pub(super) fn new(owner: User, app: App) -> Self {
+        Team { owner, app }
     }
 
     #[allow(unused)]

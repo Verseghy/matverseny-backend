@@ -1,9 +1,4 @@
-use crate::{
-    error,
-    error::{DatabaseError, Error, ToPgError},
-    iam::Claims,
-    Json, Result, StateTrait,
-};
+use crate::{error, error::DatabaseError, iam::Claims, Json, Result, StateTrait};
 use axum::{http::StatusCode, Extension};
 use entity::users::{self, Class};
 use sea_orm::{EntityTrait, Set};
@@ -21,23 +16,19 @@ pub async fn register<S: StateTrait>(
     Json(request): Json<Request>,
 ) -> Result<StatusCode> {
     let user = users::ActiveModel {
-        id: Set(claims.subject.clone()),
+        id: Set(claims.subject),
         school: Set(request.school),
         class: Set(request.class),
-        ..Default::default()
     };
 
-    let result = users::Entity::insert(user).exec(state.db()).await;
+    let result = users::Entity::insert(user)
+        .exec_without_returning(state.db())
+        .await;
 
-    match result.map_err(ToPgError::to_pg_error) {
-        Err(Ok(pg_error)) => {
-            if pg_error.unique_violation("users_pkey") {
-                Err(error::USER_ALREADY_EXISTS)
-            } else {
-                Err(Error::internal(pg_error))
-            }
-        }
-        Err(Err(error)) => Err(Error::internal(error)),
-        Ok(_) => Ok(StatusCode::CREATED),
-    }
+    match result {
+        Err(err) if err.unique_violation("PK_users") => return Err(error::USER_ALREADY_EXISTS),
+        r => r?,
+    };
+
+    Ok(StatusCode::CREATED)
 }

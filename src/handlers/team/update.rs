@@ -1,24 +1,28 @@
 use crate::{
-    error, error::Error, error::Result, handlers::socket::Event, iam::Claims, utils::set_option,
+    error,
+    error::Error,
+    error::Result,
+    handlers::socket::Event,
+    iam::Claims,
+    utils::{set_option, topics},
     StateTrait, ValidatedJson,
 };
 use axum::{http::StatusCode, Extension};
-use entity::{teams, users};
+use entity::teams;
 use rdkafka::producer::FutureRecord;
-use sea_orm::{
-    ConnectionTrait, EntityTrait, FromQueryResult, IntoActiveModel, QuerySelect, TransactionTrait,
-};
+use sea_orm::{ConnectionTrait, EntityTrait, IntoActiveModel, QuerySelect, TransactionTrait};
 use serde::Deserialize;
 use std::time::Duration;
+use uuid::Uuid;
 use validator::Validate;
 
 #[derive(Debug, Deserialize, Validate)]
 pub struct Request {
     #[validate(length(max = 32))]
     name: Option<String>,
-    owner: Option<String>,
+    owner: Option<Uuid>,
     #[serde(default, with = "::serde_with::rust::double_option")]
-    coowner: Option<Option<String>>,
+    co_owner: Option<Option<Uuid>>,
     locked: Option<bool>,
 }
 
@@ -29,7 +33,7 @@ pub async fn update_team<S: StateTrait>(
 ) -> Result<StatusCode> {
     let txn = state.db().begin().await?;
 
-    let team = users::Entity::select_team(&claims.subject)
+    let team = teams::Entity::find_from_member(&claims.subject)
         .lock_exclusive()
         .one(&txn)
         .await?
@@ -48,7 +52,7 @@ pub async fn update_team<S: StateTrait>(
     // without this the ORM would generate an invalid sql statement
     if request.name.is_none()
         && request.owner.is_none()
-        && request.coowner.is_none()
+        && request.co_owner.is_none()
         && request.locked.is_none()
     {
         return Ok(StatusCode::NO_CONTENT);
@@ -64,26 +68,27 @@ pub async fn update_team<S: StateTrait>(
         }
     }
 
-    if let Some(Some(coowner)) = &request.coowner {
+    if let Some(Some(coowner)) = &request.co_owner {
         if !is_user_in_team(&txn, coowner, &team.id).await? {
             return Err(error::NO_SUCH_MEMBER);
         }
     }
 
-    let kafka_topic = super::get_kafka_topic(&team.id);
     let kafka_payload = serde_json::to_string(&Event::UpdateTeam {
         name: request.name.clone(),
-        owner: request.owner.clone(),
-        coowner: request.coowner.clone(),
+        owner: request.owner,
+        co_owner: request.co_owner,
         locked: request.locked,
         code: None,
     })
     .unwrap();
 
+    let kafka_topic = topics::team_info(&team.id);
+
     let mut active_model = team.into_active_model();
     active_model.name = set_option(request.name);
     active_model.owner = set_option(request.owner);
-    active_model.coowner = set_option(request.coowner);
+    active_model.co_owner = set_option(request.co_owner);
     active_model.locked = set_option(request.locked);
 
     teams::Entity::update(active_model).exec(&txn).await?;
@@ -103,24 +108,18 @@ pub async fn update_team<S: StateTrait>(
     Ok(StatusCode::NO_CONTENT)
 }
 
-#[derive(FromQueryResult)]
-struct User {
-    team: Option<String>,
-}
-
 // This also checks if the user is actually exists, but does not differentiate
 // between non-existing and not in team for security reasons
-async fn is_user_in_team(db: &impl ConnectionTrait, user: &str, team: &str) -> Result<bool> {
-    let res = users::Entity::find_by_id(user.to_owned())
-        .select_only()
-        .column(users::Column::Team)
-        .into_model::<User>()
-        .one(db)
-        .await?;
+async fn is_user_in_team(
+    db: &impl ConnectionTrait,
+    user_id: &Uuid,
+    team_id: &Uuid,
+) -> Result<bool> {
+    let team = teams::Entity::find_from_member(user_id).one(db).await?;
 
-    Ok(if let Some(User { team: Some(t) }) = res {
-        t == team
+    if let Some(teams::Model { id, .. }) = team {
+        Ok(*team_id == id)
     } else {
-        false
-    })
+        Ok(false)
+    }
 }
