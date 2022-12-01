@@ -21,7 +21,7 @@ members = [".", "entity", "migration"]
 [dependencies]
 axum = { version = "0.6.1", features = ["ws", "http2", "headers"] }
 serde = { version = "1.0.148", features = ["derive"] }
-tokio = { version = "1.22.0", features = ["macros", "rt-multi-thread", "signal"] }
+tokio = { version = "1.22.0", features = ["macros", "rt-multi-thread", "signal", "parking_lot"] }
 tower = "0.4.13"
 tower-http = { version = "0.3.4", features = ["cors", "compression-full", "decompression-full", "catch-panic", "sensitive-headers", "request-id", "util", "add-extension"] }
 tracing = "0.1.37"
