@@ -1,7 +1,7 @@
 #![allow(unused_imports)]
 
 pub(crate) use super::macros::*;
-pub use super::{request::*, response::*, App};
+pub use super::{request::*, response::*, App, get_cached_app};
 pub use assert_json_diff::{assert_json_eq, assert_json_include};
 pub use futures::StreamExt;
 pub use http::StatusCode;

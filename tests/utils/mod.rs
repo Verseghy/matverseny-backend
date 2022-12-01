@@ -18,11 +18,10 @@ use std::{
     net::{Ipv4Addr, SocketAddr, TcpListener},
     sync::{
         atomic::{AtomicU64, Ordering},
-        Arc,
+        Arc, RwLock,
     },
 };
 use team::Team;
-use tokio::task::JoinHandle;
 use tokio_tungstenite::tungstenite::Message;
 use tracing::log::LevelFilter;
 use user::*;
@@ -30,7 +29,6 @@ use user::*;
 const DEFAULT_URL: &str = "postgres://matverseny:secret@127.0.0.1:5432/matverseny";
 
 pub struct AppInner {
-    _join_handle: JoinHandle<()>,
     client: Client,
     addr: SocketAddr,
 }
@@ -41,7 +39,17 @@ pub struct App {
 }
 
 impl App {
+    #[allow(unused)]
     pub async fn new() -> Self {
+        Self::new_inner(false).await
+    }
+
+    #[allow(unused)]
+    pub async fn new_with_rt() -> Self {
+        Self::new_inner(true).await
+    }
+
+    async fn new_inner(with_rt: bool) -> Self {
         dotenv().ok();
 
         let conn = Self::setup_database().await;
@@ -51,10 +59,22 @@ impl App {
         let addr = listener.local_addr().unwrap();
         let state = State::with_database(conn).await;
 
-        let join_handle = tokio::spawn(matverseny_backend::run(listener, state));
+        if with_rt {
+            std::thread::spawn(move || {
+                let rt = tokio::runtime::Builder::new_current_thread()
+                    .enable_all()
+                    .build()
+                    .expect("Failed to create tokio runtime");
+
+                rt.block_on(async {
+                    matverseny_backend::run(listener, state).await;
+                });
+            });
+        } else {
+            tokio::spawn(matverseny_backend::run(listener, state));
+        }
 
         let inner = AppInner {
-            _join_handle: join_handle,
             client: Client::new(),
             addr,
         };
@@ -167,3 +187,25 @@ pub fn get_socket_message(
         panic!("not text");
     }
 }
+
+static APP: RwLock<Option<App>> = RwLock::new(None);
+
+#[allow(unused)]
+pub async fn get_cached_app() -> App {
+    if let Ok(mut lock) = APP.try_write() {
+        if let Some(lock) = &*lock {
+            return lock.clone();
+        }
+
+        let app = App::new_with_rt().await;
+        *lock = Some(app.clone());
+
+        macros::enable_logging!(INFO);
+
+        app
+    } else {
+        let lock = APP.read();
+        lock.unwrap().as_ref().unwrap().clone()
+    }
+}
+
