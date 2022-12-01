@@ -2,13 +2,13 @@ use crate::{
     error::{self, DatabaseError, Error, Result},
     iam::Claims,
     utils::{generate_join_code, topics},
-    Json, StateTrait, ValidatedJson,
+    StateTrait, ValidatedJson,
 };
 use axum::{http::StatusCode, Extension};
 use entity::{team_members, teams, users};
 use rdkafka::admin::{AdminOptions, NewTopic, TopicReplication};
 use sea_orm::{EntityTrait, QuerySelect, Set, TransactionTrait};
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 use uuid::Uuid;
 use validator::Validate;
 
@@ -18,16 +18,11 @@ pub struct Request {
     name: String,
 }
 
-#[derive(Serialize)]
-pub struct Response {
-    id: String,
-}
-
 pub async fn create_team<S: StateTrait>(
     Extension(state): Extension<S>,
     claims: Claims,
     ValidatedJson(request): ValidatedJson<Request>,
-) -> Result<(StatusCode, Json<Response>)> {
+) -> Result<StatusCode> {
     let txn = state.db().begin().await?;
 
     let user = users::Entity::find_by_id(claims.subject)
@@ -93,13 +88,7 @@ pub async fn create_team<S: StateTrait>(
 
         txn.commit().await?;
 
-        // TODO: consider returning nothing: the user don't need to know the team id
-        return Ok((
-            StatusCode::CREATED,
-            Json(Response {
-                id: result.last_insert_id.to_string(),
-            }),
-        ));
+        return Ok(StatusCode::CREATED);
     }
 
     Err(error::FAILED_TO_GENERATE_JOIN_CODE)

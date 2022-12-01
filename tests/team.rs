@@ -21,11 +21,6 @@ mod create {
             .await;
 
         assert_eq!(res.status(), StatusCode::CREATED);
-
-        let body = res.json::<Value>().await;
-
-        assert!(body.is_object());
-        assert!(body["id"].is_string());
     }
 
     #[tokio::test]
@@ -44,11 +39,6 @@ mod create {
             .await;
 
         assert_eq!(res.status(), StatusCode::CREATED);
-
-        let body = res.json::<Value>().await;
-
-        assert!(body.is_object());
-        assert!(body["id"].is_string());
 
         let user2 = app.register_user().await;
 
@@ -80,11 +70,6 @@ mod create {
             .await;
 
         assert_eq!(res.status(), StatusCode::CREATED);
-
-        let body = res.json::<Value>().await;
-
-        assert!(body.is_object());
-        assert!(body["id"].is_string());
 
         let res = app
             .post("/team/create")

@@ -133,8 +133,6 @@ impl App {
 
         assert_eq!(res.status(), StatusCode::CREATED);
 
-        let json: Value = res.json().await;
-
         Team::new(owner.clone(), self.clone())
     }
 
