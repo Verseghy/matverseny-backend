@@ -69,11 +69,11 @@ impl From<DbErr> for Error {
     }
 }
 
-macro_rules! error {
+macro_rules! const_error {
     ($name:ident, $status:ident, $code:literal, $msg:literal) => {
         pub const $name: $crate::error::Error =
             $crate::error::Error::new(::axum::http::StatusCode::$status, $code, $msg);
     };
 }
 
-pub(self) use error;
+pub(self) use const_error;

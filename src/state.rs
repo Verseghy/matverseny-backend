@@ -45,7 +45,7 @@ impl State {
     }
 
     fn create_kafka_producer() -> FutureProducer {
-        tracing::info!("Creating kafka producer");
+        info!("Creating kafka producer");
 
         let bootstrap_servers =
             env::var("KAFKA_BOOTSTRAP_SERVERS").expect("KAFKA_BOOTSRAP_SERVERS not set");
@@ -57,7 +57,7 @@ impl State {
     }
 
     fn create_kafka_admin() -> AdminClient<DefaultClientContext> {
-        tracing::info!("Creating kafka admin client");
+        info!("Creating kafka admin client");
 
         let bootstrap_servers =
             env::var("KAFKA_BOOTSTRAP_SERVERS").expect("KAFKA_BOOTSRAP_SERVERS not set");
@@ -69,7 +69,7 @@ impl State {
     }
 
     async fn connect_database() -> DbConn {
-        tracing::info!("Trying to connect to database");
+        info!("Trying to connect to database");
 
         let url = env::var("DATABASE_URL").expect("DATABASE_URL is not set");
         let mut opts = ConnectOptions::new(url);
@@ -77,7 +77,7 @@ impl State {
 
         let db = Database::connect(opts).await.unwrap();
 
-        tracing::info!("Connected to database");
+        info!("Connected to database");
 
         db
     }

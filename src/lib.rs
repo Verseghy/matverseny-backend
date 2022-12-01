@@ -31,6 +31,9 @@
 #![deny(private_in_public)]
 #![allow(elided_lifetimes_in_paths, clippy::type_complexity)]
 
+#[macro_use]
+extern crate tracing;
+
 pub mod error;
 mod handlers;
 mod iam;
@@ -97,7 +100,7 @@ fn app<S: StateTrait>(state: S) -> Router {
 }
 
 pub async fn run(listener: TcpListener, state: impl StateTrait) {
-    tracing::info!(
+    info!(
         "listening on port {}",
         listener.local_addr().unwrap().port()
     );

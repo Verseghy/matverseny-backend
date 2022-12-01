@@ -71,7 +71,7 @@ pub async fn ws_handler<S: StateTrait>(
     claims: Claims,
     ws: WebSocketUpgrade,
 ) -> Result<impl IntoResponse> {
-    tracing::debug!("ws connection");
+    debug!("ws connection");
 
     let team_info = get_initial_team_info(&state, &claims.subject).await?;
     let consumer = create_consumer(&team_info.0.id)?;
@@ -81,7 +81,7 @@ pub async fn ws_handler<S: StateTrait>(
 
     Ok(ws.on_upgrade(move |socket: WebSocket| async move {
         if let Err(err) = handler(socket, consumer, claims, team_info).await {
-            tracing::error!("socket failed with: {:?}", err);
+            error!("socket failed with: {:?}", err);
         }
     }))
 }
@@ -125,7 +125,7 @@ async fn get_initial_team_info<S: StateTrait>(state: &S, user_id: &Uuid) -> Resu
         .await?
         .ok_or(error::USER_NOT_IN_TEAM)?;
 
-    tracing::debug!("found team");
+    debug!("found team");
 
     let members = users::Entity::find_in_team(&result.id)
         .all(state.db())
@@ -160,7 +160,7 @@ async fn handler(
 ) -> Result<()> {
     let mut stream = consumer.stream();
 
-    tracing::debug!("got team info: {:?}, members: {:?}", team, members);
+    debug!("got team info: {:?}, members: {:?}", team, members);
 
     socket
         .send(Message::Text(
@@ -193,7 +193,7 @@ async fn handler(
 
                     let event = serde_json::from_str(&payload).unwrap();
 
-                    tracing::debug!("subject: {}, event: {:?}", claims.subject, event);
+                    debug!("subject: {}, event: {:?}", claims.subject, event);
 
                     if matches!(event, Event::DisbandTeam)
                         || matches!(event, Event::KickUser { user } if user == claims.subject)
@@ -206,11 +206,11 @@ async fn handler(
                         return Ok(())
                     }
 
-                    tracing::debug!("event: {:?}", payload);
+                    debug!("event: {:?}", payload);
 
                     if let Err(err) = socket.send(Message::Text(payload)).await {
                         let tungstenite_error = err.source().unwrap().downcast_ref::<TungsteniteError>().unwrap();
-                        tracing::error!("error: {:?}", tungstenite_error);
+                        error!("error: {:?}", tungstenite_error);
                         break Err(Error::internal(err))
                     }
                 } else {
@@ -221,7 +221,7 @@ async fn handler(
             }
             message = socket.recv() => {
                 if let Some(Ok(Message::Close(_))) = message {
-                    tracing::debug!("socket closed by client");
+                    debug!("socket closed by client");
                     break Ok(())
                 } else {
                     // socket is closed

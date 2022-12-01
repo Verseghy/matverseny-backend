@@ -42,7 +42,7 @@ pub async fn join_team<S: StateTrait>(
             .await?
             .ok_or_else(|| {
                 // this is suspicious so log it
-                tracing::warn!("tried to join team without registration");
+                warn!("tried to join team without registration");
                 error::USER_NOT_REGISTERED
             })?;
 

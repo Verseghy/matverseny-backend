@@ -208,4 +208,3 @@ pub async fn get_cached_app() -> App {
         lock.unwrap().as_ref().unwrap().clone()
     }
 }
-

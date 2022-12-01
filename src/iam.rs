@@ -109,7 +109,7 @@ impl IamTrait for Iam {
         match jsonwebtoken::decode(token, &self.decoding, &VALIDATION) {
             Ok(decode) => Ok(decode.claims),
             Err(err) => {
-                tracing::error!("jwt error: {:?}", err);
+                error!("jwt error: {:?}", err);
                 Err(err)
             }
         }

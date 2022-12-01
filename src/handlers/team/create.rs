@@ -36,7 +36,7 @@ pub async fn create_team<S: StateTrait>(
         .await?
         .ok_or_else(|| {
             // this is suspicious so log it
-            tracing::warn!("tried to create team without registration");
+            warn!("tried to create team without registration");
             error::USER_NOT_REGISTERED
         })?;
 

@@ -81,10 +81,7 @@ where
 
         let span = match state.iam().get_claims(header.token()) {
             Ok(claims) => {
-                let span = Some(tracing::info_span!(
-                    "claims",
-                    user_id = claims.subject.to_string()
-                ));
+                let span = Some(info_span!("claims", user_id = claims.subject.to_string()));
                 request.extensions_mut().insert(claims);
                 span
             }

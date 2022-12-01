@@ -19,7 +19,7 @@ pub async fn leave_team<S: StateTrait>(
         .await?
         .ok_or_else(|| {
             // this is suspicious so log it
-            tracing::warn!("tried to leave team without registration");
+            warn!("tried to leave team without registration");
             error::USER_NOT_REGISTERED
         })?;
 
