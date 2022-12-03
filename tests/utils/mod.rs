@@ -18,10 +18,11 @@ use std::{
     net::{Ipv4Addr, SocketAddr, TcpListener},
     sync::{
         atomic::{AtomicU64, Ordering},
-        Arc, RwLock,
+        Arc,
     },
 };
 use team::Team;
+use tokio::sync::OnceCell;
 use tokio_tungstenite::tungstenite::Message;
 use tracing::log::LevelFilter;
 use user::*;
@@ -186,23 +187,9 @@ pub fn get_socket_message(
     }
 }
 
-static APP: RwLock<Option<App>> = RwLock::new(None);
+static APP: OnceCell<App> = OnceCell::const_new();
 
 #[allow(unused)]
-pub async fn get_cached_app() -> App {
-    if let Ok(mut lock) = APP.try_write() {
-        if let Some(lock) = &*lock {
-            return lock.clone();
-        }
-
-        let app = App::new_with_rt().await;
-        *lock = Some(app.clone());
-
-        macros::enable_logging!(INFO);
-
-        app
-    } else {
-        let lock = APP.read();
-        lock.unwrap().as_ref().unwrap().clone()
-    }
+pub async fn get_cached_app() -> &'static App {
+    APP.get_or_init(|| App::new_with_rt()).await
 }
