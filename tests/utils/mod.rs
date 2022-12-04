@@ -14,6 +14,7 @@ use request::*;
 use reqwest::Client;
 use sea_orm::{ConnectOptions, Database, DbConn};
 use serde_json::{json, Value};
+use uuid::Uuid;
 use std::{
     net::{Ipv4Addr, SocketAddr, TcpListener},
     sync::{
@@ -30,7 +31,6 @@ use user::*;
 const DEFAULT_URL: &str = "postgres://matverseny:secret@127.0.0.1:5432/matverseny";
 
 pub struct AppInner {
-    client: Client,
     addr: SocketAddr,
 }
 
@@ -68,6 +68,7 @@ impl App {
                     .expect("Failed to create tokio runtime");
 
                 rt.block_on(async {
+                    macros::enable_logging!(INFO);
                     matverseny_backend::run(listener, state).await;
                 });
             });
@@ -76,7 +77,6 @@ impl App {
         }
 
         let inner = AppInner {
-            client: Client::new(),
             addr,
         };
 
@@ -140,8 +140,7 @@ impl App {
     #[allow(dead_code)]
     pub fn post(&self, url: &str) -> RequestBuilder {
         RequestBuilder::new(
-            self.inner
-                .client
+            Client::new()
                 .post(format!("http://{}{}", self.inner.addr, url)),
         )
     }
@@ -149,8 +148,7 @@ impl App {
     #[allow(dead_code)]
     pub fn patch(&self, url: &str) -> RequestBuilder {
         RequestBuilder::new(
-            self.inner
-                .client
+            Client::new()
                 .patch(format!("http://{}{}", self.inner.addr, url)),
         )
     }
@@ -192,4 +190,12 @@ pub fn get_socket_message(
 pub async fn get_cached_app() -> &'static App {
     static APP: OnceCell<App> = OnceCell::const_new();
     APP.get_or_init(App::new_with_rt).await
+}
+
+#[allow(unused)]
+pub fn uuid() -> String {
+    Uuid::new_v4()
+        .as_simple()
+        .encode_lower(&mut Uuid::encode_buffer())
+        .to_owned()
 }
