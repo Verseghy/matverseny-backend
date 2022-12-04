@@ -187,9 +187,9 @@ pub fn get_socket_message(
     }
 }
 
-static APP: OnceCell<App> = OnceCell::const_new();
 
 #[allow(unused)]
 pub async fn get_cached_app() -> &'static App {
-    APP.get_or_init(|| App::new_with_rt()).await
+    static APP: OnceCell<App> = OnceCell::const_new();
+    APP.get_or_init(App::new_with_rt).await
 }

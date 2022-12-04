@@ -24,7 +24,7 @@ async fn no_team() {
         let body = response.body();
         assert!(body.is_some());
 
-        let response: Value = serde_json::from_slice(&body.as_ref().unwrap()).unwrap();
+        let response: Value = serde_json::from_slice(body.as_ref().unwrap()).unwrap();
         assert_eq!(response["code"], error::USER_NOT_IN_TEAM.code());
     } else {
         unreachable!();
