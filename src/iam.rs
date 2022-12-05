@@ -1,6 +1,8 @@
-use crate::error;
+use crate::{
+    error::{self, Result},
+};
 use axum::{async_trait, extract::FromRequestParts, http::request::Parts};
-use jsonwebtoken::{errors::Error, Algorithm, DecodingKey, Validation};
+use jsonwebtoken::{Algorithm, DecodingKey, Validation};
 use once_cell::sync::Lazy;
 use serde::{de, Deserialize, Deserializer};
 use std::env;
@@ -61,7 +63,10 @@ where
 {
     type Rejection = error::Error;
 
-    async fn from_request_parts(parts: &mut Parts, _state: &S) -> Result<Self, Self::Rejection> {
+    async fn from_request_parts(
+        parts: &mut Parts,
+        _state: &S,
+    ) -> std::result::Result<Self, Self::Rejection> {
         parts
             .extensions
             .remove::<Claims>()
@@ -70,7 +75,7 @@ where
 }
 
 pub trait IamTrait {
-    fn get_claims(&self, token: &str) -> Result<Claims, Error>;
+    fn get_claims(&self, token: &str) -> Result<Claims>;
 }
 
 pub struct Iam {
@@ -105,12 +110,12 @@ static VALIDATION: Lazy<Validation> = Lazy::new(|| {
 });
 
 impl IamTrait for Iam {
-    fn get_claims(&self, token: &str) -> Result<Claims, Error> {
+    fn get_claims(&self, token: &str) -> Result<Claims> {
         match jsonwebtoken::decode(token, &self.decoding, &VALIDATION) {
             Ok(decode) => Ok(decode.claims),
-            Err(err) => {
-                error!("jwt error: {:?}", err);
-                Err(err)
+            Err(error) => {
+                warn!(token, error = error.to_string(), "tried invalid token");
+                Err(error::JWT_INVALID_TOKEN)
             }
         }
     }

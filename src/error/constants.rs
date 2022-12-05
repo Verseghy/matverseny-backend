@@ -100,3 +100,8 @@ const_error! {
     #[status(FORBIDDEN)]
     const OWNER_CANNOT_LEAVE;
 }
+const_error! {
+    #[error(20, "invalid jwt token")]
+    #[status(BAD_REQUEST)]
+    const JWT_INVALID_TOKEN;
+}
