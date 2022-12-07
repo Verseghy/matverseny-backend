@@ -102,7 +102,7 @@ async fn socket_handler<S: StateTrait>(state: S, socket: &mut WebSocket) -> Resu
     let (team, members, claims) = socket_auth(&state, socket).await?;
     let _ = info_span!("claims", user_id = claims.subject.to_string()).enter();
 
-    let consumer = create_consumer(&team.id)?;
+    let consumer = create_consumer(&team.id).await?;
 
     socket
         .send(Message::Text(
@@ -243,7 +243,7 @@ async fn socket_auth<S: StateTrait>(state: &S, socket: &mut WebSocket) -> Result
 }
 
 // TODO: create a global singleton consumer for performance reasons
-fn create_consumer(team_id: &Uuid) -> Result<StreamConsumer> {
+async fn create_consumer(team_id: &Uuid) -> Result<StreamConsumer> {
     let bootstrap_servers = std::env::var("KAFKA_BOOTSTRAP_SERVERS").map_err(Error::internal)?;
 
     let consumer: StreamConsumer = ClientConfig::new()
@@ -265,6 +265,7 @@ fn create_consumer(team_id: &Uuid) -> Result<StreamConsumer> {
         // This shouldn't happend because creating team should also create the kafka topic
         .map_err(Error::internal)?;
 
+    tokio::time::sleep(std::time::Duration::from_millis(200)).await;
 
     Ok(consumer)
 }
