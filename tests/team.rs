@@ -135,6 +135,8 @@ mod join {
                 }
             })
         );
+
+        socket.close(None).await.unwrap();
     }
 
     #[tokio::test]
@@ -227,6 +229,8 @@ mod leave {
                 }
             })
         );
+
+        socket.close(None).await.unwrap();
     }
 
     #[tokio::test]
@@ -501,6 +505,8 @@ mod update {
                 }
             })
         );
+
+        socket.close(None).await.unwrap();
     }
 
     #[tokio::test]
@@ -539,6 +545,8 @@ mod update {
                 }
             })
         );
+
+        socket.close(None).await.unwrap();
     }
 
     #[tokio::test]
@@ -583,6 +591,8 @@ mod update {
                 }
             })
         );
+
+        socket.close(None).await.unwrap();
     }
 
     #[tokio::test]
@@ -614,6 +624,8 @@ mod update {
                 }
             })
         );
+
+        socket.close(None).await.unwrap();
     }
 }
 
@@ -911,6 +923,8 @@ mod kick {
                 }
             },
         );
+
+        socket1.close(None).await.unwrap();
     }
 
     #[tokio::test]
@@ -969,6 +983,8 @@ mod kick {
                 }
             },
         );
+
+        socket1.close(None).await.unwrap();
     }
 
     #[tokio::test]
@@ -1042,6 +1058,9 @@ mod kick {
                 }
             },
         );
+
+        socket1.close(None).await.unwrap();
+        socket2.close(None).await.unwrap();
     }
 }
 
@@ -1092,6 +1111,8 @@ mod code {
 
         assert_eq!(message["event"].as_str().unwrap(), "UPDATE_TEAM");
         assert!(!message["data"]["code"].as_str().unwrap().is_empty());
+
+        socket.close(None).await.unwrap();
     }
 
     // TODO: test join code clash

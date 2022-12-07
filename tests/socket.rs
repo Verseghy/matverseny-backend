@@ -99,4 +99,6 @@ async fn team_info() {
     assert!(message["data"].get("code").is_some());
     // TODO: this should equal to the name in the iam
     assert!(message["data"]["members"][0].get("name").is_some());
+
+    socket.close(None).await.unwrap();
 }
