@@ -24,6 +24,7 @@ use serde::{Deserialize, Serialize};
 use std::{borrow::Cow, error::Error as _, mem::MaybeUninit, time::Duration};
 use tokio::time;
 use tokio_tungstenite::tungstenite::error::Error as TungsteniteError;
+use tracing::Instrument;
 use uuid::Uuid;
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -100,75 +101,80 @@ pub async fn ws_handler<S: StateTrait>(
 
 async fn socket_handler<S: StateTrait>(state: S, socket: &mut WebSocket) -> Result<()> {
     let (team, members, claims) = socket_auth(&state, socket).await?;
-    let _ = info_span!("claims", user_id = claims.subject.to_string()).enter();
+    let claims_span = info_span!("claims", user_id = claims.subject.to_string());
 
-    let consumer = create_consumer(&team.id).await?;
+    async move {
+        let consumer = create_consumer(&team.id).await?;
 
-    socket
-        .send(Message::Text(
-            serde_json::to_string(&Event::TeamInfo {
-                id: team.id,
-                name: team.name,
-                code: team.join_code,
-                locked: team.locked,
-                members,
-            })
-            .unwrap(),
-        ))
-        .await
-        .map_err(Error::internal)?;
+        socket
+            .send(Message::Text(
+                serde_json::to_string(&Event::TeamInfo {
+                    id: team.id,
+                    name: team.name,
+                    code: team.join_code,
+                    locked: team.locked,
+                    members,
+                })
+                .unwrap(),
+            ))
+            .await
+            .map_err(Error::internal)?;
 
-    let mut kafka_stream = consumer.stream();
+        let mut kafka_stream = consumer.stream();
 
-    loop {
-        tokio::select! {
-            message = kafka_stream.next() => {
-                let Some(message) = message else {
-                    error!("kafka stream closed unexpectedly");
-                    break Err(error::INTERNAL)
-                };
+        loop {
+            tokio::select! {
+                message = kafka_stream.next() => {
+                    let Some(message) = message else {
+                        error!("kafka stream closed unexpectedly");
+                        break Err(error::INTERNAL)
+                    };
 
-                let message = message.map_err(Error::internal)?;
+                    let message = message.map_err(Error::internal)?;
 
-                let Some(payload) = message.payload() else {
-                    // This shouldn't happen so if somehow it still happens just ignore it
-                    continue
-                };
-
-                // SAFETY: the backend will always send valid utf-8
-                let payload = unsafe { std::str::from_utf8_unchecked(payload) };
-                let event = serde_json::from_str(payload)?;
-
-                if matches!(event, Event::DisbandTeam)
-                    || matches!(event, Event::KickUser { user } if user == claims.subject)
-                {
-                    let _ = socket.send(Message::Close(Some(CloseFrame {
-                        code: close_code::NORMAL,
-                        reason: Cow::Owned(payload.to_owned()),
-                    }))).await;
-
-                    return Ok(())
-                }
-
-                if let Err(err) = socket.send(Message::Text(payload.to_owned())).await {
-                    let tungstenite_error = err.source().unwrap().downcast_ref::<TungsteniteError>().unwrap();
-                    error!("error: {:?}", tungstenite_error);
-                    break Err(Error::internal(err))
-                }
-            }
-            message = socket.next() => {
-                let _message = match message {
-                    Some(Ok(Message::Close(_))) | None => break Ok(()),
-                    Some(Ok(Message::Text(t))) => t,
-                    Some(Ok(_)) => {
-                        debug!("wrong message type on websocket");
+                    let Some(payload) = message.payload() else {
+                        warn!("got kafka message without payload");
+                        // This shouldn't happen so if somehow it still happens just ignore it
                         continue
+                    };
+
+                    // SAFETY: the backend will always send valid utf-8
+                    let payload = unsafe { std::str::from_utf8_unchecked(payload) };
+                    let event = serde_json::from_str(payload)?;
+
+                    if matches!(event, Event::DisbandTeam)
+                        || matches!(event, Event::KickUser { user } if user == claims.subject)
+                    {
+                        let _ = socket.send(Message::Close(Some(CloseFrame {
+                            code: close_code::NORMAL,
+                            reason: Cow::Owned(payload.to_owned()),
+                        }))).await;
+
+                        return Ok(())
                     }
-                    Some(Err(err)) => Err(Error::internal(err))?,
-                };
+
+                    if let Err(err) = socket.send(Message::Text(payload.to_owned())).await {
+                        let tungstenite_error = err.source().unwrap().downcast_ref::<TungsteniteError>().unwrap();
+                        error!("error: {:?}", tungstenite_error);
+                        break Err(Error::internal(err))
+                    }
+                }
+                message = socket.next() => {
+                    let _message = match message {
+                        Some(Ok(Message::Close(_))) | None => break Ok(()),
+                        Some(Ok(Message::Text(t))) => t,
+                        Some(Ok(_)) => {
+                            debug!("wrong message type on websocket");
+                            continue
+                        }
+                        Some(Err(err)) => Err(Error::internal(err))?,
+                    };
+                }
             }
         }
     }
+        .instrument(claims_span)
+        .await
 }
 
 type TeamInfo = (teams::Model, Vec<Member>, Claims);

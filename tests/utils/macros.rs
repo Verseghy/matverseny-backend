@@ -89,8 +89,8 @@ macro_rules! assert_close_frame_error {
         use ::tokio_tungstenite::tungstenite::{protocol::frame::coding::CloseCode, Message};
 
         let Some(Ok(Message::Close(Some(frame)))) = $msg else {
-                                                panic!("no or empty close frame");
-                                            };
+                                                                panic!("no or empty close frame");
+                                                            };
 
         assert_eq!(frame.code, CloseCode::Error);
 
