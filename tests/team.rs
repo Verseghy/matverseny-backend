@@ -558,10 +558,8 @@ mod update {
         let member = app.register_user().await;
         member.join(&team.get_code().await).await;
 
-        tracing::info!("asd 1");
         let mut socket = app.socket("/ws").start().await;
         assert_team_info!(socket, owner);
-        tracing::info!("asd 2");
 
         let member_id = member.id.strip_prefix("UserID-").unwrap();
 
@@ -576,11 +574,8 @@ mod update {
 
         assert_eq!(res.status(), StatusCode::NO_CONTENT);
 
-        tracing::info!("asd 3");
         let message = socket.next().await;
-        tracing::info!("asd 4");
         let message = utils::get_socket_message(message);
-        tracing::info!("asd 5");
 
         assert_json_eq!(
             message,

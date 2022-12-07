@@ -93,7 +93,7 @@ pub async fn ws_handler<S: StateTrait>(
                 .await;
             warn!("socket ended with error: {:?}", err);
         } else {
-            info!("socket ended");
+            // info!("socket ended");
         }
     })
 }
@@ -120,14 +120,9 @@ async fn socket_handler<S: StateTrait>(state: S, socket: &mut WebSocket) -> Resu
 
     let mut kafka_stream = consumer.stream();
 
-    let pos = consumer.position().unwrap();
-    info!("kafka pos: {:?}", pos);
-
     loop {
         tokio::select! {
             message = kafka_stream.next() => {
-                info!("got message: {:?}", message);
-
                 let Some(message) = message else {
                     error!("kafka stream closed unexpectedly");
                     break Err(error::INTERNAL)
@@ -270,7 +265,6 @@ fn create_consumer(team_id: &Uuid) -> Result<StreamConsumer> {
         // This shouldn't happend because creating team should also create the kafka topic
         .map_err(Error::internal)?;
 
-    info!(topic = topics::team_info(team_id), "consumer created");
 
     Ok(consumer)
 }
