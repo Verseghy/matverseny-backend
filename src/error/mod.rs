@@ -9,7 +9,6 @@ use axum::{
     response::{IntoResponse, Response},
 };
 use bytes::{BufMut, Bytes, BytesMut};
-use sea_orm::DbErr;
 use serde_json::json;
 
 #[derive(Debug)]
@@ -79,16 +78,12 @@ impl IntoResponse for Error<'_> {
     }
 }
 
-impl From<DbErr> for Error<'_> {
+impl<E> From<E> for Error<'_>
+where
+    E: Into<Box<dyn std::error::Error>>,
+{
     #[inline]
-    fn from(error: DbErr) -> Self {
-        Error::internal(error)
-    }
-}
-
-impl From<axum::Error> for Error<'_> {
-    #[inline]
-    fn from(error: axum::Error) -> Self {
+    fn from(error: E) -> Self {
         Error::internal(error)
     }
 }

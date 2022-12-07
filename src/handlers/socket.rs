@@ -137,7 +137,7 @@ async fn socket_handler<S: StateTrait>(state: S, socket: &mut WebSocket) -> Resu
 
                 // SAFETY: the backend will always send valid utf-8
                 let payload = unsafe { std::str::from_utf8_unchecked(payload) };
-                let event = serde_json::from_str(payload).unwrap();
+                let event = serde_json::from_str(payload)?;
 
                 if matches!(event, Event::DisbandTeam)
                     || matches!(event, Event::KickUser { user } if user == claims.subject)
