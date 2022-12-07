@@ -21,7 +21,7 @@ where
     B::Error: Into<BoxError>,
     S: Send + Sync,
 {
-    type Rejection = Error;
+    type Rejection = Error<'static>;
 
     async fn from_request(req: Request<B>, state: &S) -> Result<Self, Self::Rejection> {
         match axum::Json::<T>::from_request(req, state).await {
@@ -56,7 +56,7 @@ where
     B::Error: Into<BoxError>,
     S: Send + Sync,
 {
-    type Rejection = Error;
+    type Rejection = Error<'static>;
 
     async fn from_request(req: Request<B>, state: &S) -> Result<Self, Self::Rejection> {
         let Json(json) = Json::<T>::from_request(req, state).await?;

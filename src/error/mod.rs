@@ -13,16 +13,15 @@ use sea_orm::DbErr;
 use serde_json::json;
 
 #[derive(Debug)]
-pub struct ErrorInner<'a> {
+pub struct Error<'a> {
     status: Option<StatusCode>,
     code: u32,
     message: &'a str,
 }
 
-pub type Error = ErrorInner<'static>;
-pub type Result<T> = std::result::Result<T, Error>;
+pub type Result<T> = std::result::Result<T, Error<'static>>;
 
-impl<'a> ErrorInner<'a> {
+impl<'a> Error<'a> {
     #[inline]
     pub fn internal<E: Into<Box<dyn std::error::Error>>>(error: E) -> Self {
         error!("internal error: {}", error.into());
@@ -30,8 +29,8 @@ impl<'a> ErrorInner<'a> {
     }
 
     #[inline]
-    const fn new(status: Option<StatusCode>, code: u32, message: &'a str) -> ErrorInner<'a> {
-        ErrorInner {
+    const fn new(status: Option<StatusCode>, code: u32, message: &'a str) -> Error<'a> {
+        Self {
             status,
             code,
             message,
@@ -69,7 +68,7 @@ impl<'a> ErrorInner<'a> {
     }
 }
 
-impl IntoResponse for ErrorInner<'_> {
+impl IntoResponse for Error<'_> {
     #[inline]
     fn into_response(self) -> Response {
         let Some(status) = self.status else {
@@ -80,14 +79,14 @@ impl IntoResponse for ErrorInner<'_> {
     }
 }
 
-impl From<DbErr> for ErrorInner<'_> {
+impl From<DbErr> for Error<'_> {
     #[inline]
     fn from(error: DbErr) -> Self {
         Error::internal(error)
     }
 }
 
-impl From<axum::Error> for ErrorInner<'_> {
+impl From<axum::Error> for Error<'_> {
     #[inline]
     fn from(error: axum::Error) -> Self {
         Error::internal(error)
