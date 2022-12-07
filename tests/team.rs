@@ -107,8 +107,8 @@ mod join {
         let owner = app.register_user().await;
         let team = app.create_team(&owner).await;
 
-        let mut socket = app.socket("/ws").user(&owner).start().await;
-        assert_team_info!(socket);
+        let mut socket = app.socket("/ws").start().await;
+        assert_team_info!(socket, owner);
 
         let join_code = team.get_code().await;
         let user = app.register_user().await;
@@ -210,8 +210,8 @@ mod leave {
         let member = app.register_user().await;
         member.join(&team.get_code().await).await;
 
-        let mut socket = app.socket("/ws").user(&owner).start().await;
-        assert_team_info!(socket);
+        let mut socket = app.socket("/ws").start().await;
+        assert_team_info!(socket, owner);
 
         let res = app.post("/team/leave").user(&member).send().await;
         assert_eq!(res.status(), StatusCode::OK);
@@ -476,8 +476,8 @@ mod update {
         let user = app.register_user().await;
         let _team = app.create_team(&user).await;
 
-        let mut socket = app.socket("/ws").user(&user).start().await;
-        assert_team_info!(socket);
+        let mut socket = app.socket("/ws").start().await;
+        assert_team_info!(socket, user);
 
         let res = app
             .patch("/team")
@@ -512,8 +512,8 @@ mod update {
         let member = app.register_user().await;
         member.join(&team.get_code().await).await;
 
-        let mut socket = app.socket("/ws").user(&owner).start().await;
-        assert_team_info!(socket);
+        let mut socket = app.socket("/ws").start().await;
+        assert_team_info!(socket, owner);
 
         let member_uuid = member.id.strip_prefix("UserID-").unwrap();
 
@@ -550,8 +550,10 @@ mod update {
         let member = app.register_user().await;
         member.join(&team.get_code().await).await;
 
-        let mut socket = app.socket("/ws").user(&owner).start().await;
-        assert_team_info!(socket);
+        tracing::info!("asd 1");
+        let mut socket = app.socket("/ws").start().await;
+        assert_team_info!(socket, owner);
+        tracing::info!("asd 2");
 
         let member_id = member.id.strip_prefix("UserID-").unwrap();
 
@@ -566,7 +568,11 @@ mod update {
 
         assert_eq!(res.status(), StatusCode::NO_CONTENT);
 
-        let message = utils::get_socket_message(socket.next().await);
+        tracing::info!("asd 3");
+        let message = socket.next().await;
+        tracing::info!("asd 4");
+        let message = utils::get_socket_message(message);
+        tracing::info!("asd 5");
 
         assert_json_eq!(
             message,
@@ -585,8 +591,8 @@ mod update {
         let owner = app.register_user().await;
         let _team = app.create_team(&owner).await;
 
-        let mut socket = app.socket("/ws").user(&owner).start().await;
-        assert_team_info!(socket);
+        let mut socket = app.socket("/ws").start().await;
+        assert_team_info!(socket, owner);
 
         let res = app
             .patch("/team")
@@ -663,12 +669,12 @@ mod disband {
         let member2 = app.register_user().await;
         member2.join(&team.get_code().await).await;
 
-        let mut socket1 = app.socket("/ws").user(&owner).start().await;
-        assert_team_info!(socket1);
-        let mut socket2 = app.socket("/ws").user(&member1).start().await;
-        assert_team_info!(socket2);
-        let mut socket3 = app.socket("/ws").user(&member2).start().await;
-        assert_team_info!(socket3);
+        let mut socket1 = app.socket("/ws").start().await;
+        assert_team_info!(socket1, owner);
+        let mut socket2 = app.socket("/ws").start().await;
+        assert_team_info!(socket2, member1);
+        let mut socket3 = app.socket("/ws").start().await;
+        assert_team_info!(socket3, member2);
 
         let res = app.post("/team/disband").user(&owner).send().await;
         assert_eq!(res.status(), StatusCode::NO_CONTENT);
@@ -869,10 +875,10 @@ mod kick {
         let member = app.register_user().await;
         member.join(&team.get_code().await).await;
 
-        let mut socket1 = app.socket("/ws").user(&owner).start().await;
-        assert_team_info!(socket1);
-        let mut socket2 = app.socket("/ws").user(&member).start().await;
-        assert_team_info!(socket2);
+        let mut socket1 = app.socket("/ws").start().await;
+        assert_team_info!(socket1, owner);
+        let mut socket2 = app.socket("/ws").start().await;
+        assert_team_info!(socket2, member);
 
         let res = app
             .post("/team/kick")
@@ -927,10 +933,10 @@ mod kick {
 
         assert_eq!(res.status(), StatusCode::NO_CONTENT);
 
-        let mut socket1 = app.socket("/ws").user(&owner).start().await;
-        assert_team_info!(socket1);
-        let mut socket2 = app.socket("/ws").user(&member).start().await;
-        assert_team_info!(socket2);
+        let mut socket1 = app.socket("/ws").start().await;
+        assert_team_info!(socket1, owner);
+        let mut socket2 = app.socket("/ws").start().await;
+        assert_team_info!(socket2, member);
 
         let res = app
             .post("/team/kick")
@@ -988,12 +994,12 @@ mod kick {
 
         assert_eq!(res.status(), StatusCode::NO_CONTENT);
 
-        let mut socket1 = app.socket("/ws").user(&owner).start().await;
-        assert_team_info!(socket1);
-        let mut socket2 = app.socket("/ws").user(&coowner).start().await;
-        assert_team_info!(socket2);
-        let mut socket3 = app.socket("/ws").user(&member).start().await;
-        assert_team_info!(socket3);
+        let mut socket1 = app.socket("/ws").start().await;
+        assert_team_info!(socket1, owner);
+        let mut socket2 = app.socket("/ws").start().await;
+        assert_team_info!(socket2, coowner);
+        let mut socket3 = app.socket("/ws").start().await;
+        assert_team_info!(socket3, member);
 
         let res = app
             .post("/team/kick")
@@ -1075,8 +1081,8 @@ mod code {
         let owner = app.register_user().await;
         let _team = app.create_team(&owner).await;
 
-        let mut socket = app.socket("/ws").user(&owner).start().await;
-        assert_team_info!(socket);
+        let mut socket = app.socket("/ws").start().await;
+        assert_team_info!(socket, owner);
 
         let res = app.post("/team/code").user(&owner).send().await;
 

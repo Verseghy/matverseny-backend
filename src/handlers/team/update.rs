@@ -104,6 +104,8 @@ pub async fn update_team<S: StateTrait>(
         .await
         .map_err(|(err, _)| Error::internal(err))?;
 
+    info!(topic = kafka_topic, "sent kafka event");
+
     txn.commit().await?;
     Ok(StatusCode::NO_CONTENT)
 }

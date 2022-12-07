@@ -105,3 +105,11 @@ const_error! {
     #[status(BAD_REQUEST)]
     const JWT_INVALID_TOKEN;
 }
+const_error! {
+    #[error(21, "the message has the wrong type")]
+    const WEBSOCKET_WRONG_MESSAGE_TYPE;
+}
+const_error! {
+    #[error(22, "did not receive auth token in time")]
+    const WEBSOCKET_AUTH_TIMEOUT;
+}

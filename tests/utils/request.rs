@@ -15,14 +15,6 @@ impl SocketRequestBuilder {
         SocketRequestBuilder { builder }
     }
 
-    pub fn user(mut self, user: &impl UserLike) -> SocketRequestBuilder {
-        self.builder = self.builder.header(
-            http::header::AUTHORIZATION,
-            format!("Bearer {}", user.access_token()),
-        );
-        self
-    }
-
     pub async fn start(mut self) -> WebSocketStream<MaybeTlsStream<TcpStream>> {
         let request = self.builder.body(()).expect("failed to create request");
         let (stream, _reponse) = tokio_tungstenite::connect_async(request)

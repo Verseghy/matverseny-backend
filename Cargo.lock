@@ -1154,6 +1154,7 @@ version = "0.1.0"
 dependencies = [
  "assert-json-diff",
  "axum",
+ "bytes",
  "dotenvy",
  "entity",
  "futures",

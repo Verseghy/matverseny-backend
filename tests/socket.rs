@@ -1,45 +1,83 @@
 mod utils;
 
-use tokio_tungstenite::tungstenite::Error;
+use tokio_tungstenite::tungstenite::Message;
 use utils::prelude::*;
 
 #[tokio::test]
-#[serial]
-async fn no_team() {
-    let app = App::new().await;
-    let user = app.register_user().await;
+async fn timeout() {
+    let app = get_cached_app().await;
 
-    let request = app
-        .socket("/ws")
-        .user(&user)
-        .into_inner()
-        .body(())
-        .expect("failed to create request");
+    let mut socket = app.socket("/ws").start().await;
 
-    let socket = tokio_tungstenite::connect_async(request).await;
-
-    if let Err(Error::Http(response)) = socket {
-        assert_eq!(response.status(), error::USER_NOT_IN_TEAM.status());
-
-        let body = response.body();
-        assert!(body.is_some());
-
-        let response: Value = serde_json::from_slice(body.as_ref().unwrap()).unwrap();
-        assert_eq!(response["code"], error::USER_NOT_IN_TEAM.code());
-    } else {
-        unreachable!();
-    }
+    assert_close_frame_error!(socket.next().await, error::WEBSOCKET_AUTH_TIMEOUT);
 }
 
 #[tokio::test]
-#[serial]
+async fn wrong_token() {
+    let app = get_cached_app().await;
+
+    let mut socket = app.socket("/ws").start().await;
+
+    socket
+        .send(Message::Text("some random invalid token".to_owned()))
+        .await
+        .unwrap();
+    assert_close_frame_error!(socket.next().await, error::JWT_INVALID_TOKEN);
+}
+
+#[tokio::test]
+async fn wrong_message_type() {
+    let app = get_cached_app().await;
+
+    let mut socket = app.socket("/ws").start().await;
+
+    socket
+        .send(Message::Binary(Vec::from("asd".as_bytes())))
+        .await
+        .unwrap();
+    assert_close_frame_error!(socket.next().await, error::WEBSOCKET_WRONG_MESSAGE_TYPE);
+}
+
+#[tokio::test]
+async fn user_not_registered() {
+    let app = get_cached_app().await;
+    let user = utils::iam::register_user().await;
+
+    let mut socket = app.socket("/ws").start().await;
+
+    socket
+        .send(Message::Text(user.access_token().clone()))
+        .await
+        .unwrap();
+    assert_close_frame_error!(socket.next().await, error::USER_NOT_REGISTERED);
+}
+
+#[tokio::test]
+async fn no_team() {
+    let app = get_cached_app().await;
+    let user = app.register_user().await;
+
+    let mut socket = app.socket("/ws").start().await;
+
+    socket
+        .send(Message::Text(user.access_token().clone()))
+        .await
+        .unwrap();
+    assert_close_frame_error!(socket.next().await, error::USER_NOT_IN_TEAM);
+}
+
+#[tokio::test]
 async fn team_info() {
-    let app = App::new().await;
+    let app = get_cached_app().await;
     let user = app.register_user().await;
 
     let _team = app.create_team(&user).await;
 
-    let mut socket = app.socket("/ws").user(&user).start().await;
+    let mut socket = app.socket("/ws").start().await;
+    socket
+        .send(Message::Text(user.access_token().clone()))
+        .await
+        .unwrap();
     let message = utils::get_socket_message(socket.next().await);
 
     assert_json_include!(

@@ -1,7 +1,7 @@
 #[allow(unused_macros)]
 macro_rules! assert_error {
     ($res:expr, $error:expr) => {{
-        assert_eq!($res.status(), $error.status());
+        assert_eq!(Some($res.status()), $error.status());
 
         let res_json: serde_json::Value = $res.json().await;
         assert_eq!(res_json["code"], $error.code());
@@ -12,8 +12,18 @@ macro_rules! assert_error {
 pub(crate) use assert_error;
 
 #[allow(unused_macros)]
+macro_rules! assert_ws_handshake {
+    ($socket:expr, $user:expr) => {{}};
+}
+
+#[allow(unused_macros)]
 macro_rules! assert_team_info {
-    ($socket:expr) => {{
+    ($socket:expr, $user:expr) => {{
+        use ::tokio_tungstenite::tungstenite::Message;
+        $socket
+            .send(Message::Text($user.access_token().clone()))
+            .await
+            .unwrap();
         let message = utils::get_socket_message((&mut $socket).next().await);
         utils::macros::assert_event_type!(message, "TEAM_INFO");
         message
@@ -72,3 +82,24 @@ macro_rules! assert_close_frame {
 
 #[allow(unused_imports)]
 pub(crate) use assert_close_frame;
+
+#[allow(unused_macros)]
+macro_rules! assert_close_frame_error {
+    ($msg:expr, $error:expr) => {{
+        use ::tokio_tungstenite::tungstenite::{protocol::frame::coding::CloseCode, Message};
+
+        let Some(Ok(Message::Close(Some(frame)))) = $msg else {
+                                                panic!("no or empty close frame");
+                                            };
+
+        assert_eq!(frame.code, CloseCode::Error);
+
+        let reason: ::serde_json::Value =
+            ::serde_json::from_str(&*frame.reason).expect("invalid json");
+
+        assert_eq!(reason["code"], $error.code());
+    }};
+}
+
+#[allow(unused_imports)]
+pub(crate) use assert_close_frame_error;

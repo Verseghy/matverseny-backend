@@ -1,9 +1,15 @@
-use crate::{error, iam::Claims, utils::topics, Error, Result, StateTrait};
+use crate::{
+    error,
+    iam::{Claims, IamTrait},
+    utils::topics,
+    Error, Result, StateTrait,
+};
 use axum::{
     extract::ws::{close_code, CloseFrame, Message, WebSocket, WebSocketUpgrade},
     response::IntoResponse,
     Extension,
 };
+use bytes::Buf;
 use entity::{
     teams,
     users::{self, Class},
@@ -15,7 +21,8 @@ use rdkafka::{
 };
 use sea_orm::EntityTrait;
 use serde::{Deserialize, Serialize};
-use std::{borrow::Cow, error::Error as _};
+use std::{borrow::Cow, error::Error as _, mem::MaybeUninit, time::Duration};
+use tokio::time;
 use tokio_tungstenite::tungstenite::error::Error as TungsteniteError;
 use uuid::Uuid;
 
@@ -68,22 +75,176 @@ pub enum Event {
 
 pub async fn ws_handler<S: StateTrait>(
     Extension(state): Extension<S>,
-    claims: Claims,
     ws: WebSocketUpgrade,
-) -> Result<impl IntoResponse> {
-    debug!("ws connection");
+) -> impl IntoResponse {
+    ws.on_upgrade(|mut socket: WebSocket| async move {
+        if let Err(err) = socket_handler(state, &mut socket).await {
+            let error_bytes = err.to_bytes();
+            let error_text = std::str::from_utf8(error_bytes.chunk()).unwrap();
 
-    let team_info = get_initial_team_info(&state, &claims.subject).await?;
-    let consumer = create_consumer(&team_info.0.id)?;
-
-    // TODO: this seem to work reliably, but it is not a bullet proof solution
-    tokio::time::sleep(std::time::Duration::from_millis(100)).await;
-
-    Ok(ws.on_upgrade(move |socket: WebSocket| async move {
-        if let Err(err) = handler(socket, consumer, claims, team_info).await {
-            error!("socket failed with: {:?}", err);
+            // it's okay to ignore the error here
+            let _ = socket
+                .send(Message::Close(Some(CloseFrame {
+                    code: close_code::ERROR,
+                    // TODO: we copy here because the `reason` field neeeds static life time, but
+                    // actually it is okay to drop the value after the future finishes
+                    reason: Cow::Owned(error_text.to_owned()),
+                })))
+                .await;
+            warn!("socket ended with error: {:?}", err);
+        } else {
+            info!("socket ended");
         }
-    }))
+    })
+}
+
+async fn socket_handler<S: StateTrait>(state: S, socket: &mut WebSocket) -> Result<()> {
+    let (team, members, claims) = socket_auth(&state, socket).await?;
+    let _ = info_span!("claims", user_id = claims.subject.to_string()).enter();
+
+    let consumer = create_consumer(&team.id)?;
+
+    socket
+        .send(Message::Text(
+            serde_json::to_string(&Event::TeamInfo {
+                id: team.id,
+                name: team.name,
+                code: team.join_code,
+                locked: team.locked,
+                members,
+            })
+            .unwrap(),
+        ))
+        .await
+        .map_err(Error::internal)?;
+
+    let mut kafka_stream = consumer.stream();
+
+    let pos = consumer.position().unwrap();
+    info!("kafka pos: {:?}", pos);
+
+    loop {
+        tokio::select! {
+            message = kafka_stream.next() => {
+                info!("got message: {:?}", message);
+
+                let Some(message) = message else {
+                    error!("kafka stream closed unexpectedly");
+                    break Err(error::INTERNAL)
+                };
+
+                let message = message.map_err(Error::internal)?;
+
+                let Some(payload) = message.payload() else {
+                    // This shouldn't happen so if somehow it still happens just ignore it
+                    continue
+                };
+
+                // SAFETY: the backend will always send valid utf-8
+                let payload = unsafe { std::str::from_utf8_unchecked(payload) };
+                let event = serde_json::from_str(payload).unwrap();
+
+                if matches!(event, Event::DisbandTeam)
+                    || matches!(event, Event::KickUser { user } if user == claims.subject)
+                {
+                    let _ = socket.send(Message::Close(Some(CloseFrame {
+                        code: close_code::NORMAL,
+                        reason: Cow::Owned(payload.to_owned()),
+                    }))).await;
+
+                    return Ok(())
+                }
+
+                if let Err(err) = socket.send(Message::Text(payload.to_owned())).await {
+                    let tungstenite_error = err.source().unwrap().downcast_ref::<TungsteniteError>().unwrap();
+                    error!("error: {:?}", tungstenite_error);
+                    break Err(Error::internal(err))
+                }
+            }
+            message = socket.next() => {
+                let _message = match message {
+                    Some(Ok(Message::Close(_))) | None => break Ok(()),
+                    Some(Ok(Message::Text(t))) => t,
+                    Some(Ok(_)) => {
+                        debug!("wrong message type on websocket");
+                        continue
+                    }
+                    Some(Err(err)) => Err(Error::internal(err))?,
+                };
+            }
+        }
+    }
+}
+
+type TeamInfo = (teams::Model, Vec<Member>, Claims);
+
+async fn socket_auth<S: StateTrait>(state: &S, socket: &mut WebSocket) -> Result<TeamInfo> {
+    let message = {
+        let timeout = time::sleep(Duration::from_secs(1));
+        tokio::pin!(timeout);
+
+        let mut uninit = MaybeUninit::uninit();
+
+        tokio::select! {
+            message = socket.next() => {
+                match message {
+                    None => {
+                        error!("websocket stream closed unexpectedly");
+                        return Err(error::INTERNAL);
+                    },
+                    Some(Ok(msg)) => uninit.write(msg),
+                    Some(Err(err)) => return Err(Error::internal(err)),
+                };
+            },
+            _ = &mut timeout => {
+                return Err(error::WEBSOCKET_AUTH_TIMEOUT);
+            },
+        };
+
+        // SAFETY: this is initialized because if there is no message then it will return early
+        unsafe { uninit.assume_init() }
+    };
+
+    let token = match message {
+        Message::Text(t) => t,
+        _ => return Err(error::WEBSOCKET_WRONG_MESSAGE_TYPE),
+    };
+
+    let claims = state.iam().get_claims(&token)?;
+
+    let user = users::Entity::find_by_id(claims.subject)
+        .one(state.db())
+        .await?
+        .ok_or(error::USER_NOT_REGISTERED)?;
+
+    let result = teams::Entity::find_from_member(&user.id)
+        .one(state.db())
+        .await?
+        .ok_or(error::USER_NOT_IN_TEAM)?;
+
+    let members = users::Entity::find_in_team(&result.id)
+        .all(state.db())
+        .await?
+        .into_iter()
+        .map(|user| Member {
+            class: user.class,
+            rank: {
+                if user.id == result.owner {
+                    Rank::Owner
+                // NOTE: use `Option::is_some_and` when it gets stabilized (#93050)
+                } else if matches!(&result.co_owner, Some(co_owner) if *co_owner == user.id) {
+                    Rank::CoOwner
+                } else {
+                    Rank::Member
+                }
+            },
+            id: user.id,
+            // TODO: get the actual name of the user
+            name: user.id.to_string(),
+        })
+        .collect();
+
+    Ok((result, members, claims))
 }
 
 // TODO: create a global singleton consumer for performance reasons
@@ -109,125 +270,7 @@ fn create_consumer(team_id: &Uuid) -> Result<StreamConsumer> {
         // This shouldn't happend because creating team should also create the kafka topic
         .map_err(Error::internal)?;
 
+    info!(topic = topics::team_info(team_id), "consumer created");
+
     Ok(consumer)
-}
-
-type TeamInfo = (teams::Model, Vec<Member>);
-
-async fn get_initial_team_info<S: StateTrait>(state: &S, user_id: &Uuid) -> Result<TeamInfo> {
-    let user = users::Entity::find_by_id(*user_id)
-        .one(state.db())
-        .await?
-        .ok_or(error::USER_NOT_REGISTERED)?;
-
-    let result = teams::Entity::find_from_member(&user.id)
-        .one(state.db())
-        .await?
-        .ok_or(error::USER_NOT_IN_TEAM)?;
-
-    debug!("found team");
-
-    let members = users::Entity::find_in_team(&result.id)
-        .all(state.db())
-        .await?
-        .into_iter()
-        .map(|user| Member {
-            class: user.class,
-            rank: {
-                if user.id == result.owner {
-                    Rank::Owner
-                // NOTE: use `Option::is_some_and` when it gets stabilized (#93050)
-                } else if matches!(&result.co_owner, Some(co_owner) if *co_owner == user.id) {
-                    Rank::CoOwner
-                } else {
-                    Rank::Member
-                }
-            },
-            id: user.id,
-            // TODO: get the actual name of the user
-            name: user.id.to_string(),
-        })
-        .collect();
-
-    Ok((result, members))
-}
-
-async fn handler(
-    mut socket: WebSocket,
-    consumer: StreamConsumer,
-    claims: Claims,
-    (team, members): TeamInfo,
-) -> Result<()> {
-    let mut stream = consumer.stream();
-
-    debug!("got team info: {:?}, members: {:?}", team, members);
-
-    socket
-        .send(Message::Text(
-            serde_json::to_string(&Event::TeamInfo {
-                id: team.id,
-                name: team.name,
-                code: team.join_code,
-                locked: team.locked,
-                members,
-            })
-            .unwrap(),
-        ))
-        .await
-        .map_err(Error::internal)?;
-
-    loop {
-        tokio::select! {
-            message = stream.next() => {
-                if let Some(message) = message {
-                    let payload = message
-                        .map_err(Error::internal)?
-                        .payload()
-                        // SAFETY: the backend will always send a payload
-                        // NOTE: this could be handled without panicing
-                        .expect("no payload")
-                        .to_vec();
-
-                    // SAFETY: the backend will always send valid utf-8
-                    let payload = unsafe { String::from_utf8_unchecked(payload) };
-
-                    let event = serde_json::from_str(&payload).unwrap();
-
-                    debug!("subject: {}, event: {:?}", claims.subject, event);
-
-                    if matches!(event, Event::DisbandTeam)
-                        || matches!(event, Event::KickUser { user } if user == claims.subject)
-                    {
-                        let _ = socket.send(Message::Close(Some(CloseFrame {
-                            code: close_code::NORMAL,
-                            reason: Cow::Owned(payload),
-                        }))).await;
-
-                        return Ok(())
-                    }
-
-                    debug!("event: {:?}", payload);
-
-                    if let Err(err) = socket.send(Message::Text(payload)).await {
-                        let tungstenite_error = err.source().unwrap().downcast_ref::<TungsteniteError>().unwrap();
-                        error!("error: {:?}", tungstenite_error);
-                        break Err(Error::internal(err))
-                    }
-                } else {
-                    // kafka connection closed
-                    socket.close().await.map_err(Error::internal)?;
-                    break Ok(());
-                }
-            }
-            message = socket.recv() => {
-                if let Some(Ok(Message::Close(_))) = message {
-                    debug!("socket closed by client");
-                    break Ok(())
-                } else {
-                    // socket is closed
-                    break Ok(())
-                }
-            }
-        }
-    }
 }

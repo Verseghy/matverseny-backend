@@ -14,8 +14,8 @@ impl Team {
 
     #[allow(unused)]
     pub async fn get_code(&self) -> String {
-        let mut socket = self.app.socket("/ws").user(&self.owner).start().await;
-        let message = assert_team_info!(socket);
+        let mut socket = self.app.socket("/ws").start().await;
+        let message = assert_team_info!(socket, self.owner);
 
         let code = message["data"]["code"]
             .as_str()

@@ -14,7 +14,6 @@ use request::*;
 use reqwest::Client;
 use sea_orm::{ConnectOptions, Database, DbConn};
 use serde_json::{json, Value};
-use uuid::Uuid;
 use std::{
     net::{Ipv4Addr, SocketAddr, TcpListener},
     sync::{
@@ -27,6 +26,7 @@ use tokio::sync::OnceCell;
 use tokio_tungstenite::tungstenite::Message;
 use tracing::log::LevelFilter;
 use user::*;
+use uuid::Uuid;
 
 const DEFAULT_URL: &str = "postgres://matverseny:secret@127.0.0.1:5432/matverseny";
 
@@ -76,9 +76,7 @@ impl App {
             tokio::spawn(matverseny_backend::run(listener, state));
         }
 
-        let inner = AppInner {
-            addr,
-        };
+        let inner = AppInner { addr };
 
         App {
             inner: Arc::new(inner),
@@ -139,18 +137,12 @@ impl App {
 
     #[allow(dead_code)]
     pub fn post(&self, url: &str) -> RequestBuilder {
-        RequestBuilder::new(
-            Client::new()
-                .post(format!("http://{}{}", self.inner.addr, url)),
-        )
+        RequestBuilder::new(Client::new().post(format!("http://{}{}", self.inner.addr, url)))
     }
 
     #[allow(dead_code)]
     pub fn patch(&self, url: &str) -> RequestBuilder {
-        RequestBuilder::new(
-            Client::new()
-                .patch(format!("http://{}{}", self.inner.addr, url)),
-        )
+        RequestBuilder::new(Client::new().patch(format!("http://{}{}", self.inner.addr, url)))
     }
 
     #[allow(unused)]
@@ -184,7 +176,6 @@ pub fn get_socket_message(
         panic!("not text");
     }
 }
-
 
 #[allow(unused)]
 pub async fn get_cached_app() -> &'static App {
