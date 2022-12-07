@@ -55,7 +55,7 @@ impl App {
 
         let conn = Self::setup_database().await;
 
-        let addr = SocketAddr::from((Ipv4Addr::UNSPECIFIED, 0));
+        let addr = SocketAddr::from((Ipv4Addr::LOCALHOST, 0));
         let listener = TcpListener::bind(addr).expect("failed to bind tcp listener");
         let addr = listener.local_addr().unwrap();
         let state = State::with_database(conn).await;
