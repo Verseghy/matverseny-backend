@@ -1,3 +1,4 @@
+mod problem;
 mod register;
 mod socket;
 mod team;
@@ -12,5 +13,6 @@ pub fn routes<S: StateTrait>() -> Router {
     Router::new()
         .route("/register", post(register::register::<S>))
         .nest("/team", team::routes::<S>())
+        .nest("/problem", problem::routes::<S>())
         .route("/ws", get(socket::ws_handler::<S>))
 }

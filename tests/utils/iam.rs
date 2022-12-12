@@ -80,3 +80,7 @@ pub async fn register_user() -> User {
         access_token,
     }
 }
+
+// TODO: implement this if iam supports this
+#[allow(unused)]
+pub async fn make_admin(user: &impl UserLike) {}

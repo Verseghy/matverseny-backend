@@ -7,4 +7,4 @@ pub use futures::{SinkExt, StreamExt};
 pub use http::StatusCode;
 pub use matverseny_backend::error;
 pub use serde_json::{json, Value};
-pub use serial_test::serial;
+pub use serial_test::{parallel, serial};

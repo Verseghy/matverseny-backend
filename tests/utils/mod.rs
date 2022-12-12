@@ -68,7 +68,6 @@ impl App {
                     .expect("Failed to create tokio runtime");
 
                 rt.block_on(async {
-                    macros::enable_logging!(INFO);
                     matverseny_backend::run(listener, state).await;
                 });
             });
