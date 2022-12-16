@@ -24,6 +24,9 @@ mod create {
             .await;
 
         assert_eq!(res.status(), StatusCode::CREATED);
+
+        let body: Value = res.json().await;
+        assert!(body.get("id").is_some());
     }
 
     #[tokio::test]

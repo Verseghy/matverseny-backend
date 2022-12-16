@@ -1,8 +1,8 @@
-use axum::http::StatusCode;
 use axum::Extension;
+use axum::{http::StatusCode, response::IntoResponse};
 use entity::problems;
-use sea_orm::{EntityTrait, Set, TransactionTrait};
-use serde::Deserialize;
+use sea_orm::{EntityTrait, Set};
+use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 use crate::{error::Result, json::Json, StateTrait};
@@ -14,10 +14,15 @@ pub struct Request {
     image: Option<String>,
 }
 
+#[derive(Serialize)]
+pub struct Response {
+    id: Uuid,
+}
+
 pub async fn create_problem<S: StateTrait>(
     Extension(state): Extension<S>,
     Json(request): Json<Request>,
-) -> Result<StatusCode> {
+) -> Result<impl IntoResponse> {
     // TODO: permission check through the iam
 
     let problem = problems::ActiveModel {
@@ -27,7 +32,12 @@ pub async fn create_problem<S: StateTrait>(
         image: Set(request.image),
     };
 
-    problems::Entity::insert(problem).exec(state.db()).await?;
+    let res = problems::Entity::insert(problem).exec(state.db()).await?;
 
-    Ok(StatusCode::CREATED)
+    Ok((
+        StatusCode::CREATED,
+        Json(Response {
+            id: res.last_insert_id,
+        }),
+    ))
 }
