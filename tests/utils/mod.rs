@@ -32,6 +32,7 @@ const DEFAULT_URL: &str = "postgres://matverseny:secret@127.0.0.1:5432/matversen
 
 pub struct AppInner {
     addr: SocketAddr,
+    db: DbConn,
 }
 
 #[derive(Clone)]
@@ -58,7 +59,7 @@ impl App {
         let addr = SocketAddr::from((Ipv4Addr::LOCALHOST, 0));
         let listener = TcpListener::bind(addr).expect("failed to bind tcp listener");
         let addr = listener.local_addr().unwrap();
-        let state = State::with_database(conn).await;
+        let state = State::with_database(conn.clone()).await;
 
         if with_rt {
             std::thread::spawn(move || {
@@ -75,11 +76,18 @@ impl App {
             tokio::spawn(matverseny_backend::run(listener, state));
         }
 
-        let inner = AppInner { addr };
+        let inner = AppInner { addr, db: conn };
 
         App {
             inner: Arc::new(inner),
         }
+    }
+
+    #[allow(unused)]
+    pub async fn clean_database(&self) {
+        migration::Migrator::fresh(&self.inner.db)
+            .await
+            .expect("failed to apply migraitons");
     }
 
     async fn setup_database() -> DbConn {
