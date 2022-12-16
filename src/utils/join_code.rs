@@ -16,9 +16,7 @@ impl Distribution<char> for UpperAlphanumeric {
 }
 
 pub fn generate_join_code<R: Rng + ?Sized>(rng: &mut R) -> String {
-    (0..6)
-        .map(|_| rng.sample(UpperAlphanumeric) as char)
-        .collect()
+    (0..6).map(|_| rng.sample(UpperAlphanumeric)).collect()
 }
 
 #[test]
