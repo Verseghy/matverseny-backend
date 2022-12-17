@@ -113,3 +113,8 @@ const_error! {
     #[error(22, "did not receive auth token in time")]
     const WEBSOCKET_AUTH_TIMEOUT;
 }
+const_error! {
+    #[error(23, "no such problem")]
+    #[status(NOT_FOUND)]
+    const PROBLEM_NOT_FOUND;
+}

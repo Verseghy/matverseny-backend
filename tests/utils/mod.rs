@@ -143,6 +143,11 @@ impl App {
     }
 
     #[allow(dead_code)]
+    pub fn get(&self, url: &str) -> RequestBuilder {
+        RequestBuilder::new(Client::new().get(format!("http://{}{}", self.inner.addr, url)))
+    }
+
+    #[allow(dead_code)]
     pub fn post(&self, url: &str) -> RequestBuilder {
         RequestBuilder::new(Client::new().post(format!("http://{}{}", self.inner.addr, url)))
     }

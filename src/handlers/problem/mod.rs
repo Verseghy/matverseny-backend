@@ -1,7 +1,11 @@
 mod create;
+mod list;
 
 use crate::StateTrait;
-use axum::{routing::post, Router};
+use axum::{
+    routing::{get, post},
+    Router,
+};
 
 /// Routes for problem management
 ///
@@ -13,5 +17,8 @@ use axum::{routing::post, Router};
 ///
 /// POST   /problem/order
 pub fn routes<S: StateTrait>() -> Router {
-    Router::new().route("/", post(create::create_problem::<S>))
+    Router::new()
+        .route("/:id", get(list::get_problem::<S>))
+        .route("/", get(list::list_problems::<S>))
+        .route("/", post(create::create_problem::<S>))
 }
