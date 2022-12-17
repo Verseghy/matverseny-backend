@@ -1110,5 +1110,9 @@ mod code {
         socket.close(None).await.unwrap();
     }
 
-    // TODO: test join code clash
+    #[tokio::test]
+    #[ignore]
+    async fn clash() {
+        // TODO: test join code clash
+    }
 }

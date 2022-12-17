@@ -40,7 +40,11 @@ async fn invalid_claims() {
     assert_error!(res, error::COULD_NOT_GET_CLAIMS);
 }
 
-// TODO: test correct jwt body but wrong signature
+#[tokio::test]
+#[ignore]
+async fn wrong_jwt_signature() {
+    // TODO: test correct jwt body but wrong signature
+}
 
 #[tokio::test]
 async fn success() {
