@@ -7,7 +7,7 @@ use crate::{
     utils::{set_option, topics},
     StateTrait, ValidatedJson,
 };
-use axum::{http::StatusCode, Extension};
+use axum::{extract::State, http::StatusCode};
 use entity::teams;
 use rdkafka::producer::FutureRecord;
 use sea_orm::{ConnectionTrait, EntityTrait, IntoActiveModel, QuerySelect, TransactionTrait};
@@ -27,7 +27,7 @@ pub struct Request {
 }
 
 pub async fn update_team<S: StateTrait>(
-    Extension(state): Extension<S>,
+    State(state): State<S>,
     claims: Claims,
     ValidatedJson(request): ValidatedJson<Request>,
 ) -> Result<StatusCode> {

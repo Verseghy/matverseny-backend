@@ -1,5 +1,5 @@
 use crate::{error, error::DatabaseError, iam::Claims, Json, Result, StateTrait};
-use axum::{http::StatusCode, Extension};
+use axum::{extract::State, http::StatusCode};
 use entity::users::{self, Class};
 use sea_orm::{EntityTrait, Set};
 use serde::Deserialize;
@@ -11,7 +11,7 @@ pub struct Request {
 }
 
 pub async fn register<S: StateTrait>(
-    Extension(state): Extension<S>,
+    State(state): State<S>,
     claims: Claims,
     Json(request): Json<Request>,
 ) -> Result<StatusCode> {

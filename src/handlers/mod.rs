@@ -9,7 +9,7 @@ use axum::{
     Router,
 };
 
-pub fn routes<S: StateTrait>() -> Router {
+pub fn routes<S: StateTrait>() -> Router<S> {
     Router::new()
         .route("/register", post(register::register::<S>))
         .nest("/team", team::routes::<S>())

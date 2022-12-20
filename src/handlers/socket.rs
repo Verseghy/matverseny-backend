@@ -5,9 +5,11 @@ use crate::{
     Error, Result, StateTrait,
 };
 use axum::{
-    extract::ws::{close_code, CloseFrame, Message, WebSocket, WebSocketUpgrade},
+    extract::{
+        ws::{close_code, CloseFrame, Message, WebSocket, WebSocketUpgrade},
+        State,
+    },
     response::IntoResponse,
-    Extension,
 };
 use bytes::Buf;
 use entity::{
@@ -75,7 +77,7 @@ pub enum Event {
 }
 
 pub async fn ws_handler<S: StateTrait>(
-    Extension(state): Extension<S>,
+    State(state): State<S>,
     ws: WebSocketUpgrade,
 ) -> impl IntoResponse {
     ws.on_upgrade(|mut socket: WebSocket| async move {

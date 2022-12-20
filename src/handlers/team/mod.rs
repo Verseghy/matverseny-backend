@@ -26,7 +26,7 @@ use axum::{
 /// # Co-Owner actions
 /// POST  /team/kick
 /// POST  /team/code
-pub fn routes<S: StateTrait>() -> Router {
+pub fn routes<S: StateTrait>() -> Router<S> {
     Router::new()
         .route("/create", post(create::create_team::<S>))
         .route("/join", post(join::join_team::<S>))

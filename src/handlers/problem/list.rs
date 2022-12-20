@@ -3,7 +3,7 @@ use crate::{
     json::Json,
     StateTrait,
 };
-use axum::{extract::Path, Extension};
+use axum::extract::{Path, State};
 use entity::problems;
 use sea_orm::{EntityTrait, FromQueryResult};
 use serde::Serialize;
@@ -19,7 +19,7 @@ pub struct Response {
 }
 
 pub async fn get_problem<S: StateTrait>(
-    Extension(state): Extension<S>,
+    State(state): State<S>,
     Path(id): Path<String>,
 ) -> Result<Json<Response>> {
     // TODO: permission check through the iam
@@ -40,9 +40,7 @@ pub async fn get_problem<S: StateTrait>(
     Ok(Json(problem))
 }
 
-pub async fn list_problems<S: StateTrait>(
-    Extension(state): Extension<S>,
-) -> Result<Json<Vec<Response>>> {
+pub async fn list_problems<S: StateTrait>(State(state): State<S>) -> Result<Json<Vec<Response>>> {
     // TODO: permission check through the iam
 
     let res = problems::Entity::find()

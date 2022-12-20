@@ -8,7 +8,6 @@ use axum::{
 };
 use std::{
     future::Future,
-    marker::PhantomData,
     pin::Pin,
     task::{Context, Poll},
 };
@@ -17,39 +16,37 @@ use tracing::Span;
 
 #[derive(Debug, Clone)]
 pub struct GetClaimsLayer<ST> {
-    _marker: PhantomData<fn() -> ST>,
+    state: ST,
 }
 
 unsafe impl<ST> Send for GetClaimsLayer<ST> {}
 
 impl<ST> GetClaimsLayer<ST> {
-    pub fn new() -> Self {
-        Self {
-            _marker: PhantomData,
-        }
+    pub fn new(state: ST) -> Self {
+        Self { state }
     }
 }
 
-impl<S, ST> Layer<S> for GetClaimsLayer<ST> {
+impl<S, ST> Layer<S> for GetClaimsLayer<ST>
+where
+    ST: Clone,
+{
     type Service = GetClaims<S, ST>;
 
     fn layer(&self, inner: S) -> Self::Service {
-        GetClaims::new(inner)
+        GetClaims::new(inner, self.state.clone())
     }
 }
 
 #[derive(Debug, Clone)]
 pub struct GetClaims<S, ST> {
     inner: S,
-    _marker: PhantomData<fn() -> ST>,
+    state: ST,
 }
 
 impl<S, ST> GetClaims<S, ST> {
-    fn new(inner: S) -> Self {
-        GetClaims {
-            inner,
-            _marker: PhantomData,
-        }
+    fn new(inner: S, state: ST) -> Self {
+        GetClaims { inner, state }
     }
 }
 
@@ -67,8 +64,6 @@ where
     }
 
     fn call(&mut self, mut request: Request<B>) -> Self::Future {
-        let state = request.extensions().get::<ST>().expect("no State");
-
         let header = match request.headers().typed_get::<Authorization<Bearer>>() {
             Some(header) => header,
             None => {
@@ -79,7 +74,7 @@ where
             }
         };
 
-        let span = match state.iam().get_claims(header.token()) {
+        let span = match self.state.iam().get_claims(header.token()) {
             Ok(claims) => {
                 let span = Some(info_span!("claims", user_id = claims.subject.to_string()));
                 request.extensions_mut().insert(claims);

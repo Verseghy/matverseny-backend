@@ -3,7 +3,7 @@ use crate::{
     json::Json,
     StateTrait,
 };
-use axum::{http::StatusCode, Extension};
+use axum::{extract::State, http::StatusCode};
 use entity::problems;
 use sea_orm::EntityTrait;
 use serde::Deserialize;
@@ -15,7 +15,7 @@ pub struct Request {
 }
 
 pub async fn delete_problem<S: StateTrait>(
-    Extension(state): Extension<S>,
+    State(state): State<S>,
     Json(request): Json<Request>,
 ) -> Result<StatusCode> {
     // TODO: permission check through the iam
@@ -27,6 +27,9 @@ pub async fn delete_problem<S: StateTrait>(
     if res.rows_affected == 0 {
         return Err(error::PROBLEM_NOT_FOUND);
     }
+
+    // TODO: update order if this problem was in the list.
+    // TODO: send kafka events
 
     Ok(StatusCode::OK)
 }

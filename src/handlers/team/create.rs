@@ -4,7 +4,7 @@ use crate::{
     utils::{generate_join_code, topics},
     StateTrait, ValidatedJson,
 };
-use axum::{http::StatusCode, Extension};
+use axum::{extract::State, http::StatusCode};
 use entity::{team_members, teams, users};
 use rdkafka::admin::{AdminOptions, NewTopic, TopicReplication};
 use sea_orm::{EntityTrait, QuerySelect, Set, TransactionTrait};
@@ -19,7 +19,7 @@ pub struct Request {
 }
 
 pub async fn create_team<S: StateTrait>(
-    Extension(state): Extension<S>,
+    State(state): State<S>,
     claims: Claims,
     ValidatedJson(request): ValidatedJson<Request>,
 ) -> Result<StatusCode> {

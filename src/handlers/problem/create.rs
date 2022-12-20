@@ -1,5 +1,4 @@
-use axum::Extension;
-use axum::{http::StatusCode, response::IntoResponse};
+use axum::{extract::State, http::StatusCode, response::IntoResponse};
 use entity::problems;
 use sea_orm::{EntityTrait, Set};
 use serde::{Deserialize, Serialize};
@@ -20,7 +19,7 @@ pub struct Response {
 }
 
 pub async fn create_problem<S: StateTrait>(
-    Extension(state): Extension<S>,
+    State(state): State<S>,
     Json(request): Json<Request>,
 ) -> Result<impl IntoResponse> {
     // TODO: permission check through the iam

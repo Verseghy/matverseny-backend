@@ -17,7 +17,7 @@ use axum::{
 /// DELETE /problem
 ///
 /// POST   /problem/order
-pub fn routes<S: StateTrait>() -> Router {
+pub fn routes<S: StateTrait>() -> Router<S> {
     Router::new()
         .route("/:id", get(list::get_problem::<S>))
         .route("/", get(list::list_problems::<S>))

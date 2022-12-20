@@ -89,17 +89,16 @@ fn app<S: StateTrait>(state: S) -> Router {
         .catch_panic()
         .sensitive_headers(once(AUTHORIZATION))
         .propagate_x_request_id()
-        .add_extension(state)
-        .layer(middlewares::GetClaimsLayer::<S>::new())
+        .layer(middlewares::GetClaimsLayer::new(state.clone()))
         .compression()
         .decompression()
         .layer(cors_layer)
         .into_inner();
 
-    handlers::routes::<S>().layer(middlewares)
+    handlers::routes::<S>().with_state(state).layer(middlewares)
 }
 
-pub async fn run(listener: TcpListener, state: impl StateTrait) {
+pub async fn run<S: StateTrait>(listener: TcpListener, state: S) {
     info!(
         "listening on port {}",
         listener.local_addr().unwrap().port()

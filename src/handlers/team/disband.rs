@@ -5,14 +5,14 @@ use crate::{
     utils::topics,
     StateTrait,
 };
-use axum::{http::StatusCode, Extension};
+use axum::{extract::State, http::StatusCode};
 use entity::{team_members, teams};
 use rdkafka::producer::FutureRecord;
 use sea_orm::{ColumnTrait, EntityTrait, QueryFilter, QuerySelect, TransactionTrait};
 use std::time::Duration;
 
 pub async fn disband_team<S: StateTrait>(
-    Extension(state): Extension<S>,
+    State(state): State<S>,
     claims: Claims,
 ) -> Result<StatusCode> {
     let txn = state.db().begin().await?;

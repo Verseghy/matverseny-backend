@@ -6,7 +6,7 @@ use crate::{
     utils::topics,
     StateTrait,
 };
-use axum::{http::StatusCode, Extension};
+use axum::{extract::State, http::StatusCode};
 use entity::{team_members, teams, users};
 use rdkafka::producer::FutureRecord;
 use sea_orm::{EntityTrait, IntoActiveModel, QuerySelect, Set, TransactionTrait};
@@ -20,7 +20,7 @@ pub struct Request {
 }
 
 pub async fn kick_user<S: StateTrait>(
-    Extension(state): Extension<S>,
+    State(state): State<S>,
     claims: Claims,
     Json(request): Json<Request>,
 ) -> Result<StatusCode> {

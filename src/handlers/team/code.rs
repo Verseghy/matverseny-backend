@@ -5,14 +5,14 @@ use crate::{
     utils::{self, topics},
     StateTrait,
 };
-use axum::{http::StatusCode, Extension};
+use axum::{extract::State, http::StatusCode};
 use entity::teams;
 use rdkafka::producer::FutureRecord;
 use sea_orm::{EntityTrait, IntoActiveModel, QuerySelect, Set, TransactionTrait};
 use std::time::Duration;
 
 pub async fn regenerate_code<S: StateTrait>(
-    Extension(state): Extension<S>,
+    State(state): State<S>,
     claims: Claims,
 ) -> Result<StatusCode> {
     let txn = state.db().begin().await?;
