@@ -19,8 +19,6 @@ pub struct GetClaimsLayer<ST> {
     state: ST,
 }
 
-unsafe impl<ST> Send for GetClaimsLayer<ST> {}
-
 impl<ST> GetClaimsLayer<ST> {
     pub fn new(state: ST) -> Self {
         Self { state }
