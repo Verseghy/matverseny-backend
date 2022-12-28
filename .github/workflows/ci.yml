@@ -9,7 +9,7 @@ on:
     - master
   pull_request: {}
 
-jubs:
+jobs:
   check:
     name: Check
     run-on: ubuntu-latest
