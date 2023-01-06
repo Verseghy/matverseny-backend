@@ -5,7 +5,7 @@ pub use constants::*;
 pub use db::*;
 
 use axum::{
-    http::StatusCode,
+    http::{header, HeaderValue, StatusCode},
     response::{IntoResponse, Response},
 };
 use bytes::{BufMut, Bytes, BytesMut};
@@ -74,7 +74,15 @@ impl IntoResponse for Error<'_> {
             panic!("cannot convert an error without status to a response")
         };
 
-        (status, self.to_bytes()).into_response()
+        let buf = self.to_bytes();
+        let mut res = (status, buf).into_response();
+
+        res.headers_mut().insert(
+            header::CONTENT_TYPE,
+            HeaderValue::from_static(mime::APPLICATION_JSON.as_ref()),
+        );
+
+        res
     }
 }
 
@@ -106,3 +114,18 @@ macro_rules! const_error {
 }
 
 pub(self) use const_error;
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn error_response_has_json_content_type() {
+        let error = Error::new(Some(StatusCode::OK), 0, "");
+        let response = error.into_response();
+        let content_type = response.headers().get(http::header::CONTENT_TYPE);
+
+        assert!(content_type.is_some(), "response");
+        assert_eq!(content_type.unwrap(), "application/json");
+    }
+}
