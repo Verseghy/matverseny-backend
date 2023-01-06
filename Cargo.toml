@@ -4,6 +4,7 @@ version.workspace = true
 edition.workspace = true
 publish.workspace = true
 license-file.workspace = true
+default-run = "matverseny-backend"
 
 [workspace.package]
 version = "0.1.0"
@@ -17,6 +18,7 @@ lto = true
 
 [workspace]
 members = [".", "entity", "migration"]
+default-members = [".", "migration"]
 
 [dependencies]
 axum = { version = "0.6.1", features = ["ws", "http2", "headers"] }
