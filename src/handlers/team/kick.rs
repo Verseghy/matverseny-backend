@@ -1,5 +1,5 @@
 use crate::{
-    error::{self, Error, Result},
+    error::{self, Result},
     handlers::socket::Event,
     iam::Claims,
     json::Json,
@@ -81,8 +81,7 @@ pub async fn kick_user<S: StateTrait>(
                 .payload(&serde_json::to_string(&Event::KickUser { user: request.user }).unwrap()),
             Duration::from_secs(5),
         )
-        .await
-        .map_err(|(err, _)| Error::internal(err))?;
+        .await?;
 
     txn.commit().await?;
 

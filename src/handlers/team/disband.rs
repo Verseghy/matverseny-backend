@@ -1,5 +1,5 @@
 use crate::{
-    error::{self, Error, Result},
+    error::{self, Result},
     handlers::socket::Event,
     iam::Claims,
     utils::topics,
@@ -46,8 +46,7 @@ pub async fn disband_team<S: StateTrait>(
                 .payload(&serde_json::to_string(&Event::DisbandTeam).unwrap()),
             Duration::from_secs(5),
         )
-        .await
-        .map_err(|(err, _)| Error::internal(err))?;
+        .await?;
 
     txn.commit().await?;
     Ok(StatusCode::NO_CONTENT)

@@ -30,7 +30,8 @@ where
                 JsonRejection::JsonDataError(_) => Err(error::JSON_MISSING_FIELDS),
                 JsonRejection::JsonSyntaxError(_) => Err(error::JSON_SYNTAX_ERROR),
                 JsonRejection::MissingJsonContentType(_) => Err(error::JSON_CONTENT_TYPE),
-                err => Err(Error::internal(err)),
+                // FIXME: maybe better error?
+                _ => Err(error::INTERNAL),
             },
         }
     }

@@ -1,5 +1,5 @@
 use crate::{
-    error::{self, DatabaseError, Error, Result},
+    error::{self, DatabaseError, Result},
     iam::Claims,
     utils::{generate_join_code, topics},
     StateTrait, ValidatedJson,
@@ -83,8 +83,7 @@ pub async fn create_team<S: StateTrait>(
                 )],
                 &AdminOptions::new(),
             )
-            .await
-            .map_err(Error::internal)?;
+            .await?;
 
         txn.commit().await?;
 

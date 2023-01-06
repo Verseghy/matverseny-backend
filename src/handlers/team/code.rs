@@ -1,5 +1,5 @@
 use crate::{
-    error::{self, DatabaseError, Error, Result},
+    error::{self, DatabaseError, Result},
     handlers::socket::Event,
     iam::Claims,
     utils::{self, topics},
@@ -64,8 +64,7 @@ pub async fn regenerate_code<S: StateTrait>(
                     .payload(&kafka_payload),
                 Duration::from_secs(5),
             )
-            .await
-            .map_err(|(err, _)| Error::internal(err))?;
+            .await?;
 
         txn.commit().await?;
 

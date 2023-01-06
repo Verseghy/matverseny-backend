@@ -3,7 +3,7 @@ use crate::{
     handlers::socket::Event,
     iam::Claims,
     utils::topics,
-    Error, Json, Result, StateTrait,
+    Json, Result, StateTrait,
 };
 use axum::{extract::State, http::StatusCode};
 use entity::{team_members, teams, users};
@@ -67,8 +67,7 @@ pub async fn join_team<S: StateTrait>(
                     .payload(&serde_json::to_string(&Event::JoinTeam { user: user.id }).unwrap()),
                 Duration::from_secs(5),
             )
-            .await
-            .map_err(|(err, _)| Error::internal(err))?;
+            .await?;
 
         txn.commit().await?;
 

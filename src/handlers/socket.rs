@@ -2,7 +2,7 @@ use crate::{
     error,
     iam::{Claims, IamTrait},
     utils::topics,
-    Error, Result, StateTrait,
+    Result, StateTrait,
 };
 use axum::{
     extract::{
@@ -120,7 +120,10 @@ async fn socket_handler<S: StateTrait>(state: S, socket: &mut WebSocket) -> Resu
                 .unwrap(),
             ))
             .await
-            .map_err(Error::internal)?;
+            .map_err(|err| {
+                error!("websocket error: {:?}", err);
+                error::WEBSOCKET_ERROR
+            })?;
 
         let mut kafka_stream = consumer.stream();
 
@@ -132,7 +135,7 @@ async fn socket_handler<S: StateTrait>(state: S, socket: &mut WebSocket) -> Resu
                         break Err(error::INTERNAL)
                     };
 
-                    let message = message.map_err(Error::internal)?;
+                    let message = message?;
 
                     let Some(payload) = message.payload() else {
                         warn!("got kafka message without payload");
@@ -157,8 +160,8 @@ async fn socket_handler<S: StateTrait>(state: S, socket: &mut WebSocket) -> Resu
 
                     if let Err(err) = socket.send(Message::Text(payload.to_owned())).await {
                         let tungstenite_error = err.source().unwrap().downcast_ref::<TungsteniteError>().unwrap();
-                        error!("error: {:?}", tungstenite_error);
-                        break Err(Error::internal(err))
+                        error!("websocket error: {:?}", tungstenite_error);
+                        break Err(error::WEBSOCKET_ERROR)
                     }
                 }
                 message = socket.next() => {
@@ -169,7 +172,10 @@ async fn socket_handler<S: StateTrait>(state: S, socket: &mut WebSocket) -> Resu
                             debug!("wrong message type on websocket");
                             continue
                         }
-                        Some(Err(err)) => Err(Error::internal(err))?,
+                        Some(Err(err)) => {
+                            error!("websocket error: {:?}", err);
+                            return Err(error::WEBSOCKET_ERROR)
+                        },
                     };
                 }
             }
@@ -193,10 +199,14 @@ async fn socket_auth<S: StateTrait>(state: &S, socket: &mut WebSocket) -> Result
                 match message {
                     None => {
                         error!("websocket stream closed unexpectedly");
+                        // The error doesn't matter because the socket is already closed
                         return Err(error::INTERNAL);
                     },
                     Some(Ok(msg)) => uninit.write(msg),
-                    Some(Err(err)) => return Err(Error::internal(err)),
+                    Some(Err(err)) => {
+                        error!("websocket error: {:?}", err);
+                        return Err(error::WEBSOCKET_ERROR)
+                    },
                 };
             },
             _ = &mut timeout => {
@@ -252,26 +262,23 @@ async fn socket_auth<S: StateTrait>(state: &S, socket: &mut WebSocket) -> Result
 
 // TODO: create a global singleton consumer for performance reasons
 async fn create_consumer(team_id: &Uuid) -> Result<StreamConsumer> {
-    let bootstrap_servers = std::env::var("KAFKA_BOOTSTRAP_SERVERS").map_err(Error::internal)?;
+    let bootstrap_servers = std::env::var("KAFKA_BOOTSTRAP_SERVERS")
+        .expect("environment variable KAFKA_BOOTSTRAP_SERVERS is not set");
 
     let consumer: StreamConsumer = ClientConfig::new()
         .set("bootstrap.servers", bootstrap_servers)
         .set("group.id", "socket")
-        .create()
-        .map_err(Error::internal)?;
+        .create()?;
 
-    consumer
-        .assign(&{
-            let mut list = TopicPartitionList::new();
-            list.add_partition(
-                &topics::team_info(team_id),
-                // TODO: research if this is reliable
-                0,
-            );
-            list
-        })
-        // This shouldn't happend because creating team should also create the kafka topic
-        .map_err(Error::internal)?;
+    consumer.assign(&{
+        let mut list = TopicPartitionList::new();
+        list.add_partition(
+            &topics::team_info(team_id),
+            // TODO: research if this is reliable
+            0,
+        );
+        list
+    })?;
 
     tokio::time::sleep(std::time::Duration::from_millis(200)).await;
 

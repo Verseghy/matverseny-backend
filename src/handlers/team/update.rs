@@ -1,6 +1,5 @@
 use crate::{
     error,
-    error::Error,
     error::Result,
     handlers::socket::Event,
     iam::Claims,
@@ -101,8 +100,7 @@ pub async fn update_team<S: StateTrait>(
                 .payload(&kafka_payload),
             Duration::from_secs(5),
         )
-        .await
-        .map_err(|(err, _)| Error::internal(err))?;
+        .await?;
 
     txn.commit().await?;
     Ok(StatusCode::NO_CONTENT)

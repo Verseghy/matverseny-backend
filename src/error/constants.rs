@@ -118,3 +118,22 @@ const_error! {
     #[status(NOT_FOUND)]
     const PROBLEM_NOT_FOUND;
 }
+const_error! {
+    #[error("M024", "database error")]
+    #[status(INTERNAL_SERVER_ERROR)]
+    const DATABASE_ERROR;
+}
+const_error! {
+    #[error("M025", "failed to deserialize json")]
+    #[status(INTERNAL_SERVER_ERROR)]
+    const JSON_DESERIALIZE;
+}
+const_error! {
+    #[error("M026", "kafka error")]
+    #[status(INTERNAL_SERVER_ERROR)]
+    const KAFKA_ERROR;
+}
+const_error! {
+    #[error("M027", "websocket error")]
+    const WEBSOCKET_ERROR;
+}

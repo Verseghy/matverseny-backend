@@ -1,6 +1,4 @@
-use crate::{
-    error, error::Error, handlers::socket::Event, iam::Claims, utils::topics, Result, StateTrait,
-};
+use crate::{error, handlers::socket::Event, iam::Claims, utils::topics, Result, StateTrait};
 use axum::{extract::State, http::StatusCode};
 use entity::{team_members, teams, users};
 use rdkafka::producer::FutureRecord;
@@ -51,8 +49,7 @@ pub async fn leave_team<S: StateTrait>(
                 .payload(&serde_json::to_string(&Event::LeaveTeam { user: user.id }).unwrap()),
             Duration::from_secs(5),
         )
-        .await
-        .map_err(|(err, _)| Error::internal(err))?;
+        .await?;
 
     txn.commit().await?;
 

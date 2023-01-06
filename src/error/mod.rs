@@ -9,6 +9,8 @@ use axum::{
     response::{IntoResponse, Response},
 };
 use bytes::{BufMut, Bytes, BytesMut};
+use rdkafka::{error::KafkaError, message::OwnedMessage};
+use sea_orm::DbErr;
 use serde_json::json;
 
 #[derive(Debug)]
@@ -21,11 +23,11 @@ pub struct Error<'a> {
 pub type Result<T> = std::result::Result<T, Error<'static>>;
 
 impl<'a> Error<'a> {
-    #[inline]
-    pub fn internal<E: Into<Box<dyn std::error::Error>>>(error: E) -> Self {
-        error!("internal error: {}", error.into());
-        constants::INTERNAL
-    }
+    // #[inline]
+    // pub fn internal<E: Into<Box<dyn std::error::Error>>>(error: E) -> Self {
+    //     error!("internal error: {}", error.into());
+    //     constants::INTERNAL
+    // }
 
     #[inline]
     const fn new(status: Option<StatusCode>, code: &'static str, message: &'a str) -> Error<'a> {
@@ -86,13 +88,35 @@ impl IntoResponse for Error<'_> {
     }
 }
 
-impl<E> From<E> for Error<'_>
-where
-    E: Into<Box<dyn std::error::Error>>,
-{
+impl From<DbErr> for Error<'_> {
     #[inline]
-    fn from(error: E) -> Self {
-        Error::internal(error)
+    fn from(error: DbErr) -> Self {
+        error!("database error: {:?}", error);
+        constants::DATABASE_ERROR
+    }
+}
+
+impl From<serde_json::Error> for Error<'_> {
+    #[inline]
+    fn from(error: serde_json::Error) -> Self {
+        error!("failed to deserialize json: {:?}", error);
+        constants::JSON_DESERIALIZE
+    }
+}
+
+impl From<KafkaError> for Error<'_> {
+    #[inline]
+    fn from(error: KafkaError) -> Self {
+        error!("kafka error: {:?}", error);
+        constants::KAFKA_ERROR
+    }
+}
+
+impl From<(KafkaError, OwnedMessage)> for Error<'_> {
+    #[inline]
+    fn from((error, _): (KafkaError, OwnedMessage)) -> Self {
+        error!("kafka error: {:?}", error);
+        constants::KAFKA_ERROR
     }
 }
 
