@@ -91,7 +91,7 @@ mod get {
     }
 
     #[tokio::test]
-    #[parallel]
+    #[serial]
     async fn success() {
         let app = get_cached_app().await;
         app.clean_database().await;
