@@ -14,7 +14,7 @@ use serde_json::json;
 #[derive(Debug)]
 pub struct Error<'a> {
     status: Option<StatusCode>,
-    code: u32,
+    code: &'static str,
     message: &'a str,
 }
 
@@ -28,7 +28,7 @@ impl<'a> Error<'a> {
     }
 
     #[inline]
-    const fn new(status: Option<StatusCode>, code: u32, message: &'a str) -> Error<'a> {
+    const fn new(status: Option<StatusCode>, code: &'static str, message: &'a str) -> Error<'a> {
         Self {
             status,
             code,
@@ -37,7 +37,7 @@ impl<'a> Error<'a> {
     }
 
     #[inline]
-    pub const fn code(&self) -> u32 {
+    pub const fn code(&self) -> &'static str {
         self.code
     }
 
@@ -121,7 +121,7 @@ mod tests {
 
     #[test]
     fn error_response_has_json_content_type() {
-        let error = Error::new(Some(StatusCode::OK), 0, "");
+        let error = Error::new(Some(StatusCode::OK), "", "");
         let response = error.into_response();
         let content_type = response.headers().get(http::header::CONTENT_TYPE);
 
