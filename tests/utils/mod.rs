@@ -1,3 +1,4 @@
+mod db;
 pub mod iam;
 pub mod macros;
 pub mod prelude;
@@ -6,13 +7,12 @@ mod response;
 mod team;
 mod user;
 
+use db::Database;
 use dotenvy::dotenv;
 use http::StatusCode;
 use matverseny_backend::State;
-use migration::MigratorTrait;
 use request::*;
 use reqwest::Client;
-use sea_orm::{ConnectOptions, Database, DbConn};
 use serde_json::{json, Value};
 use std::{
     net::{Ipv4Addr, SocketAddr, TcpListener},
@@ -22,87 +22,64 @@ use std::{
     },
 };
 use team::Team;
-use tokio::sync::OnceCell;
+use tokio::sync::{oneshot, OnceCell};
 use tokio_tungstenite::tungstenite::Message;
-use tracing::log::LevelFilter;
 use user::*;
 use uuid::Uuid;
 
-const DEFAULT_URL: &str = "postgres://matverseny:secret@127.0.0.1:5432/matverseny";
-
+#[derive(Debug)]
 pub struct AppInner {
     addr: SocketAddr,
-    db: DbConn,
+    db: Database,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct App {
     inner: Arc<AppInner>,
 }
 
 impl App {
-    #[allow(unused)]
     pub async fn new() -> Self {
-        Self::new_inner(false).await
-    }
-
-    #[allow(unused)]
-    pub async fn new_with_rt() -> Self {
-        Self::new_inner(true).await
-    }
-
-    async fn new_inner(with_rt: bool) -> Self {
         dotenv().ok();
 
-        let conn = Self::setup_database().await;
+        let (tx, rx) = oneshot::channel();
 
-        let addr = SocketAddr::from((Ipv4Addr::LOCALHOST, 0));
-        let listener = TcpListener::bind(addr).expect("failed to bind tcp listener");
-        let addr = listener.local_addr().unwrap();
-        let state = State::with_database(conn.clone()).await;
+        std::thread::spawn(move || {
+            let rt = tokio::runtime::Builder::new_current_thread()
+                .enable_all()
+                .build()
+                .expect("Failed to create tokio runtime");
 
-        if with_rt {
-            std::thread::spawn(move || {
-                let rt = tokio::runtime::Builder::new_current_thread()
-                    .enable_all()
-                    .build()
-                    .expect("Failed to create tokio runtime");
+            rt.block_on(async {
+                let conn = Database::setup().await;
 
-                rt.block_on(async {
-                    matverseny_backend::run(listener, state).await;
+                let addr = SocketAddr::from((Ipv4Addr::LOCALHOST, 0));
+                let listener = TcpListener::bind(addr).expect("failed to bind tcp listener");
+                let state = State::with_database(conn.conn()).await;
+
+                let inner = Arc::new(AppInner {
+                    addr: listener.local_addr().unwrap(),
+                    db: conn,
                 });
+
+                tx.send(inner).unwrap();
+
+                matverseny_backend::run(listener, state).await;
             });
-        } else {
-            tokio::spawn(matverseny_backend::run(listener, state));
-        }
+        });
 
-        let inner = AppInner { addr, db: conn };
+        let app = App {
+            inner: rx.await.unwrap(),
+        };
 
-        App {
-            inner: Arc::new(inner),
-        }
+        app.clean_database().await;
+
+        app
     }
 
     #[allow(unused)]
     pub async fn clean_database(&self) {
-        migration::Migrator::fresh(&self.inner.db)
-            .await
-            .expect("failed to apply migraitons");
-    }
-
-    async fn setup_database() -> DbConn {
-        let mut opts = ConnectOptions::new(DEFAULT_URL.to_owned());
-        opts.sqlx_logging_level(LevelFilter::Debug);
-
-        let conn = Database::connect(opts)
-            .await
-            .expect("failed to connect to database");
-
-        migration::Migrator::fresh(&conn)
-            .await
-            .expect("failed to apply migrations");
-
-        conn
+        self.inner.db.clean().await;
     }
 
     #[allow(unused)]
@@ -197,7 +174,7 @@ pub fn get_socket_message(
 #[allow(unused)]
 pub async fn get_cached_app() -> &'static App {
     static APP: OnceCell<App> = OnceCell::const_new();
-    APP.get_or_init(App::new_with_rt).await
+    APP.get_or_init(App::new).await
 }
 
 #[allow(unused)]
