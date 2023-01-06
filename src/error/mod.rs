@@ -102,6 +102,7 @@ macro_rules! const_error {
         $(#[status($status:ident)])?
         const $name:ident;
     ) => {
+        macros::error_code_to_ident!($code);
         pub const $name: $crate::error::Error =
             $crate::error::Error::new($crate::error::const_error!(@status $($status)?), $code, $msg);
     };
