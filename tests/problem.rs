@@ -366,3 +366,221 @@ mod delete {
         // TODO: assert error
     }
 }
+
+mod update {
+    use super::*;
+
+    #[tokio::test]
+    #[parallel]
+    async fn not_found() {
+        let app = get_cached_app().await;
+
+        let user = utils::iam::register_user().await;
+        utils::iam::make_admin(&user).await;
+
+        let res = app
+            .patch("/problem")
+            .user(&user)
+            .json(&json!({
+                "id": uuid(),
+                "body": "Test body 1.",
+                "solution": 1,
+                "image": "test image 1",
+            }))
+            .send()
+            .await;
+
+        assert_error!(res, error::PROBLEM_NOT_FOUND);
+    }
+
+    #[tokio::test]
+    #[parallel]
+    async fn delete_image() {
+        let app = get_cached_app().await;
+
+        let user = utils::iam::register_user().await;
+        utils::iam::make_admin(&user).await;
+
+        let res = app
+            .post("/problem")
+            .user(&user)
+            .json(&json!({
+                "body": "Test body 1.",
+                "solution": 1,
+                "image": "test image 1",
+            }))
+            .send()
+            .await;
+
+        assert_eq!(
+            res.status(),
+            StatusCode::CREATED,
+            "failed to create problem: response={:#?}",
+            res.json::<Value>().await,
+        );
+
+        let body: Value = res.json().await;
+        let id = body["id"].as_str().unwrap();
+
+        let res = app
+            .patch("/problem")
+            .user(&user)
+            .json(&json!({
+                "id": id,
+                "body": "Test body 2.",
+                "solution": 2,
+                "image": null,
+            }))
+            .send()
+            .await;
+
+        assert_eq!(
+            res.status(),
+            StatusCode::NO_CONTENT,
+            "failed to update problem: response={:#?}",
+            res.json::<Value>().await
+        );
+
+        let res = app
+            .get(&format!("/problem/{}", id))
+            .user(&user)
+            .send()
+            .await;
+
+        assert_eq!(res.status(), StatusCode::OK);
+
+        assert_json_eq!(
+            res.json::<Value>().await,
+            json!({
+                "id": id,
+                "body": "Test body 2.",
+                "solution": 2,
+            })
+        )
+    }
+
+    #[tokio::test]
+    #[parallel]
+    async fn everything_is_optional() {
+        let app = get_cached_app().await;
+
+        let user = utils::iam::register_user().await;
+        utils::iam::make_admin(&user).await;
+
+        let res = app
+            .post("/problem")
+            .user(&user)
+            .json(&json!({
+                "body": "Test body 1.",
+                "solution": 1,
+                "image": "test image 1",
+            }))
+            .send()
+            .await;
+
+        assert_eq!(
+            res.status(),
+            StatusCode::CREATED,
+            "failed to create problem: response={:#?}",
+            res.json::<Value>().await,
+        );
+
+        let body: Value = res.json().await;
+        let id = body["id"].as_str().unwrap();
+
+        let res = app
+            .patch("/problem")
+            .user(&user)
+            .json(&json!({
+                "id": id,
+            }))
+            .send()
+            .await;
+
+        assert_eq!(
+            res.status(),
+            StatusCode::NO_CONTENT,
+            "failed to update problem: response={:#?}",
+            res.json::<Value>().await
+        );
+    }
+
+    #[tokio::test]
+    #[parallel]
+    async fn success() {
+        let app = get_cached_app().await;
+
+        let user = utils::iam::register_user().await;
+        utils::iam::make_admin(&user).await;
+
+        let res = app
+            .post("/problem")
+            .user(&user)
+            .json(&json!({
+                "body": "Test body 1.",
+                "solution": 1,
+                "image": "test image 1",
+            }))
+            .send()
+            .await;
+
+        assert_eq!(
+            res.status(),
+            StatusCode::CREATED,
+            "failed to create problem: response={:#?}",
+            res.json::<Value>().await,
+        );
+
+        let body: Value = res.json().await;
+        let id = body["id"].as_str().unwrap();
+
+        let res = app
+            .patch("/problem")
+            .user(&user)
+            .json(&json!({
+                "id": id,
+                "body": "Test body 2.",
+                "solution": 2,
+                "image": "test image 2",
+            }))
+            .send()
+            .await;
+
+        assert_eq!(
+            res.status(),
+            StatusCode::NO_CONTENT,
+            "failed to update problem: response={:#?}",
+            res.json::<Value>().await
+        );
+
+        let res = app
+            .get(&format!("/problem/{}", id))
+            .user(&user)
+            .send()
+            .await;
+
+        assert_eq!(res.status(), StatusCode::OK);
+
+        assert_json_eq!(
+            res.json::<Value>().await,
+            json!({
+                "id": id,
+                "body": "Test body 2.",
+                "solution": 2,
+                "image": "test image 2",
+            })
+        )
+    }
+
+    #[tokio::test]
+    #[parallel]
+    #[ignore]
+    async fn not_admin() {
+        let app = get_cached_app().await;
+        let user = utils::iam::register_user().await;
+
+        let _res = app.delete("/problem").user(&user).send().await;
+
+        // TODO: assert error
+    }
+}

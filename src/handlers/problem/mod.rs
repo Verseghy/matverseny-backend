@@ -1,10 +1,11 @@
 mod create;
 mod delete;
 mod list;
+mod update;
 
 use crate::StateTrait;
 use axum::{
-    routing::{delete, get, post},
+    routing::{delete, get, patch, post},
     Router,
 };
 
@@ -22,5 +23,6 @@ pub fn routes<S: StateTrait>() -> Router<S> {
         .route("/:id", get(list::get_problem::<S>))
         .route("/", get(list::list_problems::<S>))
         .route("/", post(create::create_problem::<S>))
+        .route("/", patch(update::update_problem::<S>))
         .route("/", delete(delete::delete_problem::<S>))
 }
