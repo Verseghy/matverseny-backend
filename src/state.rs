@@ -48,7 +48,7 @@ impl State {
         info!("Creating kafka producer");
 
         let bootstrap_servers =
-            env::var("KAFKA_BOOTSTRAP_SERVERS").expect("KAFKA_BOOTSRAP_SERVERS not set");
+            env::var("KAFKA_BOOTSTRAP_SERVERS").expect("KAFKA_BOOTSTRAP_SERVERS not set");
 
         ClientConfig::new()
             .set("bootstrap.servers", bootstrap_servers)
