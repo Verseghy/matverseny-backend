@@ -20,6 +20,11 @@ impl MigrationTrait for Migration {
                             .not_null(),
                     )
                     .col(ColumnDef::new(problems::Column::Image).string().null())
+                    .primary_key(
+                        Index::create()
+                            .name("PK_problems")
+                            .col(problems::Column::Id),
+                    )
                     .to_owned(),
             )
             .await
