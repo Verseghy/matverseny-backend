@@ -20,7 +20,7 @@ pub struct Error<'a> {
     message: &'a str,
 }
 
-pub type Result<T> = std::result::Result<T, Error<'static>>;
+pub type Result<T = ()> = std::result::Result<T, Error<'static>>;
 
 impl<'a> Error<'a> {
     // #[inline]
