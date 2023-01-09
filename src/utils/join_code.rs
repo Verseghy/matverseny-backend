@@ -11,7 +11,7 @@ impl Distribution<char> for UpperAlphanumeric {
 
         let range = Uniform::new(0, CHARSET.len());
         let n = range.sample(rng);
-        unsafe { char::from_u32_unchecked(CHARSET[n] as u32) }
+        CHARSET[n] as char
     }
 }
 
