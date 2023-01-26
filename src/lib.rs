@@ -46,14 +46,9 @@ use error::{Error, Result};
 use json::*;
 pub use state::*;
 
-use axum::{http::header::AUTHORIZATION, Router};
-use std::{iter::once, net::TcpListener};
+use crate::middlewares::middlewares;
+use std::net::TcpListener;
 use tokio::signal;
-use tower::ServiceBuilder;
-use tower_http::{
-    cors::{Any, CorsLayer},
-    ServiceBuilderExt,
-};
 
 async fn shutdown_signal() {
     let ctrl_c = async {
@@ -79,34 +74,18 @@ async fn shutdown_signal() {
     };
 }
 
-fn app<S: StateTrait>(state: S) -> Router {
-    let cors_layer = CorsLayer::new()
-        .allow_origin(Any)
-        .allow_methods(Any)
-        .allow_headers(Any);
-
-    let middlewares = ServiceBuilder::new()
-        .catch_panic()
-        .sensitive_headers(once(AUTHORIZATION))
-        .propagate_x_request_id()
-        .layer(middlewares::GetClaimsLayer::new(state.clone()))
-        .compression()
-        .decompression()
-        .layer(cors_layer)
-        .into_inner();
-
-    handlers::routes::<S>().with_state(state).layer(middlewares)
-}
-
 pub async fn run<S: StateTrait>(listener: TcpListener, state: S) {
     info!(
         "listening on port {}",
         listener.local_addr().unwrap().port()
     );
 
+    let app = handlers::routes::<S>();
+    let app = middlewares(state, app);
+
     axum::Server::from_tcp(listener)
         .expect("failed to start server")
-        .serve(app(state).into_make_service())
+        .serve(app.into_make_service())
         .with_graceful_shutdown(shutdown_signal())
         .await
         .unwrap()
