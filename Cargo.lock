@@ -1183,6 +1183,7 @@ dependencies = [
  "serde_json",
  "serde_with",
  "serial_test",
+ "smallvec",
  "sqlx",
  "tokio",
  "tokio-tungstenite 0.18.0",

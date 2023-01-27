@@ -42,37 +42,11 @@ mod middlewares;
 mod state;
 mod utils;
 
+use crate::{middlewares::middlewares, utils::SignalHandler};
 use error::{Error, Result};
 use json::*;
 pub use state::*;
-
-use crate::middlewares::middlewares;
 use std::net::TcpListener;
-use tokio::signal;
-
-async fn shutdown_signal() {
-    let ctrl_c = async {
-        signal::ctrl_c()
-            .await
-            .expect("failed to install Ctrl+C handler");
-    };
-
-    #[cfg(unix)]
-    let terminate = async {
-        signal::unix::signal(signal::unix::SignalKind::terminate())
-            .expect("failed to install SIGTERM handler")
-            .recv()
-            .await;
-    };
-
-    #[cfg(not(unix))]
-    let terminate = std::future::pending::<()>();
-
-    tokio::select! {
-        _ = ctrl_c => {},
-        _ = terminate => {},
-    };
-}
 
 pub async fn run<S: StateTrait>(listener: TcpListener, state: S) {
     info!(
@@ -86,7 +60,7 @@ pub async fn run<S: StateTrait>(listener: TcpListener, state: S) {
     axum::Server::from_tcp(listener)
         .expect("failed to start server")
         .serve(app.into_make_service())
-        .with_graceful_shutdown(shutdown_signal())
+        .with_graceful_shutdown(SignalHandler::new())
         .await
         .unwrap()
 }
