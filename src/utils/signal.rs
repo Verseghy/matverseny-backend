@@ -13,7 +13,7 @@ pub struct SignalHandler {
     #[cfg(unix)]
     signals: smallvec::SmallVec<[Signal; 3]>,
     #[cfg(not(unix))]
-    signals: BoxFuture<'static, Result<()>>,
+    signals: BoxFuture<'static, std::io::Result<()>>,
 }
 
 impl SignalHandler {
