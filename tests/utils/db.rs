@@ -35,7 +35,7 @@ impl Database {
                 while let Some(tx) = rx.recv().await {
                     migration::Migrator::fresh(&conn)
                         .await
-                        .expect("failed to apply migraitons");
+                        .expect("failed to apply migrations");
 
                     tx.send(()).unwrap();
                 }
