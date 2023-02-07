@@ -1,12 +1,16 @@
 use matverseny_backend::State;
 use std::net::{Ipv4Addr, SocketAddr, TcpListener};
 use tracing::level_filters::LevelFilter;
+use tracing_subscriber::{fmt, layer::SubscriberExt, util::SubscriberInitExt, EnvFilter, Layer};
 
 #[tokio::main]
 async fn main() {
-    tracing_subscriber::fmt()
-        .with_max_level(LevelFilter::INFO)
-        .with_line_number(true)
+    let env_filter = EnvFilter::builder()
+        .with_default_directive(LevelFilter::INFO.into())
+        .from_env_lossy();
+
+    tracing_subscriber::registry()
+        .with(fmt::layer().with_line_number(true).with_filter(env_filter))
         .init();
 
     let addr = SocketAddr::from((Ipv4Addr::UNSPECIFIED, 3002));
