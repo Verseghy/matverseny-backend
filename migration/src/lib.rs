@@ -3,7 +3,8 @@ mod m20221125_001445_create_teams_table;
 mod m20221125_002951_create_team_members_table;
 mod m20221208_194301_create_problems_table;
 
-pub use sea_orm_migration::prelude::*;
+use sea_orm_migration::prelude::*;
+pub use sea_orm_migration::MigratorTrait;
 
 pub struct Migrator;
 
