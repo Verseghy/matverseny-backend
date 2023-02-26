@@ -16,9 +16,6 @@ license-file = "LICENSE"
 strip = true
 lto = true
 
-[profile.dev]
-incremental = false
-
 [workspace]
 members = [".", "entity", "migration", "macros"]
 default-members = [".", "migration"]
