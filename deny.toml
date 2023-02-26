@@ -16,6 +16,7 @@ allow = [
     "MPL-2.0",
     "BSD-3-Clause",
     "BSD-2-Clause",
+    "Zlib",
 ]
 exceptions = [
     { allow = ["OpenSSL"], name = "ring" },
