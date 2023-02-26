@@ -16,6 +16,9 @@ license-file = "LICENSE"
 strip = true
 lto = true
 
+[profile.dev]
+incremental = false
+
 [workspace]
 members = [".", "entity", "migration", "macros"]
 default-members = [".", "migration"]
@@ -47,6 +50,7 @@ bytes = "1.3.0"
 mime = "0.3.16"
 macros = { path = "./macros/" }
 smallvec = "1.10.0"
+const_format = "0.2.30"
 
 [workspace.dependencies]
 uuid = { version = "1.2.2", features = ["v4", "fast-rng"] }

@@ -4,6 +4,14 @@ use super::users;
 use sea_orm::entity::prelude::*;
 use uuid::Uuid;
 
+pub mod constrains {
+    pub const PK_TEAMS: &str = "PK_teams";
+    pub const UC_TEAMS_NAME: &str = "UC_teams_name";
+    pub const UC_TEAMS_JOIN_CODE: &str = "UC_teams_join_code";
+    pub const FK_TEAMS_OWNER: &str = "FK_teams_owner";
+    pub const FK_TEAMS_CO_OWNER: &str = "FK_teams_co_owner";
+}
+
 #[derive(Clone, Debug, PartialEq, Eq, DeriveEntityModel)]
 #[sea_orm(table_name = "teams")]
 pub struct Model {

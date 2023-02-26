@@ -3,6 +3,10 @@ use sea_orm::entity::prelude::*;
 use serde_repr::{Deserialize_repr, Serialize_repr};
 use uuid::Uuid;
 
+pub mod constraints {
+    pub const PK_USERS: &str = "PK_users";
+}
+
 #[derive(Clone, Debug, PartialEq, Eq, DeriveEntityModel)]
 #[sea_orm(table_name = "users")]
 pub struct Model {

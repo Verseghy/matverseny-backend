@@ -1,4 +1,4 @@
-use entity::problems;
+use entity::problems::{self, constraints::*};
 use sea_orm_migration::prelude::*;
 
 #[derive(DeriveMigrationName)]
@@ -20,11 +20,7 @@ impl MigrationTrait for Migration {
                             .not_null(),
                     )
                     .col(ColumnDef::new(problems::Column::Image).string().null())
-                    .primary_key(
-                        Index::create()
-                            .name("PK_problems")
-                            .col(problems::Column::Id),
-                    )
+                    .primary_key(Index::create().name(PK_PROBLEMS).col(problems::Column::Id))
                     .to_owned(),
             )
             .await

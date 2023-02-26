@@ -6,7 +6,10 @@ use crate::{
     Json, Result, StateTrait,
 };
 use axum::{extract::State, http::StatusCode};
-use entity::{team_members, teams, users};
+use entity::{
+    team_members::{self, constraints::*},
+    teams, users,
+};
 use rdkafka::producer::FutureRecord;
 use sea_orm::{EntityTrait, QuerySelect, Set, TransactionTrait};
 use serde::Deserialize;
@@ -54,7 +57,7 @@ pub async fn join_team<S: StateTrait>(
         let result = team_members::Entity::insert(active_model).exec(&txn).await;
 
         if let Err(err) = result {
-            if err.unique_violation("UC_team_members_user_id") {
+            if err.unique_violation(UC_TEAM_MEMBERS_USER_ID) {
                 return Err(error::ALREADY_IN_TEAM);
             }
         }

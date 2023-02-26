@@ -1,4 +1,5 @@
-use entity::problems_order;
+use const_format::formatcp;
+use entity::problems_order::{self, constraints::*};
 use sea_orm_migration::{
     prelude::*,
     sea_orm::{ConnectionTrait, Statement},
@@ -51,24 +52,26 @@ impl MigrationTrait for Migration {
             .get_connection()
             .execute(Statement::from_string(
                 manager.get_database_backend(),
-                r#"CREATE TABLE IF NOT EXISTS "problems_order" (
+                formatcp!(
+                    r#"CREATE TABLE IF NOT EXISTS "problems_order" (
                     "id" uuid NOT NULL,
                     "next" uuid NULL,
 
-                    CONSTRAINT "PK_problems_order"
+                    CONSTRAINT "{PK_PROBLEMS_ORDER}"
                         PRIMARY KEY ("id"),
-                    CONSTRAINT "UC_problems_order_next"
+                    CONSTRAINT "{UC_PROBLEMS_ORDER_NEXT}"
                         UNIQUE NULLS NOT DISTINCT ("next")
                         DEFERRABLE INITIALLY IMMEDIATE,
-                    CONSTRAINT "FK_problems_order_id"
+                    CONSTRAINT "{FK_PROBLEMS_ORDER_ID}"
                         FOREIGN KEY ("id")
                         REFERENCES "problems" ("id")
                         DEFERRABLE INITIALLY IMMEDIATE,
-                    CONSTRAINT "FK_problems_order_next"
+                    CONSTRAINT "{FK_PROBLEMS_ORDER_NEXT}"
                         FOREIGN KEY ("next")
                         REFERENCES "problems_order" ("id")
                         DEFERRABLE INITIALLY IMMEDIATE
                 )"#
+                )
                 .to_owned(),
             ))
             .await?;

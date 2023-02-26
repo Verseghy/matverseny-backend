@@ -1,14 +1,16 @@
 use crate::{
     error::{self, DatabaseError, Result},
     json::Json,
+    utils::execute_str,
     StateTrait,
 };
 use axum::{extract::State, http::StatusCode};
-use entity::problems_order;
+use const_format::formatcp;
+use entity::problems_order::{self, constraints::*};
 use sea_orm::{
     sea_query::{CaseStatement, Query},
     ActiveValue::NotSet,
-    ColumnTrait, Condition, ConnectionTrait, EntityTrait, QueryFilter, QuerySelect, Set, Statement,
+    ColumnTrait, Condition, ConnectionTrait, EntityTrait, QueryFilter, QuerySelect, Set,
     StatementBuilder, TransactionTrait,
 };
 use serde::{Deserialize, Serialize};
@@ -40,10 +42,10 @@ pub async fn change<S: StateTrait>(
                     .one(&txn)
                     .await?;
 
-                txn.execute(Statement::from_string(
-                    txn.get_database_backend(),
-                    "SET CONSTRAINTS \"UC_problems_order_next\" DEFERRED".to_owned(),
-                ))
+                execute_str(
+                    &txn,
+                    formatcp!(r#"SET CONSTRAINTS "{UC_PROBLEMS_ORDER_NEXT}" DEFERRED"#),
+                )
                 .await?;
 
                 let res = problems_order::Entity::insert(problems_order::ActiveModel {
@@ -54,10 +56,10 @@ pub async fn change<S: StateTrait>(
                 .await;
 
                 match res {
-                    Err(err) if err.foreign_key_violation("FK_problems_order_id") => {
+                    Err(err) if err.foreign_key_violation(FK_PROBLEMS_ORDER_ID) => {
                         return Err(error::PROBLEM_NOT_FOUND);
                     }
-                    Err(err) if err.unique_violation("PK_problems_order") => {
+                    Err(err) if err.unique_violation(PK_PROBLEMS_ORDER) => {
                         return Err(error::PROBLEM_ALREADY_IN_ORDER);
                     }
                     Err(err) => return Err(err.into()),
@@ -84,10 +86,10 @@ pub async fn change<S: StateTrait>(
                     .one(&txn)
                     .await?;
 
-                txn.execute(Statement::from_string(
-                    txn.get_database_backend(),
-                    r#"SET CONSTRAINTS "UC_problems_order_next" DEFERRED"#.to_owned(),
-                ))
+                execute_str(
+                    &txn,
+                    formatcp!(r#"SET CONSTRAINTS "{UC_PROBLEMS_ORDER_NEXT}" DEFERRED"#),
+                )
                 .await?;
 
                 let res = problems_order::Entity::insert(problems_order::ActiveModel {
@@ -98,10 +100,10 @@ pub async fn change<S: StateTrait>(
                 .await;
 
                 match res {
-                    Err(err) if err.foreign_key_violation("FK_problems_order_id") => {
+                    Err(err) if err.foreign_key_violation(FK_PROBLEMS_ORDER_ID) => {
                         return Err(error::PROBLEM_NOT_FOUND);
                     }
-                    Err(err) if err.unique_violation("PK_problems_order") => {
+                    Err(err) if err.unique_violation(PK_PROBLEMS_ORDER) => {
                         return Err(error::PROBLEM_ALREADY_IN_ORDER);
                     }
                     Err(err) => return Err(err.into()),
@@ -139,10 +141,10 @@ pub async fn change<S: StateTrait>(
                 return Err(error::PROBLEM_NOT_FOUND);
             };
 
-            txn.execute(Statement::from_string(
-                txn.get_database_backend(),
-                "SET CONSTRAINTS \"FK_problems_order_next\" DEFERRED".to_owned(),
-            ))
+            execute_str(
+                &txn,
+                formatcp!(r#"SET CONSTRAINTS "{FK_PROBLEMS_ORDER_NEXT}" DEFERRED"#),
+            )
             .await?;
 
             problems_order::Entity::delete_by_id(to_delete.id)
@@ -231,10 +233,10 @@ pub async fn change<S: StateTrait>(
                     (expr, ids)
                 };
 
-            txn.execute(Statement::from_string(
-                txn.get_database_backend(),
-                r#"SET CONSTRAINTS "UC_problems_order_next" DEFERRED"#.to_owned(),
-            ))
+            execute_str(
+                &txn,
+                formatcp!(r#"SET CONSTRAINTS "{UC_PROBLEMS_ORDER_NEXT}" DEFERRED"#),
+            )
             .await?;
 
             let query = Query::update()
@@ -242,8 +244,6 @@ pub async fn change<S: StateTrait>(
                 .value(problems_order::Column::Next, expr)
                 .and_where(problems_order::Column::Id.is_in(ids))
                 .to_owned();
-
-            // debug!("query: {query:#?}");
 
             txn.execute(StatementBuilder::build(&query, &txn.get_database_backend()))
                 .await?;

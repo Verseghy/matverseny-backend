@@ -5,7 +5,11 @@ use crate::{
     StateTrait, ValidatedJson,
 };
 use axum::{extract::State, http::StatusCode};
-use entity::{team_members, teams, users};
+use entity::{
+    team_members::{self, constraints::*},
+    teams::{self, constrains::*},
+    users,
+};
 use rdkafka::admin::{AdminOptions, NewTopic, TopicReplication};
 use sea_orm::{EntityTrait, QuerySelect, Set, TransactionTrait};
 use serde::Deserialize;
@@ -51,10 +55,10 @@ pub async fn create_team<S: StateTrait>(
         };
 
         let result = match teams::Entity::insert(team_model).exec(&txn).await {
-            Err(err) if err.unique_violation("UC_teams_name") => {
+            Err(err) if err.unique_violation(UC_TEAMS_NAME) => {
                 return Err(error::DUPLICATE_TEAM_NAME)
             }
-            Err(err) if err.unique_violation("UC_teams_join_code") => continue,
+            Err(err) if err.unique_violation(UC_TEAMS_JOIN_CODE) => continue,
             r => r?,
         };
 
@@ -67,7 +71,7 @@ pub async fn create_team<S: StateTrait>(
             .exec(&txn)
             .await
         {
-            Err(err) if err.unique_violation("UC_team_members_user_id") => {
+            Err(err) if err.unique_violation(UC_TEAM_MEMBERS_USER_ID) => {
                 return Err(error::ALREADY_IN_TEAM)
             }
             r => r?,

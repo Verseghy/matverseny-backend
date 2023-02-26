@@ -1,6 +1,10 @@
 use sea_orm::entity::prelude::*;
 use uuid::Uuid;
 
+pub mod constraints {
+    pub const PK_PROBLEMS: &str = "PK_problems";
+}
+
 #[derive(Clone, Debug, PartialEq, Eq, DeriveEntityModel)]
 #[sea_orm(table_name = "problems")]
 pub struct Model {

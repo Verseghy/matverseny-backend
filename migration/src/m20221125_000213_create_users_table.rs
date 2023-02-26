@@ -1,4 +1,4 @@
-use entity::users;
+use entity::users::{self, constraints::*};
 use sea_orm_migration::prelude::*;
 
 #[derive(DeriveMigrationName)]
@@ -23,7 +23,7 @@ impl MigrationTrait for Migration {
                             .small_integer()
                             .not_null(),
                     )
-                    .primary_key(Index::create().name("PK_users").col(users::Column::Id))
+                    .primary_key(Index::create().name(PK_USERS).col(users::Column::Id))
                     .to_owned(),
             )
             .await

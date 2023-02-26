@@ -1,6 +1,6 @@
 use crate::{error, error::DatabaseError, iam::Claims, Json, Result, StateTrait};
 use axum::{extract::State, http::StatusCode};
-use entity::users::{self, Class};
+use entity::users::{self, constraints::*, Class};
 use sea_orm::{EntityTrait, Set};
 use serde::Deserialize;
 
@@ -26,7 +26,7 @@ pub async fn register<S: StateTrait>(
         .await;
 
     match result {
-        Err(err) if err.unique_violation("PK_users") => return Err(error::USER_ALREADY_EXISTS),
+        Err(err) if err.unique_violation(PK_USERS) => return Err(error::USER_ALREADY_EXISTS),
         r => r?,
     };
 

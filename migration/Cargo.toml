@@ -13,3 +13,4 @@ path = "src/lib.rs"
 tokio = { version = "1.22.0", features = ["rt", "macros"] }
 sea-orm-migration = { version = "0.10.4", default-features = false, features = ["sqlx-postgres", "runtime-tokio-rustls", "cli"] }
 entity = { path = "../entity" }
+const_format = "0.2.30"

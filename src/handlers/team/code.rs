@@ -6,7 +6,7 @@ use crate::{
     StateTrait,
 };
 use axum::{extract::State, http::StatusCode};
-use entity::teams;
+use entity::teams::{self, constrains::*};
 use rdkafka::producer::FutureRecord;
 use sea_orm::{EntityTrait, IntoActiveModel, QuerySelect, Set, TransactionTrait};
 use std::time::Duration;
@@ -43,7 +43,7 @@ pub async fn regenerate_code<S: StateTrait>(
         let res = teams::Entity::update(model).exec(&txn).await;
 
         match res {
-            Err(err) if err.unique_violation("UC_teams_join_code") => continue,
+            Err(err) if err.unique_violation(UC_TEAMS_JOIN_CODE) => continue,
             r => r?,
         };
 

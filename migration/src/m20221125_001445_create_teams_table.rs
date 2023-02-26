@@ -1,4 +1,7 @@
-use entity::{teams, users};
+use entity::{
+    teams::{self, constrains::*},
+    users,
+};
 use sea_orm_migration::prelude::*;
 
 #[derive(DeriveMigrationName)]
@@ -26,29 +29,29 @@ impl MigrationTrait for Migration {
                             .string_len(6)
                             .not_null(),
                     )
-                    .primary_key(Index::create().name("PK_teams").col(teams::Column::Id))
+                    .primary_key(Index::create().name(PK_TEAMS).col(teams::Column::Id))
                     .index(
                         Index::create()
-                            .name("UC_teams_name")
+                            .name(UC_TEAMS_NAME)
                             .col(teams::Column::Name)
                             .unique(),
                     )
                     .index(
                         Index::create()
-                            .name("UC_teams_join_code")
+                            .name(UC_TEAMS_JOIN_CODE)
                             .col(teams::Column::JoinCode)
                             .unique(),
                     )
                     .foreign_key(
                         ForeignKey::create()
-                            .name("FK_teams_owner")
+                            .name(FK_TEAMS_OWNER)
                             .from(teams::Entity, teams::Column::Owner)
                             .to(users::Entity, users::Column::Id)
                             .on_delete(ForeignKeyAction::Cascade),
                     )
                     .foreign_key(
                         ForeignKey::create()
-                            .name("FK_teams_co_owner")
+                            .name(FK_TEAMS_CO_OWNER)
                             .from(teams::Entity, teams::Column::CoOwner)
                             .to(users::Entity, users::Column::Id)
                             .on_delete(ForeignKeyAction::SetNull),
