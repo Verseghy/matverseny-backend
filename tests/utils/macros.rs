@@ -47,12 +47,25 @@ pub(crate) use assert_event_type;
 
 #[allow(unused_macros)]
 macro_rules! enable_logging {
-    ($level:ident) => {
-        ::tracing_subscriber::fmt()
-            .with_max_level(::tracing::level_filters::LevelFilter::$level)
-            .with_line_number(true)
+    ($level:ident) => {{
+        use ::tracing::level_filters::LevelFilter;
+        use ::tracing_subscriber::{
+            layer::SubscriberExt, util::SubscriberInitExt, EnvFilter, Layer,
+        };
+
+        let env_filter = EnvFilter::builder()
+            .with_default_directive(LevelFilter::$level.into())
+            .from_env_lossy();
+
+        ::tracing_subscriber::registry()
+            .with(
+                ::tracing_subscriber::fmt::layer()
+                    .with_test_writer()
+                    .with_line_number(true)
+                    .with_filter(env_filter),
+            )
             .init();
-    };
+    }};
 }
 
 #[allow(unused_imports)]
