@@ -15,4 +15,6 @@ pub fn routes<S: StateTrait>() -> Router<S> {
         .nest("/team", team::routes::<S>())
         .nest("/problem", problem::routes::<S>())
         .route("/ws", get(socket::ws_handler::<S>))
+        .route("/liveness", get(|| async {}))
+        .route("/readiness", get(|| async {}))
 }
