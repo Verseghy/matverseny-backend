@@ -2,6 +2,7 @@ mod m20221125_000213_create_users_table;
 mod m20221125_001445_create_teams_table;
 mod m20221125_002951_create_team_members_table;
 mod m20221208_194301_create_problems_table;
+mod m20230107_191407_create_problems_order_table;
 
 use sea_orm_migration::prelude::*;
 pub use sea_orm_migration::MigratorTrait;
@@ -16,6 +17,7 @@ impl MigratorTrait for Migrator {
             Box::new(m20221125_001445_create_teams_table::Migration),
             Box::new(m20221125_002951_create_team_members_table::Migration),
             Box::new(m20221208_194301_create_problems_table::Migration),
+            Box::new(m20230107_191407_create_problems_order_table::Migration),
         ]
     }
 }

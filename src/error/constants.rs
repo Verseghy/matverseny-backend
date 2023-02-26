@@ -137,3 +137,8 @@ const_error! {
     #[error("M027", "websocket error")]
     const WEBSOCKET_ERROR;
 }
+const_error! {
+    #[error("M028", "the problem is already inserted into the order")]
+    #[status(BAD_REQUEST)]
+    const PROBLEM_ALREADY_IN_ORDER;
+}

@@ -1,6 +1,7 @@
 mod create;
 mod delete;
 mod list;
+mod order;
 mod update;
 
 use crate::StateTrait;
@@ -25,4 +26,6 @@ pub fn routes<S: StateTrait>() -> Router<S> {
         .route("/", post(create::create_problem::<S>))
         .route("/", patch(update::update_problem::<S>))
         .route("/", delete(delete::delete_problem::<S>))
+        .route("/order", post(order::change::<S>))
+        .route("/order", get(order::get::<S>))
 }

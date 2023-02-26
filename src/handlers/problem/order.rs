@@ -1,0 +1,288 @@
+use crate::{
+    error::{self, DatabaseError, Result},
+    json::Json,
+    StateTrait,
+};
+use axum::{extract::State, http::StatusCode};
+use entity::problems_order;
+use sea_orm::{
+    sea_query::{CaseStatement, Query},
+    ActiveValue::NotSet,
+    ColumnTrait, Condition, ConnectionTrait, EntityTrait, QueryFilter, QuerySelect, Set, Statement,
+    StatementBuilder, TransactionTrait,
+};
+use serde::{Deserialize, Serialize};
+use smallvec::{smallvec, SmallVec};
+use uuid::Uuid;
+
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(tag = "type", rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum Request {
+    Insert { before: Option<Uuid>, id: Uuid },
+    Delete { id: Uuid },
+    Swap { id1: Uuid, id2: Uuid },
+}
+
+pub async fn change<S: StateTrait>(
+    State(state): State<S>,
+    Json(request): Json<Request>,
+) -> Result<StatusCode> {
+    // TODO: permission check through the iam
+
+    let txn = state.db().begin().await?;
+
+    match request {
+        Request::Insert { before, id } => {
+            if let Some(before) = before {
+                let after = problems_order::Entity::find()
+                    .filter(problems_order::Column::Next.eq(before))
+                    .lock_exclusive()
+                    .one(&txn)
+                    .await?;
+
+                txn.execute(Statement::from_string(
+                    txn.get_database_backend(),
+                    "SET CONSTRAINTS \"UC_problems_order_next\" DEFERRED".to_owned(),
+                ))
+                .await?;
+
+                let res = problems_order::Entity::insert(problems_order::ActiveModel {
+                    id: Set(id),
+                    next: Set(Some(before)),
+                })
+                .exec(&txn)
+                .await;
+
+                match res {
+                    Err(err) if err.foreign_key_violation("FK_problems_order_id") => {
+                        return Err(error::PROBLEM_NOT_FOUND);
+                    }
+                    Err(err) if err.unique_violation("PK_problems_order") => {
+                        return Err(error::PROBLEM_ALREADY_IN_ORDER);
+                    }
+                    Err(err) => return Err(err.into()),
+                    _ => {}
+                }
+
+                if let Some(after) = &after {
+                    problems_order::Entity::update(problems_order::ActiveModel {
+                        id: Set(after.id),
+                        next: Set(Some(id)),
+                    })
+                    .exec(&txn)
+                    .await?;
+                }
+
+                // TODO: kafka
+                txn.commit().await?;
+            } else {
+                // Insert problem to the end of the list
+
+                let before = problems_order::Entity::find()
+                    .filter(problems_order::Column::Next.is_null())
+                    .lock_exclusive()
+                    .one(&txn)
+                    .await?;
+
+                txn.execute(Statement::from_string(
+                    txn.get_database_backend(),
+                    r#"SET CONSTRAINTS "UC_problems_order_next" DEFERRED"#.to_owned(),
+                ))
+                .await?;
+
+                let res = problems_order::Entity::insert(problems_order::ActiveModel {
+                    id: Set(id),
+                    next: NotSet,
+                })
+                .exec(&txn)
+                .await;
+
+                match res {
+                    Err(err) if err.foreign_key_violation("FK_problems_order_id") => {
+                        return Err(error::PROBLEM_NOT_FOUND);
+                    }
+                    Err(err) if err.unique_violation("PK_problems_order") => {
+                        return Err(error::PROBLEM_ALREADY_IN_ORDER);
+                    }
+                    Err(err) => return Err(err.into()),
+                    _ => {}
+                }
+
+                if let Some(before) = before {
+                    problems_order::Entity::update(problems_order::ActiveModel {
+                        id: Set(before.id),
+                        next: Set(Some(id)),
+                    })
+                    .exec(&txn)
+                    .await?;
+                }
+
+                // TODO: kafka
+                txn.commit().await?;
+            }
+        }
+        Request::Delete { id } => {
+            let res = problems_order::Entity::find()
+                .filter(
+                    Condition::any()
+                        .add(problems_order::Column::Id.eq(id))
+                        .add(problems_order::Column::Next.eq(id)),
+                )
+                .lock_exclusive()
+                .all(&txn)
+                .await?;
+
+            let to_delete = res.iter().find(|item| item.id == id);
+            let before = res.iter().find(|item| item.next == Some(id));
+
+            let Some(to_delete) = to_delete else {
+                return Err(error::PROBLEM_NOT_FOUND);
+            };
+
+            txn.execute(Statement::from_string(
+                txn.get_database_backend(),
+                "SET CONSTRAINTS \"FK_problems_order_next\" DEFERRED".to_owned(),
+            ))
+            .await?;
+
+            problems_order::Entity::delete_by_id(to_delete.id)
+                .exec(&txn)
+                .await?;
+
+            if let Some(before) = before {
+                problems_order::Entity::update(problems_order::ActiveModel {
+                    id: Set(before.id),
+                    next: Set(to_delete.next),
+                })
+                .exec(&txn)
+                .await?;
+            }
+
+            // TODO: kafka
+            txn.commit().await?;
+        }
+        Request::Swap { id1, id2 } => {
+            trace!("swapping: {id1}, {id2}");
+
+            let res = problems_order::Entity::find()
+                .filter(
+                    Condition::any()
+                        .add(problems_order::Column::Id.eq(id1))
+                        .add(problems_order::Column::Id.eq(id2))
+                        .add(problems_order::Column::Next.eq(id1))
+                        .add(problems_order::Column::Next.eq(id2)),
+                )
+                .lock_exclusive()
+                .all(&txn)
+                .await?;
+
+            let item1 = res.iter().find(|item| item.id == id1);
+            let item2 = res.iter().find(|item| item.id == id2);
+            let before1 = res.iter().find(|item| item.next == Some(id1));
+            let before2 = res.iter().find(|item| item.next == Some(id2));
+
+            let (Some(item1), Some(item2)) = (item1, item2) else {
+                return Err(error::PROBLEM_NOT_FOUND);
+            };
+
+            let (expr, ids): (_, SmallVec<[Uuid; 4]>) =
+                if item1.next == Some(item2.id) || item2.next == Some(item1.id) {
+                    trace!("swap adjacent");
+
+                    let (item1, item2, before2) = if item1.next == Some(item2.id) {
+                        (item2, item1, before1)
+                    } else {
+                        (item1, item2, before2)
+                    };
+
+                    let mut ids = smallvec![item1.id, item2.id];
+
+                    let mut expr = CaseStatement::new()
+                        .case(problems_order::Column::Id.eq(item1.id), item2.id)
+                        .case(problems_order::Column::Id.eq(item2.id), item1.next);
+
+                    if let Some(before2) = before2 {
+                        expr = expr.case(problems_order::Column::Id.eq(before2.id), item1.id);
+                        ids.push(before2.id);
+                    }
+
+                    (expr, ids)
+                } else {
+                    trace!("swap not adjacent");
+
+                    let mut ids = smallvec![item1.id, item2.id];
+
+                    let mut expr = CaseStatement::new()
+                        .case(problems_order::Column::Id.eq(item1.id), item2.next)
+                        .case(problems_order::Column::Id.eq(item2.id), item1.next);
+
+                    if let Some(before1) = before1 {
+                        expr = expr.case(problems_order::Column::Id.eq(before1.id), item2.id);
+
+                        ids.push(before1.id);
+                    }
+
+                    if let Some(before2) = before2 {
+                        expr = expr.case(problems_order::Column::Id.eq(before2.id), item1.id);
+
+                        ids.push(before2.id);
+                    }
+
+                    (expr, ids)
+                };
+
+            txn.execute(Statement::from_string(
+                txn.get_database_backend(),
+                r#"SET CONSTRAINTS "UC_problems_order_next" DEFERRED"#.to_owned(),
+            ))
+            .await?;
+
+            let query = Query::update()
+                .table(problems_order::Entity)
+                .value(problems_order::Column::Next, expr)
+                .and_where(problems_order::Column::Id.is_in(ids))
+                .to_owned();
+
+            // debug!("query: {query:#?}");
+
+            txn.execute(StatementBuilder::build(&query, &txn.get_database_backend()))
+                .await?;
+
+            // TODO: kafka
+            txn.commit().await?;
+        }
+    }
+
+    Ok(StatusCode::NO_CONTENT)
+}
+
+pub async fn get<S: StateTrait>(State(state): State<S>) -> Result<Json<Vec<Uuid>>> {
+    let mut res = problems_order::Entity::find().all(state.db()).await?;
+
+    debug!("res: {res:?}");
+
+    if res.is_empty() {
+        return Ok(Json(Vec::new()));
+    }
+
+    let Some(last_pos) = res.iter().position(|item| item.next.is_none()) else {
+        panic!("corrupted problem chain");
+    };
+
+    let length = res.len();
+    res.swap(last_pos, length - 1);
+
+    let mut last_id = res[length - 1].id;
+
+    for i in (0..(length - 1)).rev() {
+        for j in 0..i {
+            if res[j].next == Some(last_id) {
+                last_id = res[j].id;
+                res.swap(i, j);
+                break;
+            }
+        }
+    }
+
+    Ok(Json(res.into_iter().map(|item| item.id).collect()))
+}
