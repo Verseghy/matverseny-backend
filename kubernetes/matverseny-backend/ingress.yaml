@@ -1,0 +1,28 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ingress
+  annotations:
+    cert-manager.io/issue-temporary-certificate: "true"
+    acme.cert-manager.io/http01-edit-in-place: "true"
+    kubernetes.io/ingress.class: "nginx"
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    nginx.ingress.kubernetes.io/enable-cors: "true"
+    nginx.ingress.kubernetes.io/use-regex: "true"
+  namespace: matverseny-backend
+spec:
+  rules:
+    - host: api.192.verseghy-gimnazium.net
+      http:
+        paths:
+          - path: "/(?!(readiness|liveness)).*"
+            pathType: Prefix
+            backend:
+              service:
+                name: matverseny-backend
+                port:
+                  number: 3002
+  tls:
+    - hosts:
+        - api.192.verseghy-gimnazium.net
+      secretName: ingress-tls

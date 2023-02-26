@@ -1,0 +1,81 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: matverseny-backend
+  namespace: matverseny-backend
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: matverseny-backend
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 1
+  template:
+    metadata:
+      labels:
+        app: matverseny-backend
+    spec:
+      containers:
+        - name: app
+          image: verseghy/matverseny-backend
+          ports:
+            - containerPort: 3002
+          imagePullPolicy: Always
+          livenessProbe:
+            httpGet:
+              path: /liveness
+              port: 3002
+            initialDelaySeconds: 300
+            failureThreshold: 5
+          readinessProbe:
+            httpGet:
+              path: /readiness
+              port: 3002
+            initialDelaySeconds: 10
+            timeoutSeconds: 5
+          resources:
+            limits:
+              memory: 128Mi
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  key: uri
+                  name: postgres-pguser-postgres
+            - name: IAM_URL
+              value: https://iam.verseghy-gimnazium.net
+            - name: IAM_JWT_RSA_PUBLIC
+              value: |
+                -----BEGIN PUBLIC KEY-----
+                MIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEA0OB8OFgGfedGLaQMNtxh
+                Kb9mFA/ro/5NDnoS1ez272/n15YrdSIKMqQ3IfQiNYUVTSvmNhYRameSLSQwVD6E
+                ObdL5m7USwYZGRgfLRj8sxfOJYuE4u4K5VXb4K4uITyiL6aHSGg4/Ab//4nE9dj8
+                JlQubyvrgadCA/+915sgL+dOc7SwFYUnyl6HapGwPhBsgYTjEiXsQe4dKYRowruk
+                tROgURYnrF2l/53o6FS4baK8aBJW15Wb7aECTCEJF6gpjV8W6D/EQZShxLpE09Xs
+                MiJ1M6XpkHbDVnuyQ56DhGGM3VXmV1hMakYb0EyU/bg1wzU4VhZmV0CSQfCYiOgH
+                XTHwbgZytraHeTVJCBKmI0Xzww608W/fZg1JFSd4oAoaUKnIVK41c37r17lUBDfp
+                QsZBfksIjVHwZ0V929QG+emj5W1XdIYbPuCehtjli9CJLLpSYOyf6CLfM8WuAM3t
+                /lV7LxwjjeEWNUVoDl06/MFqQ0lOzBxVUMlfweeZy+uqY+Xk1pzKVOjj5aqO+K5k
+                j2hcctyLt97ArB+3OMiSFaYxIB5nyZGFOEKptyfkWK/Bc0n7PEBYp613hTNIs3US
+                mn13W5bGJrumHz/xXqiu11hhkRGVaZA4Rvsw73rUXomCHrmd9PeHebfJ2bYpE8LJ
+                SslnJeyrVLtjAFOvE6mURIsCAwEAAQ==
+                -----END PUBLIC KEY-----
+            - name: KAFKA_BOOTSTRAP_SERVERS
+              value: kafka-cluster-kafka-bootstrap.matverseny-backend.svc.cluster.local:9092
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: matverseny-backend
+  namespace: matverseny-backend
+spec:
+  selector:
+    app: matverseny-backend
+  ports:
+    - name: matverseny-backend
+      protocol: TCP
+      port: 80
+      targetPort: 3002
