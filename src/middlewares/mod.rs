@@ -1,8 +1,10 @@
 mod claims;
+mod permissions;
 
 use crate::StateTrait;
 use axum::{http::header::AUTHORIZATION, Router};
 pub use claims::*;
+pub use permissions::*;
 use std::iter;
 use tower::ServiceBuilder;
 use tower_http::{

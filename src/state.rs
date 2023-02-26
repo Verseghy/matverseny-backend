@@ -21,6 +21,7 @@ pub trait StateTrait: Send + Sync + Clone + 'static {
     fn rng(&self) -> Self::Rand;
     fn kafka_producer(&self) -> &FutureProducer;
     fn kafka_admin(&self) -> &AdminClient<DefaultClientContext>;
+    fn app_secret(&self) -> &str;
 }
 
 pub struct State {
@@ -28,6 +29,7 @@ pub struct State {
     iam: Iam,
     kafka_producer: FutureProducer,
     kafka_admin: AdminClient<DefaultClientContext>,
+    app_secret: String,
 }
 
 impl State {
@@ -41,6 +43,7 @@ impl State {
             iam: Iam::new(),
             kafka_producer: Self::create_kafka_producer(),
             kafka_admin: Self::create_kafka_admin(),
+            app_secret: env::var("IAM_APP_SECRET").expect("IAM_APP_SECRET is not set"),
         })
     }
 
@@ -113,5 +116,9 @@ impl StateTrait for Arc<State> {
 
     fn kafka_admin(&self) -> &AdminClient<DefaultClientContext> {
         &self.kafka_admin
+    }
+
+    fn app_secret(&self) -> &str {
+        &self.app_secret
     }
 }

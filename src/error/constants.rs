@@ -142,3 +142,8 @@ const_error! {
     #[status(BAD_REQUEST)]
     const PROBLEM_ALREADY_IN_ORDER;
 }
+const_error! {
+    #[error("M029", "insufficient permissions")]
+    #[status(UNAUTHORIZED)]
+    const NOT_ENOUGH_PERMISSIONS;
+}

@@ -54,7 +54,7 @@ pub async fn run<S: StateTrait>(listener: TcpListener, state: S) {
         listener.local_addr().unwrap().port()
     );
 
-    let app = handlers::routes::<S>();
+    let app = handlers::routes::<S>(state.clone());
     let app = middlewares(state, app);
 
     axum::Server::from_tcp(listener)
