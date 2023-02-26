@@ -24,41 +24,41 @@ members = [".", "entity", "migration", "macros"]
 default-members = [".", "migration"]
 
 [dependencies]
-axum = { version = "0.6.1", features = ["ws", "http2", "headers"] }
-serde = { version = "1.0.148", features = ["derive"] }
-tokio = { version = "1.22.0", features = ["macros", "rt-multi-thread", "signal", "parking_lot", "sync"] }
+axum = { version = "0.6.8", features = ["ws", "http2", "headers"] }
+serde = { version = "1.0.152", features = ["derive"] }
+tokio = { version = "1.25.0", features = ["macros", "rt-multi-thread", "signal", "parking_lot", "sync"] }
 tower = "0.4.13"
-tower-http = { version = "0.3.4", features = ["cors", "compression-full", "decompression-full", "catch-panic", "sensitive-headers", "request-id", "util"] }
+tower-http = { version = "0.4.0", features = ["cors", "compression-full", "decompression-full", "catch-panic", "sensitive-headers", "request-id", "util"] }
 tracing = "0.1.37"
 tracing-subscriber = "0.3.16"
 entity = { path = "./entity" }
-sea-orm = { version = "0.10.4", default-features = false, features = ["runtime-tokio-rustls", "sqlx-postgres", "with-uuid"] }
-serde_json = "1.0.89"
+sea-orm = { version = "0.11.0", default-features = false, features = ["runtime-tokio-rustls", "sqlx-postgres", "with-uuid"] }
+serde_json = "1.0.93"
 validator = { version = "0.16.0", features = ["derive"] }
 pin-project = "1.0.12"
-jsonwebtoken = "8.1.1"
-once_cell = { version = "1.16.0", features = ["parking_lot"] }
+jsonwebtoken = "8.2.0"
+once_cell = { version = "1.17.1", features = ["parking_lot"] }
 rand = "0.8.5"
-futures = "0.3.25"
+futures = "0.3.26"
 rdkafka = { version = "0.29.0", features = ["tracing", "cmake-build"] }
 rand_chacha = "0.3.1"
-serde_with = "2.1.0"
+serde_with = "2.2.0"
 tokio-tungstenite = "0.18.0"
 sqlx = { version = "0.6.2", default-features = false, features = ["postgres"] }
 uuid.workspace = true
-bytes = "1.3.0"
+bytes = "1.4.0"
 mime = "0.3.16"
 macros = { path = "./macros/" }
 smallvec = "1.10.0"
 const_format = "0.2.30"
 
 [workspace.dependencies]
-uuid = { version = "1.2.2", features = ["v4", "fast-rng"] }
+uuid = { version = "1.3.0", features = ["v4", "fast-rng", "serde"] }
 
 [dev-dependencies]
 dotenvy = "0.15.6"
-http = "0.2.8"
-reqwest = { version = "0.11.13", features = ["json"] }
+http = "0.2.9"
+reqwest = { version = "0.11.14", features = ["json"] }
 migration = { path = "./migration" }
 assert-json-diff = "2.0.2"
-serial_test = "0.9.0"
+serial_test = "1.0.0"

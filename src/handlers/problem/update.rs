@@ -42,7 +42,7 @@ pub async fn update_problem<S: StateTrait>(
     let res = problems::Entity::update(active_model).exec(&txn).await;
 
     match res {
-        Err(DbErr::RecordNotFound(_)) => return Err(error::PROBLEM_NOT_FOUND),
+        Err(DbErr::RecordNotUpdated) => return Err(error::PROBLEM_NOT_FOUND),
         e => e?,
     };
 
