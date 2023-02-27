@@ -3,7 +3,6 @@ version: '3'
 services:
   db:
     image: postgres
-    restart: always
     environment:
       POSTGRES_USER: matverseny
       POSTGRES_PASSWORD: secret
@@ -13,7 +12,6 @@ services:
 
   kafka:
     image: bitnami/kafka:latest
-    restart: always
     environment:
       KAFKA_BROKER_ID: 1
       KAFKA_CFG_LISTENERS: PLAINTEXT://:9092
@@ -30,7 +28,6 @@ services:
 
   zookeeper:
     image: bitnami/zookeeper:latest
-    restart: always
     environment:
       ALLOW_ANONYMOUS_LOGIN: yes
     networks:
@@ -38,7 +35,6 @@ services:
 
   iam:
     image: verseghy/iam
-    restart: always
     environment:
       DATABASE_URL: mysql://iam:secret@iam-database:3306/iam
       # TEST KEYS
@@ -52,7 +48,6 @@ services:
 
   iam-database:
     image: mysql:8.0
-    restart: always
     environment:
       MYSQL_DATABASE: iam
       MYSQL_USER: iam
