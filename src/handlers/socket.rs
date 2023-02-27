@@ -165,11 +165,10 @@ async fn socket_handler<S: StateTrait>(state: S, socket: &mut WebSocket) -> Resu
                     }
                 }
                 message = socket.next() => {
-                    let _message = match message {
+                    match message {
                         Some(Ok(Message::Close(_))) | None => break Ok(()),
-                        Some(Ok(Message::Text(t))) => t,
                         Some(Ok(_)) => {
-                            debug!("wrong message type on websocket");
+                            warn!("got message on websocket");
                             continue
                         }
                         Some(Err(err)) => {
