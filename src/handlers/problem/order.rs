@@ -124,43 +124,7 @@ pub async fn change<S: StateTrait>(
             }
         }
         Request::Delete { id } => {
-            let res = problems_order::Entity::find()
-                .filter(
-                    Condition::any()
-                        .add(problems_order::Column::Id.eq(id))
-                        .add(problems_order::Column::Next.eq(id)),
-                )
-                .lock_exclusive()
-                .all(&txn)
-                .await?;
-
-            let to_delete = res.iter().find(|item| item.id == id);
-            let before = res.iter().find(|item| item.next == Some(id));
-
-            let Some(to_delete) = to_delete else {
-                return Err(error::PROBLEM_NOT_FOUND);
-            };
-
-            execute_str(
-                &txn,
-                formatcp!(r#"SET CONSTRAINTS "{FK_PROBLEMS_ORDER_NEXT}" DEFERRED"#),
-            )
-            .await?;
-
-            problems_order::Entity::delete_by_id(to_delete.id)
-                .exec(&txn)
-                .await?;
-
-            if let Some(before) = before {
-                problems_order::Entity::update(problems_order::ActiveModel {
-                    id: Set(before.id),
-                    next: Set(to_delete.next),
-                })
-                .exec(&txn)
-                .await?;
-            }
-
-            // TODO: kafka
+            delete_problem(&txn, id).await?;
             txn.commit().await?;
         }
         Request::Swap { id1, id2 } => {
@@ -285,4 +249,49 @@ pub async fn get<S: StateTrait>(State(state): State<S>) -> Result<Json<Vec<Uuid>
     }
 
     Ok(Json(res.into_iter().map(|item| item.id).collect()))
+}
+
+pub(super) async fn delete_problem<T>(txn: &T, id: Uuid) -> Result<()>
+where
+    T: TransactionTrait + ConnectionTrait,
+{
+    let res = problems_order::Entity::find()
+        .filter(
+            Condition::any()
+                .add(problems_order::Column::Id.eq(id))
+                .add(problems_order::Column::Next.eq(id)),
+        )
+        .lock_exclusive()
+        .all(txn)
+        .await?;
+
+    let to_delete = res.iter().find(|item| item.id == id);
+    let before = res.iter().find(|item| item.next == Some(id));
+
+    let Some(to_delete) = to_delete else {
+        return Err(error::PROBLEM_NOT_FOUND);
+    };
+
+    execute_str(
+        txn,
+        formatcp!(r#"SET CONSTRAINTS "{FK_PROBLEMS_ORDER_NEXT}" DEFERRED"#),
+    )
+    .await?;
+
+    problems_order::Entity::delete_by_id(to_delete.id)
+        .exec(txn)
+        .await?;
+
+    if let Some(before) = before {
+        problems_order::Entity::update(problems_order::ActiveModel {
+            id: Set(before.id),
+            next: Set(to_delete.next),
+        })
+        .exec(txn)
+        .await?;
+    }
+
+    // TODO: kafka
+
+    Ok(())
 }
