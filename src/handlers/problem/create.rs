@@ -16,6 +16,9 @@ pub struct Request {
 #[derive(Serialize)]
 pub struct Response {
     id: Uuid,
+    body: String,
+    solution: i64,
+    image: Option<String>,
 }
 
 pub async fn create_problem<S: StateTrait>(
@@ -26,9 +29,9 @@ pub async fn create_problem<S: StateTrait>(
 
     let problem = problems::ActiveModel {
         id: Set(Uuid::new_v4()),
-        body: Set(request.body),
-        solution: Set(request.solution),
-        image: Set(request.image),
+        body: Set(request.body.clone()),
+        solution: Set(request.solution.clone()),
+        image: Set(request.image.clone()),
     };
 
     let res = problems::Entity::insert(problem).exec(state.db()).await?;
@@ -37,6 +40,9 @@ pub async fn create_problem<S: StateTrait>(
         StatusCode::CREATED,
         Json(Response {
             id: res.last_insert_id,
+            body: request.body,
+            solution: request.solution,
+            image: request.image,
         }),
     ))
 }

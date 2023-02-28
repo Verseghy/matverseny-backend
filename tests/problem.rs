@@ -27,6 +27,15 @@ mod create {
 
         let body: Value = res.json().await;
         assert!(body.get("id").is_some());
+
+        assert_json_include!(
+            actual: body,
+            expected: json!({
+                "body": "some body",
+                "solution": 23,
+                "image": "image link",
+            }),
+        );
     }
 
     #[tokio::test]
