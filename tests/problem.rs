@@ -537,7 +537,11 @@ mod update {
             let app = get_cached_app().await;
             let user = utils::iam::register_user().await;
 
-            let res = app.put(&format!("/problem/{}", uuid())).user(&user).send().await;
+            let res = app
+                .put(&format!("/problem/{}", uuid()))
+                .user(&user)
+                .send()
+                .await;
 
             assert_error!(res, error::NOT_ENOUGH_PERMISSIONS);
         }
@@ -753,7 +757,11 @@ mod update {
         let app = get_cached_app().await;
         let user = utils::iam::register_user().await;
 
-        let res = app.patch(&format!("/problem/{}", uuid())).user(&user).send().await;
+        let res = app
+            .patch(&format!("/problem/{}", uuid()))
+            .user(&user)
+            .send()
+            .await;
 
         assert_error!(res, error::NOT_ENOUGH_PERMISSIONS);
     }
