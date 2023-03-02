@@ -29,8 +29,6 @@ pub async fn change<S: StateTrait>(
     State(state): State<S>,
     Json(request): Json<Request>,
 ) -> Result<StatusCode> {
-    // TODO: permission check through the iam
-
     let txn = state.db().begin().await?;
 
     match request {

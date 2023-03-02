@@ -23,8 +23,6 @@ pub async fn update_problem<S: StateTrait>(
     State(state): State<S>,
     Json(request): Json<Request>,
 ) -> Result<StatusCode> {
-    // TODO: permission check through the iam
-
     // This is necessary because the ORM would generate a wrong sql statement
     if request.body.is_none() && request.solution.is_none() && request.image.is_none() {
         return Ok(StatusCode::NO_CONTENT);

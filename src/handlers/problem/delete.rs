@@ -18,8 +18,6 @@ pub async fn delete_problem<S: StateTrait>(
     State(state): State<S>,
     Json(request): Json<Request>,
 ) -> Result<StatusCode> {
-    // TODO: permission check through the iam
-
     let txn = state.db().begin().await?;
 
     let res = problems_order::Entity::find_by_id(request.id)

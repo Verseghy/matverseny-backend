@@ -22,8 +22,6 @@ pub async fn get_problem<S: StateTrait>(
     State(state): State<S>,
     Path(id): Path<String>,
 ) -> Result<Json<Response>> {
-    // TODO: permission check through the iam
-
     let Ok(uuid) = Uuid::parse_str(&id) else {
         return Err(error::PROBLEM_NOT_FOUND);
     };
@@ -41,8 +39,6 @@ pub async fn get_problem<S: StateTrait>(
 }
 
 pub async fn list_problems<S: StateTrait>(State(state): State<S>) -> Result<Json<Vec<Response>>> {
-    // TODO: permission check through the iam
-
     let res = problems::Entity::find()
         .into_model::<Response>()
         .all(state.db())
