@@ -60,12 +60,11 @@ mod create {
 
     #[tokio::test]
     #[parallel]
-    #[ignore]
     async fn not_admin() {
         let app = get_cached_app().await;
         let user = utils::iam::register_user().await;
 
-        let _res = app
+        let res = app
             .post("/problem")
             .user(&user)
             .json(&json!({
@@ -75,7 +74,7 @@ mod create {
             .send()
             .await;
 
-        //TODO: assert error
+        assert_error!(res, error::NOT_ENOUGH_PERMISSIONS);
     }
 }
 
@@ -89,6 +88,7 @@ mod get {
         app.clean_database().await;
 
         let user = utils::iam::register_user().await;
+        utils::iam::make_admin(&user).await;
 
         let res = app
             .get(&format!("/problem/{}", uuid()))
@@ -169,18 +169,17 @@ mod get {
 
     #[tokio::test]
     #[parallel]
-    #[ignore]
     async fn not_admin() {
         let app = get_cached_app().await;
         let user = utils::iam::register_user().await;
 
-        let _res = app
+        let res = app
             .get(&format!("/problem/{}", uuid()))
             .user(&user)
             .send()
             .await;
 
-        //TODO: assert error
+        assert_error!(res, error::NOT_ENOUGH_PERMISSIONS);
     }
 }
 
@@ -283,14 +282,13 @@ mod list {
 
     #[tokio::test]
     #[parallel]
-    #[ignore]
     async fn not_admin() {
         let app = get_cached_app().await;
         let user = utils::iam::register_user().await;
 
-        let _res = app.get("/problem").user(&user).send().await;
+        let res = app.get("/problem").user(&user).send().await;
 
-        // TODO: assert error
+        assert_error!(res, error::NOT_ENOUGH_PERMISSIONS);
     }
 }
 
@@ -365,14 +363,13 @@ mod delete {
 
     #[tokio::test]
     #[parallel]
-    #[ignore]
     async fn not_admin() {
         let app = get_cached_app().await;
         let user = utils::iam::register_user().await;
 
-        let _res = app.delete("/problem").user(&user).send().await;
+        let res = app.delete("/problem").user(&user).send().await;
 
-        // TODO: assert error
+        assert_error!(res, error::NOT_ENOUGH_PERMISSIONS);
     }
 }
 
@@ -583,14 +580,13 @@ mod update {
 
     #[tokio::test]
     #[parallel]
-    #[ignore]
     async fn not_admin() {
         let app = get_cached_app().await;
         let user = utils::iam::register_user().await;
 
-        let _res = app.delete("/problem").user(&user).send().await;
+        let res = app.delete("/problem").user(&user).send().await;
 
-        // TODO: assert error
+        assert_error!(res, error::NOT_ENOUGH_PERMISSIONS);
     }
 }
 
@@ -1353,13 +1349,12 @@ mod order {
 
     #[tokio::test]
     #[parallel]
-    #[ignore]
     async fn not_admin() {
         let app = get_cached_app().await;
         let user = utils::iam::register_user().await;
 
-        let _res = app.delete("/problem").user(&user).send().await;
+        let res = app.delete("/problem").user(&user).send().await;
 
-        // TODO: assert error
+        assert_error!(res, error::NOT_ENOUGH_PERMISSIONS);
     }
 }
