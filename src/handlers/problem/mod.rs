@@ -16,7 +16,7 @@ use axum::{
 /// GET    /problem/:id
 /// POST   /problem
 /// PATCH  /problem
-/// DELETE /problem
+/// DELETE /problem/:id
 ///
 /// POST   /problem/order
 pub fn routes<S: StateTrait>(state: S) -> Router<S> {
@@ -50,7 +50,7 @@ pub fn routes<S: StateTrait>(state: S) -> Router<S> {
             )),
         )
         .route(
-            "/",
+            "/:id",
             delete(delete::delete_problem::<S>).layer(PermissionsLayer::new(
                 state.clone(),
                 &["mathcompetition.problems"],

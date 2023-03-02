@@ -304,11 +304,8 @@ mod delete {
         utils::iam::make_admin(&user).await;
 
         let res = app
-            .delete("/problem")
+            .delete(&format!("/problem/{}", uuid()))
             .user(&user)
-            .json(&json!({
-                "id": uuid(),
-            }))
             .send()
             .await;
 
@@ -345,11 +342,8 @@ mod delete {
         let id = body["id"].as_str().unwrap();
 
         let res = app
-            .delete("/problem")
+            .delete(&format!("/problem/{}", id))
             .user(&user)
-            .json(&json!({
-                "id": id,
-            }))
             .send()
             .await;
 
