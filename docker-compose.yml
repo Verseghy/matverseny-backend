@@ -65,6 +65,7 @@ services:
 
   iam-migration:
     image: verseghy/iam-migration
+    pull_policy: always
     environment:
       DATABASE_URL: mysql://iam:secret@iam-database:3306/iam
     depends_on:
