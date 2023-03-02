@@ -35,6 +35,7 @@ services:
 
   iam:
     image: verseghy/iam
+    pull_policy: always
     environment:
       DATABASE_URL: mysql://iam:secret@iam-database:3306/iam
       # TEST KEYS
