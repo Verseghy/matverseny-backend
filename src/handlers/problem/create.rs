@@ -30,7 +30,7 @@ pub async fn create_problem<S: StateTrait>(
     let problem = problems::ActiveModel {
         id: Set(Uuid::new_v4()),
         body: Set(request.body.clone()),
-        solution: Set(request.solution.clone()),
+        solution: Set(request.solution),
         image: Set(request.image.clone()),
     };
 
