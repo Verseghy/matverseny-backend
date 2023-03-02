@@ -1,0 +1,13 @@
+[package]
+name = "cmds"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+tokio = { version = "1.26.0", features = ["rt", "macros"] }
+libiam = { git = "https://github.com/Verseghy/iam", package = "libiam" }
+dotenvy = "0.15.6"
+
+[[bin]]
+name = "create_iam_app"
+path = "src/create_iam_app.rs"

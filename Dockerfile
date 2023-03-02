@@ -7,7 +7,8 @@ WORKDIR /builder
 RUN cargo new --bin app && \
     cargo new --lib app/entity && \
     cargo new --lib app/migration && \
-    cargo new --lib app/macros
+    cargo new --lib app/macros && \
+    cargo new --lib app/cmds
 
 WORKDIR /builder/app
 

@@ -17,8 +17,8 @@ strip = true
 lto = true
 
 [workspace]
-members = [".", "entity", "migration", "macros"]
-default-members = [".", "migration"]
+members = [".", "entity", "migration", "macros", "cmds"]
+default-members = [".", "migration", "cmds"]
 
 [dependencies]
 axum = { version = "0.6.8", features = ["ws", "http2", "headers"] }
