@@ -9,7 +9,8 @@ use axum::{
     response::{IntoResponse, Response},
 };
 use futures::{future::BoxFuture, Future};
-use serde_json::{json, Value};
+use serde::Deserialize;
+use serde_json::json;
 use tower::{Layer, Service};
 
 use crate::{error, iam::Claims, StateTrait};
@@ -80,9 +81,9 @@ where
 
         let json = json!({
             "actions": self.permissions,
-            "user": claims.subject,
+            "user": format!("UserID-{}", claims.subject),
         });
-        let secret = self.state.app_secret().to_owned();
+        let token = self.state.iam_app().token().to_owned();
 
         let future = self.inner.call(req);
 
@@ -91,7 +92,7 @@ where
 
             let res = client
                 .post(format!("{}/v1/decision", env::var("IAM_URL").unwrap()))
-                .header(AUTHORIZATION, secret)
+                .header(AUTHORIZATION, format!("Bearer {}", token))
                 .json(&json)
                 .send()
                 .await;
@@ -101,16 +102,23 @@ where
                 return Ok(error::NOT_ENOUGH_PERMISSIONS.into_response())
             };
 
-            let json = match res.json::<Value>().await {
-                Err(err) => {
-                    error!("IAM did not return valied json: {:?}", err);
+            #[derive(Debug, Deserialize)]
+            #[allow(unused)]
+            struct Response {
+                code: String,
+                error: String,
+            }
+
+            if !res.status().is_success() {
+                let status = res.status();
+                let text = res.text().await.unwrap();
+
+                if let Ok(err) = serde_json::from_str::<Response>(&text) {
+                    error!("IAM returned error: {:?}, status: {}", err, status);
                     return Ok(error::NOT_ENOUGH_PERMISSIONS.into_response());
                 }
-                Ok(json) => json,
-            };
 
-            if let Some(err) = json.get("error") {
-                error!("IAM return error: {}, code: {:?}", err, json.get("code"));
+                error!("text: {}", text);
                 return Ok(error::NOT_ENOUGH_PERMISSIONS.into_response());
             }
 
