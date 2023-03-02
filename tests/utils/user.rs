@@ -36,11 +36,16 @@ impl User {
 }
 
 pub trait UserLike {
-    fn access_token(&self) -> &String;
+    fn access_token(&self) -> &str;
+    fn id(&self) -> &str;
 }
 
 impl UserLike for User {
-    fn access_token(&self) -> &String {
+    fn access_token(&self) -> &str {
         &self.access_token
+    }
+
+    fn id(&self) -> &str {
+        &self.id
     }
 }

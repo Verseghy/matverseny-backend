@@ -21,7 +21,7 @@ macro_rules! assert_team_info {
     ($socket:expr, $user:expr) => {{
         use ::tokio_tungstenite::tungstenite::Message;
         $socket
-            .send(Message::Text($user.access_token().clone()))
+            .send(Message::Text($user.access_token().to_owned()))
             .await
             .unwrap();
         let message = utils::get_socket_message((&mut $socket).next().await);

@@ -46,7 +46,7 @@ async fn user_not_registered() {
     let mut socket = app.socket("/ws").start().await;
 
     socket
-        .send(Message::Text(user.access_token().clone()))
+        .send(Message::Text(user.access_token().to_owned()))
         .await
         .unwrap();
     assert_close_frame_error!(socket.next().await, error::USER_NOT_REGISTERED);
@@ -60,7 +60,7 @@ async fn no_team() {
     let mut socket = app.socket("/ws").start().await;
 
     socket
-        .send(Message::Text(user.access_token().clone()))
+        .send(Message::Text(user.access_token().to_owned()))
         .await
         .unwrap();
     assert_close_frame_error!(socket.next().await, error::USER_NOT_IN_TEAM);
@@ -75,7 +75,7 @@ async fn team_info() {
 
     let mut socket = app.socket("/ws").start().await;
     socket
-        .send(Message::Text(user.access_token().clone()))
+        .send(Message::Text(user.access_token().to_owned()))
         .await
         .unwrap();
     let message = utils::get_socket_message(socket.next().await);

@@ -10,6 +10,7 @@ mod user;
 use db::Database;
 use dotenvy::dotenv;
 use http::StatusCode;
+use libiam::testing::actions::{assign_action_to_app, ensure_action};
 use matverseny_backend::State;
 use request::*;
 use reqwest::Client;
@@ -51,11 +52,31 @@ impl App {
                 .expect("Failed to create tokio runtime");
 
             rt.block_on(async {
+                tracing::trace!("starting app thread");
+
+                let iam = iam::get_iam();
+                let iam_db = iam::get_db().await;
+                let (_, secret) = libiam::testing::apps::create_app(iam_db, &uuid()).await;
+                let iam_app = libiam::App::login(&iam, &secret).await.unwrap();
+
+                tracing::trace!("creating actions");
+
+                ensure_action(iam_db, "mathcompetition.problems", true).await;
+                ensure_action(iam_db, "mathcompetition.admin", true).await;
+
+                tracing::trace!("assigning actions to app");
+
+                assign_action_to_app(iam_db, "iam.policy.assign", &iam_app.id()).await;
+
+                tracing::trace!("setting up database");
+
                 let conn = Database::setup().await;
+
+                tracing::trace!("binding socket");
 
                 let addr = SocketAddr::from((Ipv4Addr::LOCALHOST, 0));
                 let listener = TcpListener::bind(addr).expect("failed to bind tcp listener");
-                let state = State::with_database(conn.conn()).await;
+                let state = State::with_database(iam_app, conn.conn()).await;
 
                 let inner = Arc::new(AppInner {
                     addr: listener.local_addr().unwrap(),
@@ -63,6 +84,8 @@ impl App {
                 });
 
                 tx.send(inner).unwrap();
+
+                tracing::trace!("starting app");
 
                 matverseny_backend::run(listener, state).await;
             });
@@ -98,7 +121,8 @@ impl App {
 
         assert_eq!(res.status(), StatusCode::CREATED);
 
-        User::new(user.id, user.email, user.access_token, self.clone())
+        let token = user.access_token().to_owned();
+        User::new(user.id, user.email, token, self.clone())
     }
 
     #[allow(unused)]

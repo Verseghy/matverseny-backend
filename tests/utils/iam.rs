@@ -1,24 +1,26 @@
 use super::UserLike;
-use once_cell::sync::Lazy;
-use reqwest::Client;
-use serde::Deserialize;
-use serde_json::json;
+use libiam::{testing::actions::assign_action_to_user, Iam};
+use once_cell::sync::{Lazy, OnceCell};
 use std::{
     env,
     sync::atomic::{AtomicU64, Ordering},
 };
 use uuid::Uuid;
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug)]
 pub struct User {
     pub id: String,
     pub email: String,
-    pub access_token: String,
+    user: libiam::User,
 }
 
 impl UserLike for User {
-    fn access_token(&self) -> &String {
-        &self.access_token
+    fn access_token(&self) -> &str {
+        self.user.token()
+    }
+
+    fn id(&self) -> &str {
+        &self.id
     }
 }
 
@@ -32,8 +34,19 @@ static TEST_ID: Lazy<String> = Lazy::new(|| {
 static USER_COUNT: AtomicU64 = AtomicU64::new(0);
 static USER_PASSWORD: &str = "test";
 
-fn get_url(url: &str) -> String {
-    format!("{}{}", env::var("IAM_URL").expect("IAM_URL not set"), url)
+pub(super) fn get_iam() -> &'static Iam {
+    static INIT: OnceCell<Iam> = OnceCell::new();
+    INIT.get_or_init(|| Iam::new(&env::var("IAM_URL").expect("IAM_URL not set")))
+}
+
+pub(super) async fn get_db() -> &'static libiam::testing::Database {
+    static DB: tokio::sync::OnceCell<libiam::testing::Database> =
+        tokio::sync::OnceCell::const_new();
+
+    DB.get_or_init(|| async {
+        libiam::testing::Database::connect("mysql://iam:secret@127.0.0.1:3306/iam").await
+    })
+    .await
 }
 
 pub async fn register_user() -> User {
@@ -43,44 +56,27 @@ pub async fn register_user() -> User {
         USER_COUNT.fetch_add(1, Ordering::Relaxed)
     );
 
-    let response = Client::new()
-        .post(get_url("/v1/users/register"))
-        .json(&json!({
-            "name": "Test User",
-            "email": email,
-            "password": USER_PASSWORD,
-        }))
-        .send()
-        .await
-        .expect("registration failed")
-        .json::<serde_json::Value>()
-        .await
-        .expect("failed to deserialize");
+    let iam = get_iam();
 
-    let id = response["id"].as_str().expect("not string").to_owned();
-
-    let response = Client::new()
-        .post(get_url("/v1/users/login"))
-        .json(&json!({
-            "email": email,
-            "password": USER_PASSWORD,
-        }))
-        .send()
+    let id = libiam::User::register(&iam, "Test User", &email, USER_PASSWORD)
         .await
-        .expect("failed to send")
-        .json::<serde_json::Value>()
-        .await
-        .expect("failed to deserialize");
+        .unwrap();
 
-    let access_token = response["token"].as_str().expect("not string").to_owned();
+    let user = libiam::User::login(&iam, &email, USER_PASSWORD)
+        .await
+        .unwrap();
 
     User {
-        id,
+        id: id.to_string(),
         email,
-        access_token,
+        user,
     }
 }
 
 // TODO: implement this if iam supports this
 #[allow(unused)]
-pub async fn make_admin(user: &impl UserLike) {}
+pub async fn make_admin(user: &impl UserLike) {
+    let db = get_db().await;
+    tracing::trace!("making user '{}' admin", user.id());
+    assign_action_to_user(db, "mathcompetition.problems", user.id()).await;
+}
