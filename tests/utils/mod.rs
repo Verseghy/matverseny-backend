@@ -163,6 +163,11 @@ impl App {
         RequestBuilder::new(Client::new().delete(format!("http://{}{}", self.inner.addr, url)))
     }
 
+    #[allow(dead_code)]
+    pub fn put(&self, url: &str) -> RequestBuilder {
+        RequestBuilder::new(Client::new().put(format!("http://{}{}", self.inner.addr, url)))
+    }
+
     #[allow(unused)]
     pub fn socket(&self, url: &str) -> SocketRequestBuilder {
         let uri = format!("ws://{}{}", self.inner.addr, url);

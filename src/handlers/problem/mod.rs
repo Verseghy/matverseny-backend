@@ -6,7 +6,7 @@ mod update;
 
 use crate::{middlewares::PermissionsLayer, StateTrait};
 use axum::{
-    routing::{delete, get, patch, post},
+    routing::{delete, get, patch, post, put},
     Router,
 };
 
@@ -15,7 +15,8 @@ use axum::{
 /// GET    /problem
 /// GET    /problem/:id
 /// POST   /problem
-/// PATCH  /problem
+/// PUT    /problem/:id
+/// PATCH  /problem/:id
 /// DELETE /problem/:id
 ///
 /// POST   /problem/order
@@ -43,7 +44,14 @@ pub fn routes<S: StateTrait>(state: S) -> Router<S> {
             )),
         )
         .route(
-            "/",
+            "/:id",
+            put(update::put::<S>).layer(PermissionsLayer::new(
+                state.clone(),
+                &["mathcompetition.problems"],
+            )),
+        )
+        .route(
+            "/:id",
             patch(update::update_problem::<S>).layer(PermissionsLayer::new(
                 state.clone(),
                 &["mathcompetition.problems"],

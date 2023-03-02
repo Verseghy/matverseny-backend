@@ -50,3 +50,27 @@ pub async fn update_problem<S: StateTrait>(
 
     Ok(StatusCode::NO_CONTENT)
 }
+
+#[derive(Deserialize)]
+pub struct PutRequest {
+    id: Uuid,
+    body: String,
+    solution: i64,
+    image: Option<String>,
+}
+
+pub async fn put<S: StateTrait>(
+    state: State<S>,
+    Json(request): Json<PutRequest>,
+) -> Result<StatusCode> {
+    update_problem(
+        state,
+        Json(Request {
+            id: request.id,
+            body: Some(request.body),
+            solution: Some(request.solution),
+            image: Some(request.image),
+        }),
+    )
+    .await
+}

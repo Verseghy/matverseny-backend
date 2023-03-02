@@ -370,6 +370,179 @@ mod delete {
 mod update {
     use super::*;
 
+    mod put {
+        use super::*;
+
+        #[tokio::test]
+        #[parallel]
+        async fn not_found() {
+            let app = get_cached_app().await;
+
+            let user = utils::iam::register_user().await;
+            utils::iam::make_admin(&user).await;
+
+            let id = uuid();
+
+            let res = app
+                .put(&format!("/problem/{}", id))
+                .user(&user)
+                .json(&json!({
+                    "id": id,
+                    "body": "Test body 1.",
+                    "solution": 1,
+                    "image": "test image 1",
+                }))
+                .send()
+                .await;
+
+            assert_error!(res, error::PROBLEM_NOT_FOUND);
+        }
+
+        #[tokio::test]
+        #[parallel]
+        async fn delete_image() {
+            let app = get_cached_app().await;
+
+            let user = utils::iam::register_user().await;
+            utils::iam::make_admin(&user).await;
+
+            let res = app
+                .post("/problem")
+                .user(&user)
+                .json(&json!({
+                    "body": "Test body 1.",
+                    "solution": 1,
+                    "image": "test image 1",
+                }))
+                .send()
+                .await;
+
+            assert_eq!(
+                res.status(),
+                StatusCode::CREATED,
+                "failed to create problem: response={:#?}",
+                res.json::<Value>().await,
+            );
+
+            let body: Value = res.json().await;
+            let id = body["id"].as_str().unwrap();
+
+            let res = app
+                .put(&format!("/problem/{}", id))
+                .user(&user)
+                .json(&json!({
+                    "id": id,
+                    "body": "Test body 2.",
+                    "solution": 2,
+                    "image": null,
+                }))
+                .send()
+                .await;
+
+            assert_eq!(
+                res.status(),
+                StatusCode::NO_CONTENT,
+                "failed to update problem: response={:#?}",
+                res.json::<Value>().await
+            );
+
+            let res = app
+                .get(&format!("/problem/{}", id))
+                .user(&user)
+                .send()
+                .await;
+
+            assert_eq!(res.status(), StatusCode::OK);
+
+            assert_json_eq!(
+                res.json::<Value>().await,
+                json!({
+                    "id": id,
+                    "body": "Test body 2.",
+                    "solution": 2,
+                })
+            )
+        }
+
+        #[tokio::test]
+        #[parallel]
+        async fn success() {
+            let app = get_cached_app().await;
+
+            let user = utils::iam::register_user().await;
+            utils::iam::make_admin(&user).await;
+
+            let res = app
+                .post("/problem")
+                .user(&user)
+                .json(&json!({
+                    "body": "Test body 1.",
+                    "solution": 1,
+                    "image": "test image 1",
+                }))
+                .send()
+                .await;
+
+            assert_eq!(
+                res.status(),
+                StatusCode::CREATED,
+                "failed to create problem: response={:#?}",
+                res.json::<Value>().await,
+            );
+
+            let body: Value = res.json().await;
+            let id = body["id"].as_str().unwrap();
+
+            let res = app
+                .put(&format!("/problem/{}", id))
+                .user(&user)
+                .json(&json!({
+                    "id": id,
+                    "body": "Test body 2.",
+                    "solution": 2,
+                    "image": "test image 2",
+                }))
+                .send()
+                .await;
+
+            assert_eq!(
+                res.status(),
+                StatusCode::NO_CONTENT,
+                "failed to update problem: response={:#?}",
+                res.json::<Value>().await
+            );
+
+            let res = app
+                .get(&format!("/problem/{}", id))
+                .user(&user)
+                .send()
+                .await;
+
+            assert_eq!(res.status(), StatusCode::OK);
+
+            assert_json_eq!(
+                res.json::<Value>().await,
+                json!({
+                    "id": id,
+                    "body": "Test body 2.",
+                    "solution": 2,
+                    "image": "test image 2",
+                })
+            )
+        }
+
+        #[tokio::test]
+        #[parallel]
+        async fn not_admin() {
+            let app = get_cached_app().await;
+            let user = utils::iam::register_user().await;
+
+            let res = app.put(&format!("/problem/{}", uuid())).user(&user).send().await;
+
+            assert_error!(res, error::NOT_ENOUGH_PERMISSIONS);
+        }
+    }
+
     #[tokio::test]
     #[parallel]
     async fn not_found() {
@@ -378,11 +551,13 @@ mod update {
         let user = utils::iam::register_user().await;
         utils::iam::make_admin(&user).await;
 
+        let id = uuid();
+
         let res = app
-            .patch("/problem")
+            .patch(&format!("/problem/{}", id))
             .user(&user)
             .json(&json!({
-                "id": uuid(),
+                "id": id,
                 "body": "Test body 1.",
                 "solution": 1,
                 "image": "test image 1",
@@ -423,7 +598,7 @@ mod update {
         let id = body["id"].as_str().unwrap();
 
         let res = app
-            .patch("/problem")
+            .patch(&format!("/problem/{}", id))
             .user(&user)
             .json(&json!({
                 "id": id,
@@ -489,7 +664,7 @@ mod update {
         let id = body["id"].as_str().unwrap();
 
         let res = app
-            .patch("/problem")
+            .patch(&format!("/problem/{}", id))
             .user(&user)
             .json(&json!({
                 "id": id,
@@ -535,7 +710,7 @@ mod update {
         let id = body["id"].as_str().unwrap();
 
         let res = app
-            .patch("/problem")
+            .patch(&format!("/problem/{}", id))
             .user(&user)
             .json(&json!({
                 "id": id,
@@ -578,7 +753,7 @@ mod update {
         let app = get_cached_app().await;
         let user = utils::iam::register_user().await;
 
-        let res = app.delete("/problem").user(&user).send().await;
+        let res = app.patch(&format!("/problem/{}", uuid())).user(&user).send().await;
 
         assert_error!(res, error::NOT_ENOUGH_PERMISSIONS);
     }
