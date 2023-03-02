@@ -1,4 +1,5 @@
 use crate::iam::{Iam, IamTrait};
+use libiam::App;
 use rand::{
     rngs::{adapter::ReseedingRng, OsRng},
     Rng, SeedableRng,
@@ -18,6 +19,7 @@ pub trait StateTrait: Send + Sync + Clone + 'static {
 
     fn db(&self) -> &Self::Db;
     fn iam(&self) -> &Self::Iam;
+    fn iam_app(&self) -> &App;
     fn rng(&self) -> Self::Rand;
     fn kafka_producer(&self) -> &FutureProducer;
     fn kafka_admin(&self) -> &AdminClient<DefaultClientContext>;
@@ -27,20 +29,22 @@ pub trait StateTrait: Send + Sync + Clone + 'static {
 pub struct State {
     database: DbConn,
     iam: Iam,
+    iam_app: App,
     kafka_producer: FutureProducer,
     kafka_admin: AdminClient<DefaultClientContext>,
     app_secret: String,
 }
 
 impl State {
-    pub async fn new() -> Arc<Self> {
-        Self::with_database(Self::connect_database().await).await
+    pub async fn new(iam_app: App) -> Arc<Self> {
+        Self::with_database(iam_app, Self::connect_database().await).await
     }
 
-    pub async fn with_database(conn: DbConn) -> Arc<Self> {
+    pub async fn with_database(iam_app: App, conn: DbConn) -> Arc<Self> {
         Arc::new(Self {
             database: conn,
             iam: Iam::new(),
+            iam_app,
             kafka_producer: Self::create_kafka_producer(),
             kafka_admin: Self::create_kafka_admin(),
             app_secret: env::var("IAM_APP_SECRET").expect("IAM_APP_SECRET is not set"),
@@ -104,6 +108,10 @@ impl StateTrait for Arc<State> {
 
     fn iam(&self) -> &Self::Iam {
         &self.iam
+    }
+
+    fn iam_app(&self) -> &App {
+        &self.iam_app
     }
 
     fn rng(&self) -> Self::Rand {
