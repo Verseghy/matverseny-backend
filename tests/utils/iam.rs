@@ -73,7 +73,6 @@ pub async fn register_user() -> User {
     }
 }
 
-// TODO: implement this if iam supports this
 #[allow(unused)]
 pub async fn make_admin(user: &impl UserLike) {
     let db = get_db().await;
