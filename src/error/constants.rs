@@ -147,3 +147,8 @@ const_error! {
     #[status(UNAUTHORIZED)]
     const NOT_ENOUGH_PERMISSIONS;
 }
+const_error! {
+    #[error("M030", "failed to get name of the user from the iam")]
+    #[status(INTERNAL_SERVER_ERROR)]
+    const IAM_FAILED_GET_NAME;
+}
