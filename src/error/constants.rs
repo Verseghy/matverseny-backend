@@ -152,3 +152,8 @@ const_error! {
     #[status(INTERNAL_SERVER_ERROR)]
     const IAM_FAILED_GET_NAME;
 }
+const_error! {
+    #[error("M031", "seconds are out of range")]
+    #[status(BAD_REQUEST)]
+    const TIME_SECONDS_OUT_OF_RANGE;
+}
