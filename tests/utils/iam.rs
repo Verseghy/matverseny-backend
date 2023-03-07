@@ -39,7 +39,7 @@ pub(super) fn get_iam() -> &'static Iam {
     INIT.get_or_init(|| Iam::new(&env::var("IAM_URL").expect("IAM_URL not set")))
 }
 
-pub(super) async fn get_db() -> &'static libiam::testing::Database {
+pub async fn get_db() -> &'static libiam::testing::Database {
     static DB: tokio::sync::OnceCell<libiam::testing::Database> =
         tokio::sync::OnceCell::const_new();
 
@@ -73,7 +73,6 @@ pub async fn register_user() -> User {
     }
 }
 
-// TODO: implement this if iam supports this
 #[allow(unused)]
 pub async fn make_admin(user: &impl UserLike) {
     let db = get_db().await;

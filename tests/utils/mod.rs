@@ -67,6 +67,7 @@ impl App {
                 tracing::trace!("assigning actions to app");
 
                 assign_action_to_app(iam_db, "iam.policy.assign", &iam_app.id()).await;
+                assign_action_to_app(iam_db, "iam.user.get", &iam_app.id()).await;
 
                 tracing::trace!("setting up database");
 
@@ -193,6 +194,7 @@ impl App {
 pub fn get_socket_message(
     message: Option<Result<Message, tokio_tungstenite::tungstenite::Error>>,
 ) -> Value {
+    tracing::debug!("socket  message: {message:?}");
     if let Some(Ok(Message::Text(message))) = message {
         serde_json::from_str(&message).expect("not json")
     } else {

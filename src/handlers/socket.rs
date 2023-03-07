@@ -234,27 +234,38 @@ async fn socket_auth<S: StateTrait>(state: &S, socket: &mut WebSocket) -> Result
         .await?
         .ok_or(error::USER_NOT_IN_TEAM)?;
 
-    let members = users::Entity::find_in_team(&result.id)
+    let raw_members = users::Entity::find_in_team(&result.id)
         .all(state.db())
-        .await?
-        .into_iter()
-        .map(|user| Member {
-            class: user.class,
-            rank: {
-                if user.id == result.owner {
-                    Rank::Owner
-                // NOTE: use `Option::is_some_and` when it gets stabilized (#93050)
-                } else if matches!(&result.co_owner, Some(co_owner) if *co_owner == user.id) {
-                    Rank::CoOwner
-                } else {
-                    Rank::Member
-                }
-            },
-            id: user.id,
-            // TODO: get the actual name of the user
-            name: user.id.to_string(),
+        .await?;
+
+    let mut members = Vec::with_capacity(raw_members.len());
+
+    for member in raw_members {
+        let name = state
+            .iam_app()
+            .get_user_info(&format!("UserID-{}", &user.id))
+            .await
+            .map_err(|error| {
+                error!("iam error: {:?}", error);
+                error::IAM_FAILED_GET_NAME
+            })?
+            .name;
+        let rank = if user.id == result.owner {
+            Rank::Owner
+        // NOTE: use `Option::is_some_and` when it gets stabilized (#93050)
+        } else if matches!(&result.co_owner, Some(co_owner) if *co_owner == user.id) {
+            Rank::CoOwner
+        } else {
+            Rank::Member
+        };
+
+        members.push(Member {
+            class: member.class,
+            rank,
+            id: member.id,
+            name,
         })
-        .collect();
+    }
 
     Ok((result, members, claims))
 }

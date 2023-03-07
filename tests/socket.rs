@@ -78,6 +78,7 @@ async fn team_info() {
         .send(Message::Text(user.access_token().to_owned()))
         .await
         .unwrap();
+
     let message = utils::get_socket_message(socket.next().await);
 
     assert_json_include!(
@@ -97,8 +98,8 @@ async fn team_info() {
     );
 
     assert!(message["data"].get("code").is_some());
-    // TODO: this should equal to the name in the iam
-    assert!(message["data"]["members"][0].get("name").is_some());
+    let user = libiam::testing::users::get_user(utils::iam::get_db().await, &user.id).await;
+    assert_eq!(message["data"]["members"][0]["name"], user.name);
 
     socket.close(None).await.unwrap();
 }
