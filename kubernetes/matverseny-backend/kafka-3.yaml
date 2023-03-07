@@ -34,5 +34,8 @@ spec:
     storage:
       type: ephemeral
   entityOperator:
-    topicOperator: {}
-    userOperator: {}
+    template:
+      topicOperatorContainer:
+        env:
+          - name: STRIMZI_USE_ZOOKEEPER_TOPIC_STORE
+            value: "true"
