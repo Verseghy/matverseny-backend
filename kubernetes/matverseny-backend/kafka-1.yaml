@@ -42,4 +42,4 @@ spec:
       topicOperatorContainer:
         env:
           - name: STRIMZI_USE_ZOOKEEPER_TOPIC_STORE
-            value: true
+            value: "true"
