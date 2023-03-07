@@ -36,7 +36,9 @@ spec:
         maxUnavailable: 0
     replicas: 3
     storage:
-      type: ephemeral
+      type: persistent-claim
+      size: 1Gi
+      deleteClaim: true
   entityOperator:
     template:
       topicOperatorContainer:
