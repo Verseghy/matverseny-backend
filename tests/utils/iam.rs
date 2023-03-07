@@ -78,4 +78,5 @@ pub async fn make_admin(user: &impl UserLike) {
     let db = get_db().await;
     tracing::trace!("making user '{}' admin", user.id());
     assign_action_to_user(db, "mathcompetition.problems", user.id()).await;
+    assign_action_to_user(db, "mathcompetition.admin", user.id()).await;
 }

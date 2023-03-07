@@ -2,6 +2,7 @@ mod time;
 
 use crate::{middlewares::PermissionsLayer, StateTrait};
 use axum::{
+    handler::Handler,
     routing::{get, patch, put},
     Router,
 };
@@ -18,21 +19,17 @@ pub fn routes<S: StateTrait>(state: S) -> Router<S> {
     Router::new()
         .route(
             "/time",
-            put(time::set_time::<S>).layer(PermissionsLayer::new(
+            put(time::set_time::<S>.layer(PermissionsLayer::new(
                 state.clone(),
-                &["mathcompetition.problems"],
-            )),
+                &["mathcompetition.admin"],
+            ))),
         )
         .route(
             "/time",
-            patch(time::set_time_patch::<S>).layer(PermissionsLayer::new(
-                state.clone(),
-                &["mathcompetition.problems"],
-            )),
+            patch(
+                time::set_time_patch::<S>
+                    .layer(PermissionsLayer::new(state, &["mathcompetition.admin"])),
+            ),
         )
-        .route(
-            "/time",
-            get(time::get_time::<S>)
-                .layer(PermissionsLayer::new(state, &["mathcompetition.problems"])),
-        )
+        .route("/time", get(time::get_time::<S>))
 }
