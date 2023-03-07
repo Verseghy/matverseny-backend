@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 ./operators.sh
-sleep 10
+sleep 300
 kubectl apply -f cluster-issuer.yaml
 kubectl apply -f configmap-ingress-nginx.yaml
 kubectl apply -f namespace-matverseny-backend.yaml
