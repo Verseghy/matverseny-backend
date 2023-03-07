@@ -45,6 +45,11 @@ spec:
                 secretKeyRef:
                   key: uri
                   name: postgres-pguser-postgres
+            - name: IAM_APP_SECRET
+              valueFrom:
+                secretKeyRef:
+                  key: IAM_APP_SECRET
+                  name: matverseny-backend
             - name: IAM_URL
               value: https://iam.verseghy-gimnazium.net
             - name: IAM_JWT_RSA_PUBLIC
