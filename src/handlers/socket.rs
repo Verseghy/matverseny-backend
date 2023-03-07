@@ -188,7 +188,7 @@ type TeamInfo = (teams::Model, Vec<Member>, Claims);
 
 async fn socket_auth<S: StateTrait>(state: &S, socket: &mut WebSocket) -> Result<TeamInfo> {
     let message = {
-        let timeout = time::sleep(Duration::from_secs(1));
+        let timeout = time::sleep(Duration::from_secs(10));
         tokio::pin!(timeout);
 
         let mut uninit = MaybeUninit::uninit();
