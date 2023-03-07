@@ -79,3 +79,13 @@ spec:
       protocol: TCP
       port: 80
       targetPort: 3002
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: matverseny-backend
+spec:
+  maxUnavailable: 1
+  selector:
+    matchLabels:
+      app: matverseny-backend
