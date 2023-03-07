@@ -277,7 +277,10 @@ async fn create_consumer(team_id: &Uuid) -> Result<StreamConsumer> {
 
     let consumer: StreamConsumer = ClientConfig::new()
         .set("bootstrap.servers", bootstrap_servers)
-        .set("group.id", "socket")
+        .set("group.id", "matverseny-backend")
+        .set("enable.partition.eof", "false")
+        .set("enable.auto.commit", "false")
+        .set("auto.offset.reset", "latest")
         .create()?;
 
     consumer.assign(&{
