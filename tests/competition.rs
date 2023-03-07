@@ -79,8 +79,6 @@ mod time {
         let user = utils::iam::register_user().await;
         utils::iam::make_admin(&user).await;
 
-        enable_logging!(DEBUG);
-
         let res = app
             .patch("/competition/time")
             .user(&user)
@@ -139,5 +137,46 @@ mod time {
                 "end_time": 234,
             })
         );
+    }
+
+    #[tokio::test]
+    #[serial]
+    async fn success_socket_events() {
+        let app = get_cached_app().await;
+
+        let admin = utils::iam::register_user().await;
+        utils::iam::make_admin(&admin).await;
+
+        let owner = app.register_user().await;
+        let _ = app.create_team(&owner).await;
+        let mut socket = app.socket("/ws").start().await;
+        assert_team_info!(socket, owner);
+
+        let res = app
+            .put("/competition/time")
+            .user(&admin)
+            .json(&json!({
+                "start_time": 1234,
+                "end_time": 4321,
+            }))
+            .send()
+            .await;
+
+        assert_eq!(res.status(), StatusCode::NO_CONTENT);
+
+        let message = utils::get_socket_message(socket.next().await);
+
+        assert_json_eq!(
+            message,
+            json!({
+                "event": "UPDATE_TIME",
+                "data": {
+                    "start_time": 1234,
+                    "end_time": 4321,
+                }
+            })
+        );
+
+        socket.close(None).await.unwrap();
     }
 }

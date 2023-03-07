@@ -6,3 +6,8 @@ pub fn team_info(team_id: &Uuid) -> String {
     let id = team_id.as_simple().encode_lower(&mut buf);
     format!("team.{id}.info")
 }
+
+#[inline(always)]
+pub const fn times() -> &'static str {
+    "info.times"
+}

@@ -24,7 +24,7 @@ use rdkafka::{
 use sea_orm::EntityTrait;
 use serde::{Deserialize, Serialize};
 use std::{borrow::Cow, error::Error as _, mem::MaybeUninit, time::Duration};
-use tokio::time;
+use tokio::time::{self, timeout};
 use tokio_tungstenite::tungstenite::error::Error as TungsteniteError;
 use tracing::Instrument;
 use uuid::Uuid;
@@ -73,6 +73,10 @@ pub enum Event {
     DisbandTeam,
     KickUser {
         user: Uuid,
+    },
+    UpdateTime {
+        start_time: Option<i64>,
+        end_time: Option<i64>,
     },
 }
 
@@ -129,13 +133,20 @@ async fn socket_handler<S: StateTrait>(state: S, socket: &mut WebSocket) -> Resu
 
         loop {
             tokio::select! {
-                message = kafka_stream.next() => {
+                message = timeout(Duration::from_secs(5), kafka_stream.next()) => {
+                    let Ok(message) = message else {
+                        debug!("timeout");
+                        continue;
+                    };
+
                     let Some(message) = message else {
                         error!("kafka stream closed unexpectedly");
                         break Err(error::INTERNAL)
                     };
 
                     let message = message?;
+
+                    debug!("kafka message: {:?}", message);
 
                     let Some(payload) = message.payload() else {
                         warn!("got kafka message without payload");
@@ -285,11 +296,8 @@ async fn create_consumer(team_id: &Uuid) -> Result<StreamConsumer> {
 
     consumer.assign(&{
         let mut list = TopicPartitionList::new();
-        list.add_partition(
-            &topics::team_info(team_id),
-            // TODO: research if this is reliable
-            0,
-        );
+        list.add_partition(&topics::team_info(team_id), 0);
+        list.add_partition(topics::times(), 0);
         list
     })?;
 
