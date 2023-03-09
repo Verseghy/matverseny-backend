@@ -50,6 +50,7 @@ pub struct Member {
 pub enum Event {
     JoinTeam {
         user: Uuid,
+        name: String,
     },
     LeaveTeam {
         user: Uuid,

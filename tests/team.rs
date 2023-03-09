@@ -126,12 +126,16 @@ mod join {
 
         let message = utils::get_socket_message(socket.next().await);
 
+        let user_info =
+            libiam::testing::users::get_user(utils::iam::get_db().await, &user.id).await;
+
         assert_json_eq!(
             message,
             json!({
                 "event": "JOIN_TEAM",
                 "data": {
                     "user": user.id.strip_prefix("UserID-").unwrap(),
+                    "name": user_info.name,
                 }
             })
         );

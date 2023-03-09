@@ -62,12 +62,27 @@ pub async fn join_team<S: StateTrait>(
             }
         }
 
+        let user_info = state
+            .iam_app()
+            .get_user_info(&format!("UserID-{}", &user.id))
+            .await
+            .map_err(|error| {
+                error!("iam error: {:?}", error);
+                error::IAM_FAILED_GET_NAME
+            })?;
+
         state
             .kafka_producer()
             .send(
                 FutureRecord::<(), String>::to(&topics::team_info(&team.id))
                     .partition(0)
-                    .payload(&serde_json::to_string(&Event::JoinTeam { user: user.id }).unwrap()),
+                    .payload(
+                        &serde_json::to_string(&Event::JoinTeam {
+                            user: user.id,
+                            name: user_info.name,
+                        })
+                        .unwrap(),
+                    ),
                 Duration::from_secs(5),
             )
             .await?;
