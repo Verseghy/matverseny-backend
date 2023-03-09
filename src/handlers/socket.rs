@@ -239,7 +239,8 @@ async fn socket_auth<S: StateTrait>(state: &S, socket: &mut WebSocket) -> Result
         _ => return Err(error::WEBSOCKET_WRONG_MESSAGE_TYPE),
     };
 
-    let token_json: TokenJSON = serde_json::from_str(&token_str).map_err(|_| error::JWT_INVALID_TOKEN)?;
+    let token_json: TokenJSON =
+        serde_json::from_str(&token_str).map_err(|_| error::JWT_INVALID_TOKEN)?;
 
     let claims = state.iam().get_claims(&token_json.token)?;
 

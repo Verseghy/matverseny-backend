@@ -46,7 +46,9 @@ async fn user_not_registered() {
     let mut socket = app.socket("/ws").start().await;
 
     socket
-        .send(Message::Text(json!({"token": user.access_token().to_owned()}).to_string()))
+        .send(Message::Text(
+            json!({"token": user.access_token().to_owned()}).to_string(),
+        ))
         .await
         .unwrap();
     assert_close_frame_error!(socket.next().await, error::USER_NOT_REGISTERED);
@@ -60,7 +62,9 @@ async fn no_team() {
     let mut socket = app.socket("/ws").start().await;
 
     socket
-        .send(Message::Text(json!({"token": user.access_token().to_owned()}).to_string()))
+        .send(Message::Text(
+            json!({"token": user.access_token().to_owned()}).to_string(),
+        ))
         .await
         .unwrap();
     assert_close_frame_error!(socket.next().await, error::USER_NOT_IN_TEAM);
@@ -75,7 +79,9 @@ async fn team_info() {
 
     let mut socket = app.socket("/ws").start().await;
     socket
-        .send(Message::Text(json!({"token": user.access_token().to_owned()}).to_string()))
+        .send(Message::Text(
+            json!({"token": user.access_token().to_owned()}).to_string(),
+        ))
         .await
         .unwrap();
 
