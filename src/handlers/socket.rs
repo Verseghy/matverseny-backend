@@ -198,6 +198,11 @@ async fn socket_handler<S: StateTrait>(state: S, socket: &mut WebSocket) -> Resu
 
 type TeamInfo = (teams::Model, Vec<Member>, Claims);
 
+#[derive(Serialize, Deserialize)]
+struct TokenJSON {
+    token: String,
+}
+
 async fn socket_auth<S: StateTrait>(state: &S, socket: &mut WebSocket) -> Result<TeamInfo> {
     let message = {
         let timeout = time::sleep(Duration::from_secs(10));
@@ -229,12 +234,14 @@ async fn socket_auth<S: StateTrait>(state: &S, socket: &mut WebSocket) -> Result
         unsafe { uninit.assume_init() }
     };
 
-    let token = match message {
+    let token_str = match message {
         Message::Text(t) => t,
         _ => return Err(error::WEBSOCKET_WRONG_MESSAGE_TYPE),
     };
 
-    let claims = state.iam().get_claims(&token)?;
+    let token_json: TokenJSON = serde_json::from_str(&token_str).map_err(|_| error::JWT_INVALID_TOKEN)?;
+
+    let claims = state.iam().get_claims(&token_json.token)?;
 
     let user = users::Entity::find_by_id(claims.subject)
         .one(state.db())
