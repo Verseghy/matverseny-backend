@@ -4,6 +4,7 @@ use crate::{
     utils::topics,
     Result, StateTrait,
 };
+use entity::times;
 use axum::{
     extract::{
         ws::{close_code, CloseFrame, Message, WebSocket, WebSocketUpgrade},
@@ -21,7 +22,7 @@ use rdkafka::{
     consumer::{Consumer, StreamConsumer},
     ClientConfig, Message as _, TopicPartitionList,
 };
-use sea_orm::EntityTrait;
+use sea_orm::{EntityTrait, Condition, ColumnTrait, QueryFilter};
 use serde::{Deserialize, Serialize};
 use std::{borrow::Cow, error::Error as _, mem::MaybeUninit, time::Duration};
 use tokio::time::{self, timeout};
@@ -132,6 +133,8 @@ async fn socket_handler<S: StateTrait>(state: S, socket: &mut WebSocket) -> Resu
                 error::WEBSOCKET_ERROR
             })?;
 
+        send_times(&state, socket).await?;
+
         let mut kafka_stream = consumer.stream();
 
         loop {
@@ -199,6 +202,41 @@ async fn socket_handler<S: StateTrait>(state: S, socket: &mut WebSocket) -> Resu
     }
         .instrument(claims_span)
         .await
+}
+
+async fn send_times<S: StateTrait>(state: &S, socket: &mut WebSocket) -> Result<()> {
+    let res = times::Entity::find()
+        .filter(
+            Condition::any()
+                .add(times::Column::Name.eq("start_time"))
+                .add(times::Column::Name.eq("end_time")),
+        )
+        .all(state.db())
+        .await?;
+
+    if res.len() != 2 {
+        error!("start_time or end_time is not found in the database");
+        return Err(error::INTERNAL);
+    }
+
+    let start_time = res.iter().find(|i| i.name == "start_time").unwrap();
+    let end_time = res.iter().find(|i| i.name == "end_time").unwrap();
+
+    socket
+        .send(Message::Text(
+            serde_json::to_string(&Event::UpdateTime {
+                start_time: Some(start_time.time.timestamp()),
+                end_time: Some(end_time.time.timestamp()),
+            })
+            .unwrap()
+        ))
+        .await
+        .map_err(|err| {
+            error!("websocket error: {:?}", err);
+            error::WEBSOCKET_ERROR
+        })?;
+
+    Ok(())
 }
 
 type TeamInfo = (teams::Model, Vec<Member>, Claims);
@@ -311,7 +349,7 @@ async fn create_consumer(team_id: &Uuid) -> Result<StreamConsumer> {
     consumer.assign(&{
         let mut list = TopicPartitionList::new();
         list.add_partition(&topics::team_info(team_id), 0);
-        // list.add_partition(topics::times(), 0);
+        list.add_partition(topics::times(), 0);
         list
     })?;
 
