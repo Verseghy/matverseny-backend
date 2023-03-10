@@ -162,6 +162,7 @@ async fn socket_handler<S: StateTrait>(state: S, socket: &mut WebSocket) -> Resu
                     let event = serde_json::from_str(payload)?;
 
                     if matches!(event, Event::DisbandTeam)
+                        || matches!(event, Event::LeaveTeam { user } if user == claims.subject)
                         || matches!(event, Event::KickUser { user } if user == claims.subject)
                     {
                         let _ = socket.send(Message::Close(Some(CloseFrame {
@@ -310,7 +311,7 @@ async fn create_consumer(team_id: &Uuid) -> Result<StreamConsumer> {
     consumer.assign(&{
         let mut list = TopicPartitionList::new();
         list.add_partition(&topics::team_info(team_id), 0);
-        list.add_partition(topics::times(), 0);
+        // list.add_partition(topics::times(), 0);
         list
     })?;
 
