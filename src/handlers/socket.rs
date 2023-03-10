@@ -99,6 +99,8 @@ pub async fn ws_handler<S: StateTrait>(
                     reason: Cow::Owned(error_text.to_owned()),
                 })))
                 .await;
+
+            socket.next().await;
             warn!("socket ended with error: {:?}", err);
         } else {
             // info!("socket ended");
@@ -166,6 +168,8 @@ async fn socket_handler<S: StateTrait>(state: S, socket: &mut WebSocket) -> Resu
                             code: close_code::NORMAL,
                             reason: Cow::Owned(payload.to_owned()),
                         }))).await;
+
+                        socket.next().await;
 
                         return Ok(())
                     }
