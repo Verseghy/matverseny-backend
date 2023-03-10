@@ -267,17 +267,17 @@ async fn socket_auth<S: StateTrait>(state: &S, socket: &mut WebSocket) -> Result
     for member in raw_members {
         let name = state
             .iam_app()
-            .get_user_info(&format!("UserID-{}", &user.id))
+            .get_user_info(&format!("UserID-{}", &member.id))
             .await
             .map_err(|error| {
                 error!("iam error: {:?}", error);
                 error::IAM_FAILED_GET_NAME
             })?
             .name;
-        let rank = if user.id == result.owner {
+        let rank = if member.id == result.owner {
             Rank::Owner
         // NOTE: use `Option::is_some_and` when it gets stabilized (#93050)
-        } else if matches!(&result.co_owner, Some(co_owner) if *co_owner == user.id) {
+        } else if matches!(&result.co_owner, Some(co_owner) if *co_owner == member.id) {
             Rank::CoOwner
         } else {
             Rank::Member
