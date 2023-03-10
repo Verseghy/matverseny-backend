@@ -1,4 +1,4 @@
-use crate::iam::{Iam, IamTrait};
+use crate::{iam::{Iam, IamTrait}, utils::topics};
 use libiam::App;
 use rand::{
     rngs::{adapter::ReseedingRng, OsRng},
@@ -6,7 +6,7 @@ use rand::{
 };
 use rand_chacha::ChaCha20Core;
 use rdkafka::{
-    admin::AdminClient, client::DefaultClientContext, producer::FutureProducer, ClientConfig,
+    admin::{AdminClient, NewTopic, TopicReplication, AdminOptions}, client::DefaultClientContext, producer::FutureProducer, ClientConfig,
 };
 use sea_orm::{ConnectOptions, ConnectionTrait, Database, DbConn, TransactionTrait};
 use std::{env, sync::Arc};
@@ -46,7 +46,7 @@ impl State {
             iam: Iam::new(),
             iam_app,
             kafka_producer: Self::create_kafka_producer(),
-            kafka_admin: Self::create_kafka_admin(),
+            kafka_admin: Self::create_kafka_admin().await,
             app_secret: env::var("IAM_APP_SECRET").expect("IAM_APP_SECRET is not set"),
         })
     }
@@ -63,16 +63,30 @@ impl State {
             .expect("failed to create kafka producer")
     }
 
-    fn create_kafka_admin() -> AdminClient<DefaultClientContext> {
+    async fn create_kafka_admin() -> AdminClient<DefaultClientContext> {
         info!("Creating kafka admin client");
 
         let bootstrap_servers =
             env::var("KAFKA_BOOTSTRAP_SERVERS").expect("KAFKA_BOOTSRAP_SERVERS not set");
 
-        ClientConfig::new()
+        let admin = ClientConfig::new()
             .set("bootstrap.servers", bootstrap_servers)
-            .create()
-            .expect("failed to create kafka admin client")
+            .create::<AdminClient<DefaultClientContext>>()
+            .expect("failed to create kafka admin client");
+
+        admin
+            .create_topics(
+                &[NewTopic::new(
+                    &topics::times(),
+                    1,
+                    TopicReplication::Fixed(1),
+                )],
+                &AdminOptions::new(),
+            )
+            .await
+            .expect("failed to create times topic");
+
+        admin
     }
 
     async fn connect_database() -> DbConn {
