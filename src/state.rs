@@ -83,7 +83,7 @@ impl State {
         admin
             .create_topics(
                 &[NewTopic::new(
-                    &topics::times(),
+                    topics::times(),
                     1,
                     TopicReplication::Fixed(1),
                 )],
