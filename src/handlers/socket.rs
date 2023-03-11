@@ -4,7 +4,6 @@ use crate::{
     utils::topics,
     Result, StateTrait,
 };
-use entity::times;
 use axum::{
     extract::{
         ws::{close_code, CloseFrame, Message, WebSocket, WebSocketUpgrade},
@@ -13,6 +12,7 @@ use axum::{
     response::IntoResponse,
 };
 use bytes::Buf;
+use entity::times;
 use entity::{
     teams,
     users::{self, Class},
@@ -22,7 +22,7 @@ use rdkafka::{
     consumer::{Consumer, StreamConsumer},
     ClientConfig, Message as _, TopicPartitionList,
 };
-use sea_orm::{EntityTrait, Condition, ColumnTrait, QueryFilter};
+use sea_orm::{ColumnTrait, Condition, EntityTrait, QueryFilter};
 use serde::{Deserialize, Serialize};
 use std::{borrow::Cow, error::Error as _, mem::MaybeUninit, time::Duration};
 use tokio::time::{self, timeout};
@@ -228,7 +228,7 @@ async fn send_times<S: StateTrait>(state: &S, socket: &mut WebSocket) -> Result<
                 start_time: Some(start_time.time.timestamp()),
                 end_time: Some(end_time.time.timestamp()),
             })
-            .unwrap()
+            .unwrap(),
         ))
         .await
         .map_err(|err| {

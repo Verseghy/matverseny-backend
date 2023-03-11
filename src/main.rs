@@ -18,7 +18,9 @@ pub async fn login() -> App {
         panic!("IAM_APP_SECRET is not set");
     };
 
-    App::login(&iam, &app_secret).await.unwrap()
+    App::login(&iam, &app_secret)
+        .await
+        .expect("failed to login into the iam")
 }
 
 #[tokio::main]

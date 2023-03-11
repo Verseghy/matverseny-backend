@@ -1,4 +1,7 @@
-use crate::{iam::{Iam, IamTrait}, utils::topics};
+use crate::{
+    iam::{Iam, IamTrait},
+    utils::topics,
+};
 use libiam::App;
 use rand::{
     rngs::{adapter::ReseedingRng, OsRng},
@@ -6,7 +9,10 @@ use rand::{
 };
 use rand_chacha::ChaCha20Core;
 use rdkafka::{
-    admin::{AdminClient, NewTopic, TopicReplication, AdminOptions}, client::DefaultClientContext, producer::FutureProducer, ClientConfig,
+    admin::{AdminClient, AdminOptions, NewTopic, TopicReplication},
+    client::DefaultClientContext,
+    producer::FutureProducer,
+    ClientConfig,
 };
 use sea_orm::{ConnectOptions, ConnectionTrait, Database, DbConn, TransactionTrait};
 use std::{env, sync::Arc};
