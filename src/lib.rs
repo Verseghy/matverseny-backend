@@ -47,6 +47,7 @@ use error::{Error, Result};
 use json::*;
 pub use state::*;
 use std::net::TcpListener;
+pub use utils::panic;
 
 pub async fn run<S: StateTrait>(listener: TcpListener, state: S) {
     info!(

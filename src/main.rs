@@ -33,6 +33,8 @@ async fn main() {
         .with(fmt::layer().with_line_number(true).with_filter(env_filter))
         .init();
 
+    matverseny_backend::panic::set_hook();
+
     let iam_app = login().await;
 
     let addr = SocketAddr::from((Ipv4Addr::UNSPECIFIED, 3002));

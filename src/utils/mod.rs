@@ -1,6 +1,7 @@
 mod de;
 mod join_code;
 mod orm;
+pub mod panic;
 mod signal;
 pub mod topics;
 
