@@ -80,6 +80,10 @@ pub enum Event {
         start_time: Option<i64>,
         end_time: Option<i64>,
     },
+    SolutionSet {
+        problem: Uuid,
+        solution: Option<i64>,
+    }
 }
 
 pub async fn ws_handler<S: StateTrait>(
