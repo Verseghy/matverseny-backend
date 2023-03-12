@@ -1,9 +1,10 @@
+mod solution;
 mod time;
 
 use crate::{middlewares::PermissionsLayer, StateTrait};
 use axum::{
     handler::Handler,
-    routing::{get, patch, put},
+    routing::{get, patch, post, put},
     Router,
 };
 
@@ -17,6 +18,7 @@ use axum::{
 /// GET   /competition/time
 pub fn routes<S: StateTrait>(state: S) -> Router<S> {
     Router::new()
+        .route("/solution", post(solution::set_solution::<S>))
         .route(
             "/time",
             put(time::set_time::<S>.layer(PermissionsLayer::new(
