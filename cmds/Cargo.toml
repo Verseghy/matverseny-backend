@@ -11,3 +11,7 @@ dotenvy = "0.15.6"
 [[bin]]
 name = "create_iam_app"
 path = "src/create_iam_app.rs"
+
+[[bin]]
+name = "create_admin_user"
+path = "src/create_admin_user.rs"
