@@ -86,11 +86,10 @@ impl State {
 
         admin
             .create_topics(
-                &[NewTopic::new(
-                    topics::times(),
-                    1,
-                    TopicReplication::Fixed(1),
-                )],
+                &[
+                    NewTopic::new(topics::times(), 1, TopicReplication::Fixed(1)),
+                    NewTopic::new(topics::problems(), 1, TopicReplication::Fixed(1)),
+                ],
                 &AdminOptions::new(),
             )
             .await
