@@ -30,14 +30,14 @@ use tokio_tungstenite::tungstenite::error::Error as TungsteniteError;
 use tracing::Instrument;
 use uuid::Uuid;
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub enum Rank {
     Owner,
     CoOwner,
     Member,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Member {
     id: Uuid,
     name: String,
@@ -46,7 +46,7 @@ pub struct Member {
 }
 
 #[serde_with::skip_serializing_none]
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(tag = "event", content = "data", rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum Event {
     JoinTeam {
@@ -158,9 +158,19 @@ async fn socket_handler<S: StateTrait>(state: S, socket: &mut WebSocket) -> Resu
         send_times(&state, socket).await?;
 
         let mut kafka_stream = consumer.stream();
+        let problems = state.problems();
+        let mut problems_stream = problems.stream().await;
 
         loop {
             tokio::select! {
+                problems_event = problems_stream.next() => {
+                    let payload = serde_json::to_string(&problems_event).unwrap();
+                    if let Err(err) = socket.send(Message::Text(payload)).await {
+                        let tungstenite_error = err.source().unwrap().downcast_ref::<TungsteniteError>().unwrap();
+                        error!("websocket error: {:?}", tungstenite_error);
+                        break Err(error::WEBSOCKET_ERROR)
+                    }
+                }
                 message = timeout(Duration::from_secs(5), kafka_stream.next()) => {
                     let Ok(message) = message else {
                         debug!("timeout");

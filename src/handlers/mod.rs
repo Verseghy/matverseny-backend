@@ -1,7 +1,7 @@
 mod competition;
 mod problem;
 mod register;
-mod socket;
+pub mod socket;
 mod team;
 
 use crate::state::StateTrait;

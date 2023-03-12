@@ -1,6 +1,6 @@
 use crate::{
     iam::{Iam, IamTrait},
-    utils::topics,
+    utils::{topics, Problems},
 };
 use libiam::App;
 use rand::{
@@ -30,6 +30,7 @@ pub trait StateTrait: Send + Sync + Clone + 'static {
     fn kafka_producer(&self) -> &FutureProducer;
     fn kafka_admin(&self) -> &AdminClient<DefaultClientContext>;
     fn app_secret(&self) -> &str;
+    fn problems(&self) -> Arc<Problems>;
 }
 
 pub struct State {
@@ -39,6 +40,7 @@ pub struct State {
     kafka_producer: FutureProducer,
     kafka_admin: AdminClient<DefaultClientContext>,
     app_secret: String,
+    problems: Arc<Problems>,
 }
 
 impl State {
@@ -47,6 +49,7 @@ impl State {
     }
 
     pub async fn with_database(iam_app: App, conn: DbConn) -> Arc<Self> {
+        let problems = Problems::new(&conn).await;
         Arc::new(Self {
             database: conn,
             iam: Iam::new(),
@@ -54,6 +57,7 @@ impl State {
             kafka_producer: Self::create_kafka_producer(),
             kafka_admin: Self::create_kafka_admin().await,
             app_secret: env::var("IAM_APP_SECRET").expect("IAM_APP_SECRET is not set"),
+            problems: Arc::new(problems),
         })
     }
 
@@ -148,5 +152,9 @@ impl StateTrait for Arc<State> {
 
     fn app_secret(&self) -> &str {
         &self.app_secret
+    }
+
+    fn problems(&self) -> Arc<Problems> {
+        Arc::clone(&self.problems)
     }
 }

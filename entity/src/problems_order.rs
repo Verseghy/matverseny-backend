@@ -17,7 +17,20 @@ pub struct Model {
     pub next: Option<Uuid>,
 }
 
-#[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
-pub enum Relation {}
+#[derive(Copy, Clone, Debug, EnumIter)]
+pub enum Relation {
+    Problem,
+}
+
+impl RelationTrait for Relation {
+    fn def(&self) -> RelationDef {
+        match self {
+            Self::Problem => Entity::belongs_to(super::problems::Entity)
+                .from(Column::Id)
+                .to(super::problems::Column::Id)
+                .into(),
+        }
+    }
+}
 
 impl ActiveModelBehavior for ActiveModel {}
