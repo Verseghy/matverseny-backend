@@ -83,7 +83,25 @@ pub enum Event {
     SolutionSet {
         problem: Uuid,
         solution: Option<i64>,
-    }
+    },
+    InsertProblem {
+        before: Option<Uuid>,
+        id: Uuid,
+        body: String,
+        image: Option<String>,
+    },
+    DeleteProblem {
+        id: Uuid,
+    },
+    SwapProblems {
+        id1: Uuid,
+        id2: Uuid,
+    },
+    UpdateProblem {
+        id: Uuid,
+        body: Option<String>,
+        image: Option<Option<String>>,
+    },
 }
 
 pub async fn ws_handler<S: StateTrait>(

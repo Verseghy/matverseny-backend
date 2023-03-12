@@ -15,6 +15,11 @@ pub fn team_solutions(team_id: &Uuid) -> String {
 }
 
 #[inline(always)]
+pub fn problems() -> &'static str {
+    "info.problems"
+}
+
+#[inline(always)]
 pub const fn times() -> &'static str {
     "info.times"
 }

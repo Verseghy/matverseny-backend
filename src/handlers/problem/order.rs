@@ -1,12 +1,19 @@
+use std::time::Duration;
+
 use crate::{
     error::{self, DatabaseError, Result},
+    handlers::socket::Event,
     json::Json,
-    utils::execute_str,
+    utils::{execute_str, topics},
     StateTrait,
 };
 use axum::{extract::State, http::StatusCode};
 use const_format::formatcp;
-use entity::problems_order::{self, constraints::*};
+use entity::{
+    problems,
+    problems_order::{self, constraints::*},
+};
+use rdkafka::producer::FutureRecord;
 use sea_orm::{
     sea_query::{CaseStatement, Query},
     ActiveValue::NotSet,
@@ -73,7 +80,26 @@ pub async fn change<S: StateTrait>(
                     .await?;
                 }
 
-                // TODO: kafka
+                let res = problems::Entity::find_by_id(id).one(&txn).await?.unwrap();
+
+                state
+                    .kafka_producer()
+                    .send(
+                        FutureRecord::<(), String>::to(topics::problems())
+                            .partition(0)
+                            .payload(
+                                &serde_json::to_string(&Event::InsertProblem {
+                                    before: Some(before),
+                                    id: res.id,
+                                    body: res.body,
+                                    image: res.image,
+                                })
+                                .unwrap(),
+                            ),
+                        Duration::from_secs(5),
+                    )
+                    .await?;
+
                 txn.commit().await?;
             } else {
                 // Insert problem to the end of the list
@@ -117,12 +143,42 @@ pub async fn change<S: StateTrait>(
                     .await?;
                 }
 
-                // TODO: kafka
+                let res = problems::Entity::find_by_id(id).one(&txn).await?.unwrap();
+
+                state
+                    .kafka_producer()
+                    .send(
+                        FutureRecord::<(), String>::to(topics::problems())
+                            .partition(0)
+                            .payload(
+                                &serde_json::to_string(&Event::InsertProblem {
+                                    before: None,
+                                    id: res.id,
+                                    body: res.body,
+                                    image: res.image,
+                                })
+                                .unwrap(),
+                            ),
+                        Duration::from_secs(5),
+                    )
+                    .await?;
+
                 txn.commit().await?;
             }
         }
         Request::Delete { id } => {
             delete_problem(&txn, id).await?;
+
+            state
+                .kafka_producer()
+                .send(
+                    FutureRecord::<(), String>::to(topics::problems())
+                        .partition(0)
+                        .payload(&serde_json::to_string(&Event::DeleteProblem { id }).unwrap()),
+                    Duration::from_secs(5),
+                )
+                .await?;
+
             txn.commit().await?;
         }
         Request::Swap { id1, id2 } => {
@@ -210,7 +266,18 @@ pub async fn change<S: StateTrait>(
             txn.execute(StatementBuilder::build(&query, &txn.get_database_backend()))
                 .await?;
 
-            // TODO: kafka
+            state
+                .kafka_producer()
+                .send(
+                    FutureRecord::<(), String>::to(topics::problems())
+                        .partition(0)
+                        .payload(
+                            &serde_json::to_string(&Event::SwapProblems { id1, id2 }).unwrap(),
+                        ),
+                    Duration::from_secs(5),
+                )
+                .await?;
+
             txn.commit().await?;
         }
     }
@@ -288,8 +355,6 @@ where
         .exec(txn)
         .await?;
     }
-
-    // TODO: kafka
 
     Ok(())
 }
