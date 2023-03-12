@@ -1,14 +1,14 @@
-use std::time::Duration;
-use crate::{error, error::Result, iam::Claims, json::Json, StateTrait};
-use axum::{extract::State, http::StatusCode};
-use sea_orm::ActiveValue::Set;
-use serde::Deserialize;
-use uuid::Uuid;
-use entity::{solutions_history, teams};
-use rdkafka::producer::FutureRecord;
-use sea_orm::{EntityTrait, QuerySelect, TransactionTrait};
 use crate::handlers::socket::Event;
 use crate::utils::topics;
+use crate::{error, error::Result, iam::Claims, json::Json, StateTrait};
+use axum::{extract::State, http::StatusCode};
+use entity::{solutions_history, teams};
+use rdkafka::producer::FutureRecord;
+use sea_orm::ActiveValue::Set;
+use sea_orm::{EntityTrait, QuerySelect, TransactionTrait};
+use serde::Deserialize;
+use std::time::Duration;
+use uuid::Uuid;
 
 #[derive(Debug, Deserialize)]
 pub struct Request {
@@ -29,7 +29,7 @@ pub async fn set_solution<S: StateTrait>(
         .await?
         .ok_or(error::USER_NOT_IN_TEAM)?;
 
-    let solution_history = solutions_history::ActiveModel{
+    let solution_history = solutions_history::ActiveModel {
         id: Set(Uuid::new_v4()),
         team: Set(team.id),
         problem: Set(request.problem),
@@ -38,7 +38,9 @@ pub async fn set_solution<S: StateTrait>(
         created_at: Default::default(),
     };
 
-    solutions_history::Entity::insert(solution_history).exec(&txn).await?;
+    solutions_history::Entity::insert(solution_history)
+        .exec(&txn)
+        .await?;
 
     state
         .kafka_producer()
@@ -48,9 +50,9 @@ pub async fn set_solution<S: StateTrait>(
                 .payload(
                     &serde_json::to_string(&Event::SolutionSet {
                         problem: request.problem,
-                        solution: request.solution
+                        solution: request.solution,
                     })
-                        .unwrap(),
+                    .unwrap(),
                 ),
             Duration::from_secs(5),
         )
