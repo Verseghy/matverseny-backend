@@ -24,9 +24,11 @@ macro_rules! assert_team_info {
             .send(Message::Text(json!({"token": $user.access_token().to_owned()}).to_string()))
             .await
             .unwrap();
+        let info = utils::get_socket_message((&mut $socket).next().await);
+        utils::macros::assert_event_type!(info, "TEAM_INFO");
         let message = utils::get_socket_message((&mut $socket).next().await);
-        utils::macros::assert_event_type!(message, "TEAM_INFO");
-        message
+        utils::macros::assert_event_type!(message, "UPDATE_TIME");
+        info
     }};
 }
 
