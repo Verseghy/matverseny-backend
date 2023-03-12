@@ -4,3 +4,4 @@ pub mod team_members;
 pub mod teams;
 pub mod times;
 pub mod users;
+pub mod solutions_history;
