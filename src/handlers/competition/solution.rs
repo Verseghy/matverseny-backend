@@ -38,7 +38,7 @@ pub async fn set_solution<S: StateTrait>(
         created_at: Default::default(),
     };
 
-    solutions_history::Entity::insert(solution_history).exec(state.db()).await?;
+    solutions_history::Entity::insert(solution_history).exec(&txn).await?;
 
     state
         .kafka_producer()
