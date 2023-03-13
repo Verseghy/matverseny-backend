@@ -12,9 +12,10 @@ use axum::{
     response::IntoResponse,
 };
 use bytes::Buf;
+use chrono::{DateTime, Utc};
 use entity::times;
 use entity::{
-    teams,
+    solutions_history, teams,
     users::{self, Class},
 };
 use futures::StreamExt;
@@ -22,7 +23,7 @@ use rdkafka::{
     consumer::{Consumer, StreamConsumer},
     ClientConfig, Message as _, TopicPartitionList,
 };
-use sea_orm::{ColumnTrait, Condition, EntityTrait, QueryFilter};
+use sea_orm::{ColumnTrait, Condition, EntityTrait, QueryFilter, QueryOrder, QuerySelect};
 use serde::{Deserialize, Serialize};
 use std::{borrow::Cow, error::Error as _, mem::MaybeUninit, time::Duration};
 use tokio::time::{self, timeout};
@@ -155,15 +156,31 @@ async fn socket_handler<S: StateTrait>(state: S, socket: &mut WebSocket) -> Resu
                 error::WEBSOCKET_ERROR
             })?;
 
-        send_times(&state, socket).await?;
+        let _start_time = send_times(&state, socket).await?;
+
+        let problems = state.problems();
+        let (mut initial_problems, mut problems_stream) = problems.stream().await;
+
+        while let Some(event) = initial_problems.next().await {
+            let payload = serde_json::to_string(&event).unwrap();
+            if let Err(err) = socket.send(Message::Text(payload)).await {
+                let tungstenite_error = err.source().unwrap().downcast_ref::<TungsteniteError>().unwrap();
+                error!("websocket error: {:?}", tungstenite_error);
+                return Err(error::WEBSOCKET_ERROR)
+            }
+        }
+
+        send_answers(&state, socket, team.id).await?;
 
         let mut kafka_stream = consumer.stream();
-        let problems = state.problems();
-        let mut problems_stream = problems.stream().await;
 
         loop {
             tokio::select! {
                 problems_event = problems_stream.next() => {
+                    let Some(problems_event) = problems_event else {
+                        continue
+                    };
+
                     let payload = serde_json::to_string(&problems_event).unwrap();
                     if let Err(err) = socket.send(Message::Text(payload)).await {
                         let tungstenite_error = err.source().unwrap().downcast_ref::<TungsteniteError>().unwrap();
@@ -173,7 +190,6 @@ async fn socket_handler<S: StateTrait>(state: S, socket: &mut WebSocket) -> Resu
                 }
                 message = timeout(Duration::from_secs(5), kafka_stream.next()) => {
                     let Ok(message) = message else {
-                        debug!("timeout");
                         continue;
                     };
 
@@ -236,7 +252,7 @@ async fn socket_handler<S: StateTrait>(state: S, socket: &mut WebSocket) -> Resu
         .await
 }
 
-async fn send_times<S: StateTrait>(state: &S, socket: &mut WebSocket) -> Result<()> {
+async fn send_times<S: StateTrait>(state: &S, socket: &mut WebSocket) -> Result<DateTime<Utc>> {
     let res = times::Entity::find()
         .filter(
             Condition::any()
@@ -267,6 +283,39 @@ async fn send_times<S: StateTrait>(state: &S, socket: &mut WebSocket) -> Result<
             error!("websocket error: {:?}", err);
             error::WEBSOCKET_ERROR
         })?;
+
+    Ok(start_time.time)
+}
+
+async fn send_answers<S: StateTrait>(
+    state: &S,
+    socket: &mut WebSocket,
+    team_id: Uuid,
+) -> Result<()> {
+    let res = solutions_history::Entity::find()
+        .filter(solutions_history::Column::Team.eq(team_id))
+        .distinct_on([solutions_history::Column::Problem])
+        .order_by_desc(solutions_history::Column::Problem)
+        .order_by_desc(solutions_history::Column::CreatedAt)
+        .all(state.db())
+        .await?;
+
+    for answer in res {
+        let payload = serde_json::to_string(&Event::SolutionSet {
+            problem: answer.problem,
+            solution: answer.solution,
+        })
+        .unwrap();
+        if let Err(err) = socket.send(Message::Text(payload)).await {
+            let tungstenite_error = err
+                .source()
+                .unwrap()
+                .downcast_ref::<TungsteniteError>()
+                .unwrap();
+            error!("websocket error: {:?}", tungstenite_error);
+            return Err(error::WEBSOCKET_ERROR);
+        }
+    }
 
     Ok(())
 }

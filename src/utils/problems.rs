@@ -184,8 +184,9 @@ impl Problems {
         }
     }
 
-    pub async fn stream(&self) -> ProblemStream {
+    pub async fn stream(&self) -> (ProblemStream, ProblemStream) {
         let (tx, rx) = mpsc::unbounded_channel();
+        let (tx2, rx2) = mpsc::unbounded_channel();
 
         let guard = self.problems.read().await;
 
@@ -199,20 +200,23 @@ impl Problems {
             .unwrap();
         }
 
+        let mut rx3 = self.channel.subscribe();
         drop(guard);
 
         {
-            let mut rx = self.channel.subscribe();
             task::spawn(async move {
-                while let Ok(message) = rx.recv().await {
-                    if tx.send(message).is_err() {
-                        break
+                while let Ok(message) = rx3.recv().await {
+                    if tx2.send(message).is_err() {
+                        break;
                     }
                 }
             });
         }
 
-        ProblemStream { channel: rx }
+        (
+            ProblemStream { channel: rx },
+            ProblemStream { channel: rx2 },
+        )
     }
 }
 
