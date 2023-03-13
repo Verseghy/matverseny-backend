@@ -1,0 +1,27 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgres-data-access
+  namespace: matverseny-backend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres-data-access
+  template:
+    metadata:
+      labels:
+        app: postgres-data-access
+    spec:
+      containers:
+        - name: postgres-data-access
+          image: alpine:latest
+          command: ['sleep', 'infinity']
+          imagePullPolicy: Always
+          volumeMounts:
+            - mountPath: /data
+              name: postgres-repo1
+      volumes:
+        - name: postgres-repo1
+          persistentVolumeClaim:
+            claimName: postgres-repo1

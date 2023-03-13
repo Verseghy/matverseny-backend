@@ -26,4 +26,9 @@ spec:
                 - "ReadWriteOnce"
               resources:
                 requests:
-                  storage: 1Gi
+                  storage: 10Gi
+          schedules:
+            full: "0,15,30,45 * * * *"
+      global:
+        repo1-retention-full: "48"
+        repo1-retention-full-type: count
