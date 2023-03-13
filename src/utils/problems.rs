@@ -173,7 +173,7 @@ impl Problems {
 
                     drop(guard);
 
-                    tx.send(event).unwrap();
+                    let _ = tx.send(event);
                 }
             }
         });
