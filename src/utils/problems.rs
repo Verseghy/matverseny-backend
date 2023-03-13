@@ -205,7 +205,9 @@ impl Problems {
             let mut rx = self.channel.subscribe();
             task::spawn(async move {
                 while let Ok(message) = rx.recv().await {
-                    tx.send(message).unwrap();
+                    if tx.send(message).is_err() {
+                        break
+                    }
                 }
             });
         }
