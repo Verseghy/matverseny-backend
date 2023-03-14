@@ -18,7 +18,7 @@ COPY ./macros/Cargo.toml ./macros/Cargo.toml
 
 RUN rm ./macros/src/lib.rs && \
     touch ./macros/src/lib.rs && \
-    cargo build --release && \
+    cargo build && \
     rm -rf ./src/ \
            ./entity/src/ \
 	   ./macros/src/
@@ -27,16 +27,16 @@ COPY ./src/ ./src/
 COPY ./entity/src/ ./entity/src/
 COPY ./macros/src/ ./macros/src/
 
-RUN rm target/release/deps/matverseny_backend* \
-       target/release/deps/entity* \
-       target/release/deps/libentity* \
-       target/release/deps/macros* \
-       target/release/deps/libmacros* && \
-    cargo build --release
+RUN rm target/debug/deps/matverseny_backend* \
+       target/debug/deps/entity* \
+       target/debug/deps/libentity* \
+       target/debug/deps/macros* \
+       target/debug/deps/libmacros* && \
+    cargo build
 
 FROM alpine
 WORKDIR /app
-COPY --from=builder /builder/app/target/release/matverseny-backend ./
+COPY --from=builder /builder/app/target/debug/matverseny-backend ./
 EXPOSE 3002
 
 RUN addgroup -S matverseny && \
