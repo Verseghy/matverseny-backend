@@ -445,9 +445,7 @@ async fn create_consumer(team_id: &Uuid) -> Result<StreamConsumer> {
         .expect("environment variable KAFKA_BOOTSTRAP_SERVERS is not set");
 
     let mut buf = [0u8; uuid::fmt::Simple::LENGTH];
-    let id = uuid::Uuid::new_v4()
-        .as_simple()
-        .encode_lower(&mut buf);
+    let id = uuid::Uuid::new_v4().as_simple().encode_lower(&mut buf);
 
     let consumer: StreamConsumer = ClientConfig::new()
         .set("bootstrap.servers", bootstrap_servers)
