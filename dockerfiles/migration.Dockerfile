@@ -1,6 +1,6 @@
 FROM rust:alpine as builder
 
-RUN apk add musl-dev build-base cmake
+RUN apk add musl-dev
 
 WORKDIR /builder
 
@@ -13,37 +13,30 @@ RUN cargo new --bin app && \
 WORKDIR /builder/app
 
 COPY ["Cargo.toml", "Cargo.lock", "./"]
+COPY ./migration/Cargo.toml ./migration/Cargo.toml
 COPY ./entity/Cargo.toml ./entity/Cargo.toml
-COPY ./macros/Cargo.toml ./macros/Cargo.toml
 
 RUN rm ./macros/src/lib.rs && \
     touch ./macros/src/lib.rs && \
-    cargo build --release && \
-    rm -rf ./src/ \
-           ./entity/src/ \
-	   ./macros/src/
+    cargo build -p migration --release && \
+    rm -rf ./migration/src \
+           ./entity/src/
 
-COPY ./src/ ./src/
+COPY ./migration/src/ ./migration/src/
 COPY ./entity/src/ ./entity/src/
-COPY ./macros/src/ ./macros/src/
 
-RUN rm target/release/deps/matverseny_backend* \
+RUN rm target/release/deps/migration* \
        target/release/deps/entity* \
-       target/release/deps/libentity* \
-       target/release/deps/macros* \
-       target/release/deps/libmacros* && \
-    cargo build --release
+       target/release/deps/libentity* && \
+    cargo build -p migration --release
 
 FROM alpine
 WORKDIR /app
-COPY --from=builder /builder/app/target/release/matverseny-backend ./
-EXPOSE 3002
+COPY --from=builder /builder/app/target/release/migration ./
 
 RUN addgroup -S matverseny && \
     adduser -S -D -H -s /bin/false -G matverseny matverseny && \
     chown -R matverseny:matverseny /app
 USER matverseny
 
-CMD ["./matverseny-backend"]
-
-
+CMD ["./migration"]

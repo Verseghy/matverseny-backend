@@ -1,0 +1,21 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: matverseny-backend-migration
+  namespace: matverseny-backend
+spec:
+  ttlSecondsAfterFinished: 3600
+  template:
+    spec:
+      containers:
+        - name: matverseny-backend-migration
+          image: verseghy/matverseny-migrations:latest
+          imagePullPolicy: Always
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  key: uri
+                  name: postgres-pguser-postgres
+      restartPolicy: OnFailure
+  backoffLimit: 100
