@@ -42,7 +42,7 @@ impl MigrationTrait for Migration {
                         ColumnDef::new(solutions_history::Column::CreatedAt)
                             .date_time()
                             .not_null()
-                            .extra("DEFAULT CURRENT_TIMESTAMP".into()),
+                            .extra("DEFAULT CURRENT_TIMESTAMP"),
                     )
                     .primary_key(
                         Index::create()

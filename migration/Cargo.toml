@@ -10,7 +10,7 @@ name = "migration"
 path = "src/lib.rs"
 
 [dependencies]
-tokio = { version = "1.25.0", features = ["rt", "macros"] }
-sea-orm-migration = { version = "0.11.0", default-features = false, features = ["sqlx-postgres", "runtime-tokio-rustls", "cli"] }
+tokio = { version = "1.33.0", features = ["rt", "macros"] }
+sea-orm-migration = { version = "0.12.4", default-features = false, features = ["sqlx-postgres", "runtime-tokio-rustls", "cli"] }
 entity = { path = "../entity" }
-const_format = "0.2.30"
+const_format = "0.2.32"
