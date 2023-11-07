@@ -421,8 +421,10 @@ async fn socket_auth<S: StateTrait>(state: &S, socket: &mut WebSocket) -> Result
             .name;
         let rank = if member.id == result.owner {
             Rank::Owner
-        // NOTE: use `Option::is_some_and` when it gets stabilized (#93050)
-        } else if matches!(&result.co_owner, Some(co_owner) if *co_owner == member.id) {
+        } else if result
+            .co_owner
+            .is_some_and(|co_owner| co_owner == member.id)
+        {
             Rank::CoOwner
         } else {
             Rank::Member
