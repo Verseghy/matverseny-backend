@@ -22,44 +22,44 @@ members = [".", "entity", "migration", "macros", "cmds"]
 default-members = [".", "migration", "cmds"]
 
 [dependencies]
-axum = { version = "0.6.8", features = ["ws", "http2", "headers"] }
-serde = { version = "1.0.152", features = ["derive"] }
-tokio = { version = "1.25.0", features = ["macros", "rt-multi-thread", "signal", "parking_lot", "sync"] }
+axum = { version = "0.6.20", features = ["ws", "http2", "headers"] }
+serde = { version = "1.0.192", features = ["derive"] }
+tokio = { version = "1.33.0", features = ["macros", "rt-multi-thread", "signal", "parking_lot", "sync"] }
 tower = "0.4.13"
-tower-http = { version = "0.4.0", features = ["cors", "compression-full", "decompression-full", "catch-panic", "sensitive-headers", "request-id", "util"] }
-tracing = "0.1.37"
-tracing-subscriber = { version = "0.3.16", features = ["env-filter"] }
+tower-http = { version = "0.4.4", features = ["cors", "compression-full", "decompression-full", "catch-panic", "sensitive-headers", "request-id", "util"] }
+tracing = "0.1.40"
+tracing-subscriber = { version = "0.3.17", features = ["env-filter"] }
 entity = { path = "./entity" }
-sea-orm = { version = "0.11.0", default-features = false, features = ["runtime-tokio-rustls", "sqlx-postgres", "with-uuid", "with-chrono"] }
-serde_json = "1.0.93"
-validator = { version = "0.16.0", features = ["derive"] }
-pin-project = "1.0.12"
-jsonwebtoken = "8.2.0"
-once_cell = { version = "1.17.1", features = ["parking_lot"] }
+sea-orm = { version = "0.12.4", default-features = false, features = ["runtime-tokio-rustls", "sqlx-postgres", "with-uuid", "with-chrono"] }
+serde_json = "1.0.108"
+validator = { version = "0.16.1", features = ["derive"] }
+pin-project = "1.1.3"
+jsonwebtoken = "9.1.0"
+once_cell = { version = "1.18.0", features = ["parking_lot"] }
 rand = "0.8.5"
-futures = "0.3.26"
-rdkafka = { version = "0.29.0", features = ["tracing", "cmake-build"] }
+futures = "0.3.29"
+rdkafka = { version = "0.35.0", features = ["tracing", "cmake-build"] }
 rand_chacha = "0.3.1"
-serde_with = "2.2.0"
-tokio-tungstenite = "0.18.0"
-sqlx = { version = "0.6.2", default-features = false, features = ["postgres"] }
+serde_with = "3.4.0"
+tokio-tungstenite = "0.20.1"
+sqlx = { version = "0.7.2", default-features = false, features = ["postgres"] }
 uuid.workspace = true
-bytes = "1.4.0"
-mime = "0.3.16"
+bytes = "1.5.0"
+mime = "0.3.17"
 macros = { path = "./macros/" }
-smallvec = "1.10.0"
-const_format = "0.2.30"
-pin-project-lite = "0.2.9"
-reqwest = { version = "0.11.14", default-features = false, features = ["json", "rustls-tls"] }
+smallvec = "1.11.1"
+const_format = "0.2.32"
+pin-project-lite = "0.2.13"
+reqwest = { version = "0.11.22", default-features = false, features = ["json", "rustls-tls"] }
 libiam = { git = "https://github.com/Verseghy/iam", package = "libiam" }
-chrono = "0.4.23"
+chrono = "0.4.31"
 
 [workspace.dependencies]
-uuid = { version = "1.3.0", features = ["v4", "fast-rng", "serde"] }
+uuid = { version = "1.5.0", features = ["v4", "fast-rng", "serde"] }
 
 [dev-dependencies]
-dotenvy = "0.15.6"
+dotenvy = "0.15.7"
 http = "0.2.9"
 migration = { path = "./migration" }
 assert-json-diff = "2.0.2"
-serial_test = "1.0.0"
+serial_test = "2.0.0"
