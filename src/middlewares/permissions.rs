@@ -74,9 +74,7 @@ where
 
     fn call(&mut self, req: Request<B>) -> Self::Future {
         let Some(claims) = req.extensions().get::<Claims>() else {
-            return Box::pin(async {
-                Ok(error::NOT_ENOUGH_PERMISSIONS.into_response())
-            });
+            return Box::pin(async { Ok(error::NOT_ENOUGH_PERMISSIONS.into_response()) });
         };
 
         let json = json!({
@@ -99,7 +97,7 @@ where
 
             let Ok(res) = res else {
                 warn!("failed to send http request: {:?}", res);
-                return Ok(error::NOT_ENOUGH_PERMISSIONS.into_response())
+                return Ok(error::NOT_ENOUGH_PERMISSIONS.into_response());
             };
 
             #[derive(Debug, Deserialize)]

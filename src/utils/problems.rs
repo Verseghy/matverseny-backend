@@ -107,7 +107,7 @@ impl Problems {
 
                     let Some(Ok(payload)) = message.payload_view::<str>() else {
                         error!("payload is not utf-8 string");
-                        break
+                        break;
                     };
 
                     let event: Event = serde_json::from_str(payload).unwrap();
