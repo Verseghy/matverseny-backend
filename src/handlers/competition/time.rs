@@ -8,7 +8,7 @@ use crate::{
     StateTrait,
 };
 use axum::{extract::State, http::StatusCode};
-use chrono::{DateTime, NaiveDateTime, Utc};
+use chrono::{NaiveDateTime, TimeZone, Utc};
 use entity::times;
 use rdkafka::producer::FutureRecord;
 use sea_orm::{ColumnTrait, Condition, EntityTrait, QueryFilter, Set, TransactionTrait};
@@ -32,7 +32,7 @@ pub async fn set_time_patch<S: StateTrait>(
             return Err(error::TIME_SECONDS_OUT_OF_RANGE);
         };
 
-        let time = DateTime::<Utc>::from_utc(naive, Utc);
+        let time = Utc.from_utc_datetime(&naive);
 
         let model = times::ActiveModel {
             name: Set(times::constants::START_TIME.to_owned()),
@@ -48,7 +48,7 @@ pub async fn set_time_patch<S: StateTrait>(
             return Err(error::TIME_SECONDS_OUT_OF_RANGE);
         };
 
-        let time = DateTime::<Utc>::from_utc(naive, Utc);
+        let time = Utc.from_utc_datetime(&naive);
 
         let model = times::ActiveModel {
             name: Set(times::constants::END_TIME.to_owned()),
