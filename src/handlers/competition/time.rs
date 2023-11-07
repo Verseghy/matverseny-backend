@@ -29,7 +29,7 @@ pub async fn set_time_patch<S: StateTrait>(
     if let Some(start_time) = req.start_time {
         let Some(naive) = NaiveDateTime::from_timestamp_opt(start_time, 0) else {
             error!("start_time seconds out of range!");
-            return Err(error::TIME_SECONDS_OUT_OF_RANGE)
+            return Err(error::TIME_SECONDS_OUT_OF_RANGE);
         };
 
         let time = DateTime::<Utc>::from_utc(naive, Utc);
@@ -45,7 +45,7 @@ pub async fn set_time_patch<S: StateTrait>(
     if let Some(end_time) = req.end_time {
         let Some(naive) = NaiveDateTime::from_timestamp_opt(end_time, 0) else {
             error!("end_time seconds out of range!");
-            return Err(error::TIME_SECONDS_OUT_OF_RANGE)
+            return Err(error::TIME_SECONDS_OUT_OF_RANGE);
         };
 
         let time = DateTime::<Utc>::from_utc(naive, Utc);
