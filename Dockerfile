@@ -1,8 +1,8 @@
-FROM rust:alpine as builder
-
-RUN apk add musl-dev build-base cmake
+FROM rust:slim-bookworm as builder
 
 WORKDIR /builder
+
+RUN apt update && apt install cmake build-essential -y
 
 RUN cargo new --bin app && \
     cargo new --lib app/entity && \
@@ -34,15 +34,15 @@ RUN rm target/release/deps/matverseny_backend* \
        target/release/deps/libmacros* && \
     cargo build --release
 
-FROM alpine
+FROM debian:12-slim
 WORKDIR /app
 COPY --from=builder /builder/app/target/release/matverseny-backend ./
 EXPOSE 3002
 
-RUN addgroup -S matverseny && \
-    adduser -S -D -H -s /bin/false -G matverseny matverseny && \
-    chown -R matverseny:matverseny /app
-USER matverseny
+RUN addgroup --system app && \
+    adduser --system --disabled-password --no-create-home --shell /bin/false --ingroup app app && \
+    chown -R app:app /app
+USER app
 
 CMD ["./matverseny-backend"]
 
