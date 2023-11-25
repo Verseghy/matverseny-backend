@@ -138,6 +138,8 @@ macro_rules! const_error {
     };
 }
 
+#[allow(clippy::useless_attribute)]
+#[allow(clippy::needless_pub_self)]
 pub(self) use const_error;
 
 #[cfg(test)]

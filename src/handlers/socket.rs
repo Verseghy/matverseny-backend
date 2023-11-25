@@ -26,7 +26,7 @@ use rdkafka::{
 use sea_orm::{ColumnTrait, Condition, EntityTrait, QueryFilter, QueryOrder, QuerySelect};
 use serde::{Deserialize, Serialize};
 use std::{borrow::Cow, error::Error as _, mem::MaybeUninit, time::Duration};
-use tokio::time::{self, sleep, timeout};
+use tokio::time::{self, timeout};
 use tokio_tungstenite::tungstenite::error::Error as TungsteniteError;
 use tracing::Instrument;
 use uuid::Uuid;
@@ -320,30 +320,30 @@ async fn send_answers<S: StateTrait>(
     Ok(())
 }
 
-async fn wait_for_start<S: StateTrait>(state: &S) -> Result<()> {
-    loop {
-        let res = times::Entity::find()
-            .filter(times::Column::Name.eq("start_time"))
-            .one(state.db())
-            .await?;
-
-        let start_time = match res {
-            None => {
-                error!("start_time is not found in the database");
-                return Err(error::INTERNAL);
-            }
-            Some(time) => time.time,
-        };
-
-        if start_time < chrono::Utc::now() {
-            break;
-        }
-
-        sleep(Duration::from_secs(3)).await;
-    }
-
-    Ok(())
-}
+// async fn wait_for_start<S: StateTrait>(state: &S) -> Result<()> {
+//     loop {
+//         let res = times::Entity::find()
+//             .filter(times::Column::Name.eq("start_time"))
+//             .one(state.db())
+//             .await?;
+//
+//         let start_time = match res {
+//             None => {
+//                 error!("start_time is not found in the database");
+//                 return Err(error::INTERNAL);
+//             }
+//             Some(time) => time.time,
+//         };
+//
+//         if start_time < chrono::Utc::now() {
+//             break;
+//         }
+//
+//         sleep(Duration::from_secs(3)).await;
+//     }
+//
+//     Ok(())
+// }
 
 type TeamInfo = (teams::Model, Vec<Member>, Claims);
 

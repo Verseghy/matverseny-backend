@@ -4,14 +4,53 @@ version.workspace = true
 edition.workspace = true
 publish.workspace = true
 license-file.workspace = true
-rust-version = "1.70"
+rust-version = "1.74"
 default-run = "matverseny-backend"
+
+[lints]
+workspace = true
 
 [workspace.package]
 version = "0.1.0"
 edition = "2021"
 publish = false
 license-file = "LICENSE"
+
+[workspace.lints.rust]
+rust_2018_idioms = "warn"
+future_incompatible = "warn"
+nonstandard_style = "warn"
+elided_lifetimes_in_paths = "allow"
+
+[workspace.lints.clippy]
+all = "warn"
+dbg_macro = "warn"
+todo = "warn"
+empty_enum = "warn"
+enum_glob_use = "warn"
+mem_forget = "warn"
+unused_self = "warn"
+filter_map_next = "warn"
+needless_continue = "warn"
+needless_borrow = "warn"
+match_wildcard_for_single_variants = "warn"
+if_let_mutex = "warn"
+await_holding_lock = "warn"
+match_on_vec_items = "warn"
+imprecise_flops = "warn"
+suboptimal_flops = "warn"
+lossy_float_literal = "warn"
+rest_pat_in_fully_bound_structs = "warn"
+fn_params_excessive_bools = "warn"
+exit = "warn"
+inefficient_to_string = "warn"
+linkedlist = "warn"
+macro_use_imports = "warn"
+unnested_or_patterns = "warn"
+str_to_string = "warn"
+type_complexity = "allow"
+
+
 
 [profile.release]
 strip = true
