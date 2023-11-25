@@ -9,6 +9,9 @@ license-file.workspace = true
 name = "migration"
 path = "src/lib.rs"
 
+[lints]
+workspace = true
+
 [dependencies]
 tokio = { version = "1.33.0", features = ["rt", "macros"] }
 sea-orm-migration = { version = "0.12.4", default-features = false, features = ["sqlx-postgres", "runtime-tokio-rustls", "cli"] }
