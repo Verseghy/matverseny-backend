@@ -1,12 +1,12 @@
 use dotenvy::dotenv;
+use jsonwebtoken::{Algorithm, DecodingKey, Validation};
+use libiam::testing::actions::ensure_action;
 use libiam::{
     testing::{actions::assign_action_to_user, Database},
     Iam, User,
 };
-use std::env::{self, args};
-use jsonwebtoken::{Algorithm, DecodingKey, Validation};
-use libiam::testing::actions::ensure_action;
 use serde::{Deserialize, Serialize};
+use std::env::{self, args};
 
 #[derive(Debug, Serialize, Deserialize)]
 struct Claims {
@@ -31,13 +31,17 @@ async fn main() {
                     v.insecure_disable_signature_validation();
                     v.set_audience(&["https://verseghy-gimnazium.net"]);
                     v
-                }
-            ).unwrap().claims.sub;
+                },
+            )
+            .unwrap()
+            .claims
+            .sub;
         }
 
         User::register(&iam, "Admin User", &email, "test")
             .await
-            .unwrap().to_string()
+            .unwrap()
+            .to_string()
     };
 
     ensure_action(&database, "mathcompetition.problems", false).await;
