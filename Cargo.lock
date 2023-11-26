@@ -540,7 +540,9 @@ name = "cmds"
 version = "0.1.0"
 dependencies = [
  "dotenvy",
+ "jsonwebtoken 9.1.0",
  "libiam",
+ "serde",
  "tokio",
 ]
 
