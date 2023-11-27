@@ -51,13 +51,14 @@ pub async fn get_stats<S: StateTrait>(
                   solutions_history 
                   inner join problems on problems.id = solutions_history.problem 
                 where 
-                  solutions_history.solution is not null 
-                  and created_at < $1
+                  created_at < $1
                 order by 
                   team, 
                   problem, 
                   created_at desc
               ) 
+            where
+              correct is not null
             group by 
               team, 
               correct
