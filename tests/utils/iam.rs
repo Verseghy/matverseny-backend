@@ -61,10 +61,7 @@ pub async fn register_user() -> User {
         .await
         .unwrap();
 
-    User {
-        email,
-        user,
-    }
+    User { email, user }
 }
 
 #[allow(unused)]
