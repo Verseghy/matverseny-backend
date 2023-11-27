@@ -4,13 +4,7 @@ use libiam::{
     testing::{actions::assign_action_to_user, Database},
     Iam, User,
 };
-use serde::{Deserialize, Serialize};
 use std::env::{self, args};
-
-#[derive(Debug, Serialize, Deserialize)]
-struct Claims {
-    sub: String,
-}
 
 #[tokio::main(flavor = "current_thread")]
 async fn main() {
