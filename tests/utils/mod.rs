@@ -123,7 +123,7 @@ impl App {
         assert_eq!(res.status(), StatusCode::CREATED);
 
         let token = user.access_token().to_owned();
-        User::new(user.id, user.email, token, self.clone())
+        User::new(user.id(), user.email, token, self.clone())
     }
 
     #[allow(unused)]
