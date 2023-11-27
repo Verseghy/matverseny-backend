@@ -1,5 +1,4 @@
 use dotenvy::dotenv;
-use jsonwebtoken::{Algorithm, DecodingKey, Validation};
 use libiam::testing::actions::ensure_action;
 use libiam::{
     testing::{actions::assign_action_to_user, Database},
@@ -23,25 +22,14 @@ async fn main() {
 
     let id = 'id: {
         if let Ok(user) = User::login(&iam, &email, "test").await {
-            break 'id jsonwebtoken::decode::<Claims>(
-                user.token(),
-                &DecodingKey::from_secret(&[]),
-                &{
-                    let mut v = Validation::new(Algorithm::RS256);
-                    v.insecure_disable_signature_validation();
-                    v.set_audience(&["https://verseghy-gimnazium.net"]);
-                    v
-                },
-            )
-            .unwrap()
-            .claims
-            .sub;
+            break 'id user.id().clone();
         }
 
         User::register(&iam, "Admin User", &email, "test")
             .await
             .unwrap()
-            .to_string()
+            .id()
+            .clone()
     };
 
     ensure_action(&database, "mathcompetition.problems", false).await;
