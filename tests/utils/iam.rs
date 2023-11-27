@@ -68,6 +68,6 @@ pub async fn register_user() -> User {
 pub async fn make_admin(user: &impl UserLike) {
     let db = get_db().await;
     tracing::trace!("making user '{}' admin", user.id());
-    assign_action_to_user(db, "mathcompetition.problems", user.id().as_str()).await;
-    assign_action_to_user(db, "mathcompetition.admin", user.id().as_str()).await;
+    assign_action_to_user(db, "mathcompetition.problems", &user.id()).await;
+    assign_action_to_user(db, "mathcompetition.admin", &user.id()).await;
 }

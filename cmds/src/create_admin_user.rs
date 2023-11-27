@@ -16,14 +16,13 @@ async fn main() {
 
     let id = 'id: {
         if let Ok(user) = User::login(&iam, &email, "test").await {
-            break 'id user.id().clone();
+            break 'id *user.id();
         }
 
-        User::register(&iam, "Admin User", &email, "test")
+        *User::register(&iam, "Admin User", &email, "test")
             .await
             .unwrap()
             .id()
-            .clone()
     };
 
     ensure_action(&database, "mathcompetition.problems", false).await;
