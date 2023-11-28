@@ -62,7 +62,7 @@ default-members = [".", "migration", "cmds"]
 
 [dependencies]
 axum = { version = "0.6.20", features = ["ws", "http2", "headers"] }
-serde = { version = "1.0.192", features = ["derive"] }
+serde = { version = "1.0.193", features = ["derive"] }
 tokio = { version = "1.33.0", features = ["macros", "rt-multi-thread", "signal", "parking_lot", "sync"] }
 tower = "0.4.13"
 tower-http = { version = "0.4.4", features = ["cors", "compression-full", "decompression-full", "catch-panic", "sensitive-headers", "request-id", "util"] }
