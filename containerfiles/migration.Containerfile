@@ -1,14 +1,18 @@
-FROM rust:alpine as builder
-
-RUN apk add musl-dev
+FROM registry.access.redhat.com/ubi9/ubi as builder
 
 WORKDIR /builder
 
-RUN cargo new --bin app && \
+RUN curl --proto '=https' --tlsv1.3 -sSf https://sh.rustup.rs > rustup-init.sh && \
+    sh rustup-init.sh --default-toolchain 1.74 --profile minimal -y && \
+    source "$HOME/.bashrc" && \
+    cargo new --bin app && \
     cargo new --lib app/entity && \
     cargo new --lib app/migration && \
     cargo new --lib app/macros && \
-    cargo new --lib app/cmds
+    cargo new --lib app/cmds && \
+    dnf install clang cmake -y
+
+ENV PATH="$PATH:/root/.cargo/bin"
 
 WORKDIR /builder/app
 
@@ -30,13 +34,13 @@ RUN rm target/release/deps/migration* \
        target/release/deps/libentity* && \
     cargo build -p migration --release
 
-FROM alpine
+
+
+
+
+FROM registry.access.redhat.com/ubi9/ubi-micro
+
 WORKDIR /app
 COPY --from=builder /builder/app/target/release/migration ./
-
-RUN addgroup -S matverseny && \
-    adduser -S -D -H -s /bin/false -G matverseny matverseny && \
-    chown -R matverseny:matverseny /app
-USER matverseny
 
 CMD ["./migration"]
