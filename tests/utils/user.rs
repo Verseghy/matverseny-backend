@@ -37,7 +37,7 @@ impl User {
 
 pub trait UserLike {
     fn access_token(&self) -> &str;
-    fn id(&self) -> &str;
+    fn id(&self) -> String;
 }
 
 impl UserLike for User {
@@ -45,7 +45,7 @@ impl UserLike for User {
         &self.access_token
     }
 
-    fn id(&self) -> &str {
-        &self.id
+    fn id(&self) -> String {
+        self.id.clone()
     }
 }

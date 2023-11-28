@@ -57,7 +57,7 @@ impl App {
                 let iam = iam::get_iam();
                 let iam_db = iam::get_db().await;
                 let (_, secret) = libiam::testing::apps::create_app(iam_db, &uuid()).await;
-                let iam_app = libiam::App::login(&iam, &secret).await.unwrap();
+                let iam_app = libiam::App::login(iam, &secret).await.unwrap();
 
                 tracing::trace!("creating actions");
 
@@ -123,7 +123,7 @@ impl App {
         assert_eq!(res.status(), StatusCode::CREATED);
 
         let token = user.access_token().to_owned();
-        User::new(user.id, user.email, token, self.clone())
+        User::new(user.id(), user.email, token, self.clone())
     }
 
     #[allow(unused)]

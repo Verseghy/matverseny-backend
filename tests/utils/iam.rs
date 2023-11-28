@@ -9,7 +9,6 @@ use uuid::Uuid;
 
 #[derive(Debug)]
 pub struct User {
-    pub id: String,
     pub email: String,
     user: libiam::User,
 }
@@ -19,8 +18,8 @@ impl UserLike for User {
         self.user.token()
     }
 
-    fn id(&self) -> &str {
-        &self.id
+    fn id(&self) -> String {
+        self.user.id().to_string()
     }
 }
 
@@ -58,25 +57,17 @@ pub async fn register_user() -> User {
 
     let iam = get_iam();
 
-    let id = libiam::User::register(&iam, "Test User", &email, USER_PASSWORD)
+    let user = libiam::User::register(iam, "Test User", &email, USER_PASSWORD)
         .await
         .unwrap();
 
-    let user = libiam::User::login(&iam, &email, USER_PASSWORD)
-        .await
-        .unwrap();
-
-    User {
-        id: id.to_string(),
-        email,
-        user,
-    }
+    User { email, user }
 }
 
 #[allow(unused)]
 pub async fn make_admin(user: &impl UserLike) {
     let db = get_db().await;
     tracing::trace!("making user '{}' admin", user.id());
-    assign_action_to_user(db, "mathcompetition.problems", user.id()).await;
-    assign_action_to_user(db, "mathcompetition.admin", user.id()).await;
+    assign_action_to_user(db, "mathcompetition.problems", &user.id()).await;
+    assign_action_to_user(db, "mathcompetition.admin", &user.id()).await;
 }

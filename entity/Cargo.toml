@@ -9,7 +9,7 @@ license-file.workspace = true
 workspace = true
 
 [dependencies]
-sea-orm = { version = "0.12.4", default-features = false, features = ["runtime-tokio-rustls", "sqlx-postgres", "macros", "with-uuid", "with-chrono"] }
-serde = { version = "1.0.192", features = ["derive"] }
+sea-orm = { version = "0.12.7", default-features = false, features = ["runtime-tokio-rustls", "sqlx-postgres", "macros", "with-uuid", "with-chrono"] }
+serde = { version = "1.0.193", features = ["derive"] }
 serde_repr = "0.1.17"
 uuid.workspace = true

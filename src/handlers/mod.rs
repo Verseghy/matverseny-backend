@@ -21,8 +21,10 @@ pub fn routes<S: StateTrait>(state: S) -> Router<S> {
         .route("/ws", get(socket::ws_handler::<S>))
         .route(
             "/stats",
-            get(stats::get_stats::<S>
-                .layer(PermissionsLayer::new(state, &["mathcompetition.admin"]))),
+            post(
+                stats::get_stats::<S>
+                    .layer(PermissionsLayer::new(state, &["mathcompetition.admin"])),
+            ),
         )
         .route("/liveness", get(|| async {}))
         .route("/readiness", get(|| async {}))

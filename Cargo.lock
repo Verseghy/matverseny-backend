@@ -877,7 +877,7 @@ dependencies = [
 name = "entity"
 version = "0.1.0"
 dependencies = [
- "sea-orm 0.12.4",
+ "sea-orm 0.12.7",
  "serde",
  "serde_repr",
  "uuid",
@@ -1104,9 +1104,9 @@ checksum = "d2fabcfbdc87f4758337ca535fb41a6d701b65693ce38287d856d1674551ec9b"
 
 [[package]]
 name = "h2"
-version = "0.3.16"
+version = "0.3.22"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5be7b54589b581f624f566bf5d8eb2bab1db736c51528720b6bd36b96b55924d"
+checksum = "4d6250322ef6e60f93f9a2162799302cd6f68f79f6e5d85c8c16f14d1d958178"
 dependencies = [
  "bytes",
  "fnv",
@@ -1114,7 +1114,7 @@ dependencies = [
  "futures-sink",
  "futures-util",
  "http",
- "indexmap 1.9.2",
+ "indexmap 2.1.0",
  "slab",
  "tokio",
  "tokio-util",
@@ -1311,7 +1311,7 @@ dependencies = [
 [[package]]
 name = "iam-common"
 version = "0.1.0"
-source = "git+https://github.com/Verseghy/iam#8facc895e87d465992830301273cafdc1f73c8c1"
+source = "git+https://github.com/Verseghy/iam#666e71c898e450ea3fd17a52d793f37734d56e41"
 dependencies = [
  "axum",
  "base64 0.21.0",
@@ -1336,7 +1336,7 @@ dependencies = [
 [[package]]
 name = "iam-entity"
 version = "0.1.0"
-source = "git+https://github.com/Verseghy/iam#8facc895e87d465992830301273cafdc1f73c8c1"
+source = "git+https://github.com/Verseghy/iam#666e71c898e450ea3fd17a52d793f37734d56e41"
 dependencies = [
  "sea-orm 0.10.7",
 ]
@@ -1344,7 +1344,7 @@ dependencies = [
 [[package]]
 name = "iam-macros"
 version = "0.1.0"
-source = "git+https://github.com/Verseghy/iam#8facc895e87d465992830301273cafdc1f73c8c1"
+source = "git+https://github.com/Verseghy/iam#666e71c898e450ea3fd17a52d793f37734d56e41"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -1543,12 +1543,13 @@ checksum = "89d92a4743f9a61002fae18374ed11e7973f530cb3a3255fb354818118b2203c"
 [[package]]
 name = "libiam"
 version = "0.1.0"
-source = "git+https://github.com/Verseghy/iam#8facc895e87d465992830301273cafdc1f73c8c1"
+source = "git+https://github.com/Verseghy/iam#666e71c898e450ea3fd17a52d793f37734d56e41"
 dependencies = [
  "async-trait",
  "futures",
  "iam-common",
  "iam-entity",
+ "jsonwebtoken 9.1.0",
  "reqwest",
  "sea-orm 0.10.7",
  "serde",
@@ -1670,7 +1671,7 @@ dependencies = [
  "rand_chacha",
  "rdkafka",
  "reqwest",
- "sea-orm 0.12.4",
+ "sea-orm 0.12.7",
  "serde",
  "serde_json",
  "serde_with",
@@ -2164,9 +2165,9 @@ dependencies = [
 
 [[package]]
 name = "proc-macro2"
-version = "1.0.69"
+version = "1.0.70"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "134c189feb4956b20f6f547d2cf727d4c0fe06722b20a0eec87ed445a97f92da"
+checksum = "39278fbbf5fb4f646ce651690877f89d1c5811a3d4acb27700c1cb3cdb78fd3b"
 dependencies = [
  "unicode-ident",
 ]
@@ -2563,9 +2564,9 @@ dependencies = [
 
 [[package]]
 name = "sea-orm"
-version = "0.12.4"
+version = "0.12.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "14d17105eb8049488d2528580ecc3f0912ab177d600f10e8e292d6994870ba6a"
+checksum = "6a7b021d2dbc5d04a5d9f6a177e7d5ab36e31b3f27d20a3655ac9181366eaad4"
 dependencies = [
  "async-stream",
  "async-trait",
@@ -2573,7 +2574,7 @@ dependencies = [
  "futures",
  "log",
  "ouroboros 0.17.2",
- "sea-orm-macros 0.12.5",
+ "sea-orm-macros 0.12.6",
  "sea-query 0.30.2",
  "sea-query-binder 0.5.0",
  "serde",
@@ -2587,9 +2588,9 @@ dependencies = [
 
 [[package]]
 name = "sea-orm-cli"
-version = "0.12.4"
+version = "0.12.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d66b46c28caf05824ecd1e68865de762959aa3640e1c21a415a00090e67b1658"
+checksum = "507c2b99f83129f4d5d511012ab47c9f40d1c7923fd4698c19fae23f0bf62913"
 dependencies = [
  "chrono",
  "clap",
@@ -2617,9 +2618,9 @@ dependencies = [
 
 [[package]]
 name = "sea-orm-macros"
-version = "0.12.5"
+version = "0.12.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a836864040c92d0615497eeccf97e1aee312857bf2ab36d74a74ce1c5c2cefc3"
+checksum = "816183a751bf9c22087679b20b6142da0b5c6d8981835ebb7b99bf1bf924640a"
 dependencies = [
  "heck 0.4.1",
  "proc-macro2",
@@ -2631,15 +2632,15 @@ dependencies = [
 
 [[package]]
 name = "sea-orm-migration"
-version = "0.12.4"
+version = "0.12.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a340d727bafe3d817b55f920498cc469e8664e8b654017d2ec93a31aed40b70f"
+checksum = "9d45937e5d4869a0dcf0222bb264df564c077cbe9b312265f3717401d023a633"
 dependencies = [
  "async-trait",
  "clap",
  "dotenvy",
  "futures",
- "sea-orm 0.12.4",
+ "sea-orm 0.12.7",
  "sea-orm-cli",
  "sea-schema",
  "tracing",
@@ -2766,18 +2767,18 @@ dependencies = [
 
 [[package]]
 name = "serde"
-version = "1.0.192"
+version = "1.0.193"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bca2a08484b285dcb282d0f67b26cadc0df8b19f8c12502c13d966bf9482f001"
+checksum = "25dd9975e68d0cb5aa1120c288333fc98731bd1dd12f561e468ea4728c042b89"
 dependencies = [
  "serde_derive",
 ]
 
 [[package]]
 name = "serde_derive"
-version = "1.0.192"
+version = "1.0.193"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d6c7207fbec9faa48073f3e3074cbe553af6ea512d7c21ba46e434e70ea9fbc1"
+checksum = "43576ca501357b9b071ac53cdc7da8ef0cbd9493d8df094cd821777ea6e894d3"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -3999,12 +4000,12 @@ dependencies = [
 
 [[package]]
 name = "webpki"
-version = "0.22.0"
+version = "0.22.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f095d78192e208183081cc07bc5515ef55216397af48b873e5edcd72637fa1bd"
+checksum = "ed63aea5ce73d0ff405984102c42de94fc55a6b75765d621c65262469b3c9b53"
 dependencies = [
- "ring 0.16.20",
- "untrusted 0.7.1",
+ "ring 0.17.5",
+ "untrusted 0.9.0",
 ]
 
 [[package]]

@@ -5,17 +5,6 @@ use utils::prelude::*;
 mod time {
     use super::*;
 
-    // #[tokio::test]
-    // #[parallel]
-    // async fn get_not_admin() {
-    //     let app = get_cached_app().await;
-    //     let user = utils::iam::register_user().await;
-    //
-    //     let res = app.post("/competition/time").user(&user).send().await;
-    //
-    //     assert_error!(res, error::NOT_ENOUGH_PERMISSIONS);
-    // }
-
     #[tokio::test]
     #[parallel]
     async fn put_not_admin() {

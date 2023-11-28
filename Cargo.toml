@@ -62,14 +62,14 @@ default-members = [".", "migration", "cmds"]
 
 [dependencies]
 axum = { version = "0.6.20", features = ["ws", "http2", "headers"] }
-serde = { version = "1.0.192", features = ["derive"] }
+serde = { version = "1.0.193", features = ["derive"] }
 tokio = { version = "1.33.0", features = ["macros", "rt-multi-thread", "signal", "parking_lot", "sync"] }
 tower = "0.4.13"
 tower-http = { version = "0.4.4", features = ["cors", "compression-full", "decompression-full", "catch-panic", "sensitive-headers", "request-id", "util"] }
 tracing = "0.1.40"
 tracing-subscriber = { version = "0.3.17", features = ["env-filter"] }
 entity = { path = "./entity" }
-sea-orm = { version = "0.12.4", default-features = false, features = ["runtime-tokio-rustls", "sqlx-postgres", "with-uuid", "with-chrono"] }
+sea-orm = { version = "0.12.7", default-features = false, features = ["runtime-tokio-rustls", "sqlx-postgres", "with-uuid", "with-chrono"] }
 serde_json = "1.0.108"
 validator = { version = "0.16.1", features = ["derive"] }
 pin-project = "1.1.3"
@@ -91,7 +91,7 @@ const_format = "0.2.32"
 pin-project-lite = "0.2.13"
 reqwest = { version = "0.11.22", default-features = false, features = ["json", "rustls-tls"] }
 libiam = { git = "https://github.com/Verseghy/iam", package = "libiam" }
-chrono = "0.4.31"
+chrono = { version = "0.4.31", features = ["serde"] }
 
 [workspace.dependencies]
 uuid = { version = "1.5.0", features = ["v4", "fast-rng", "serde"] }
