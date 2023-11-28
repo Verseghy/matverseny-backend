@@ -1,14 +1,18 @@
-FROM rust:slim-bookworm as builder
+FROM registry.access.redhat.com/ubi9/ubi as builder
 
 WORKDIR /builder
 
-RUN apt update && apt install cmake build-essential -y
-
-RUN cargo new --bin app && \
+RUN curl --proto '=https' --tlsv1.3 -sSf https://sh.rustup.rs > rustup-init.sh && \
+    sh rustup-init.sh --default-toolchain 1.74 --profile minimal -y && \
+    source "$HOME/.bashrc" && \
+    cargo new --bin app && \
     cargo new --lib app/entity && \
     cargo new --lib app/migration && \
     cargo new --lib app/macros && \
-    cargo new --lib app/cmds
+    cargo new --lib app/cmds && \
+    dnf install clang cmake -y
+
+ENV PATH="$PATH:/root/.cargo/bin"
 
 WORKDIR /builder/app
 
@@ -34,15 +38,16 @@ RUN rm target/release/deps/matverseny_backend* \
        target/release/deps/libmacros* && \
     cargo build --release
 
-FROM debian:12-slim
+
+
+
+
+FROM registry.access.redhat.com/ubi9/ubi-micro
+
 WORKDIR /app
 COPY --from=builder /builder/app/target/release/matverseny-backend ./
-EXPOSE 3002
 
-RUN addgroup --system app && \
-    adduser --system --disabled-password --no-create-home --shell /bin/false --ingroup app app && \
-    chown -R app:app /app
-USER app
+EXPOSE 3002
 
 CMD ["./matverseny-backend"]
 
