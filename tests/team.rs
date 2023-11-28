@@ -6,6 +6,7 @@ mod create {
     use super::*;
 
     #[tokio::test]
+    #[parallel]
     async fn success() {
         let app = get_cached_app().await;
         let user = app.register_user().await;
@@ -23,6 +24,7 @@ mod create {
     }
 
     #[tokio::test]
+    #[parallel]
     async fn name_already_taken() {
         let app = get_cached_app().await;
         let user = app.register_user().await;
@@ -53,6 +55,7 @@ mod create {
     }
 
     #[tokio::test]
+    #[parallel]
     async fn already_in_team() {
         let app = get_cached_app().await;
         let user = app.register_user().await;
@@ -81,6 +84,7 @@ mod create {
     }
 
     #[tokio::test]
+    #[parallel]
     async fn not_registered() {
         let app = get_cached_app().await;
         let user = utils::iam::register_user().await;
@@ -102,6 +106,7 @@ mod join {
     use super::*;
 
     #[tokio::test]
+    #[parallel]
     async fn success() {
         let app = get_cached_app().await;
         let owner = app.register_user().await;
@@ -144,6 +149,7 @@ mod join {
     }
 
     #[tokio::test]
+    #[parallel]
     async fn wrong_code() {
         let app = get_cached_app().await;
         let user = app.register_user().await;
@@ -161,6 +167,7 @@ mod join {
     }
 
     #[tokio::test]
+    #[parallel]
     async fn already_in_team() {
         let app = get_cached_app().await;
         let user1 = app.register_user().await;
@@ -182,6 +189,7 @@ mod join {
     }
 
     #[tokio::test]
+    #[parallel]
     async fn locked_team() {
         let app = get_cached_app().await;
         let owner = app.register_user().await;
@@ -208,6 +216,7 @@ mod leave {
     use super::*;
 
     #[tokio::test]
+    #[parallel]
     async fn success() {
         let app = get_cached_app().await;
         let owner = app.register_user().await;
@@ -238,6 +247,7 @@ mod leave {
     }
 
     #[tokio::test]
+    #[parallel]
     async fn not_in_team() {
         let app = get_cached_app().await;
         let owner = app.register_user().await;
@@ -251,6 +261,7 @@ mod leave {
     }
 
     #[tokio::test]
+    #[parallel]
     async fn locked_team() {
         let app = get_cached_app().await;
         let owner = app.register_user().await;
@@ -266,6 +277,7 @@ mod leave {
     }
 
     #[tokio::test]
+    #[parallel]
     async fn owner_cannot_leave() {
         let app = get_cached_app().await;
         let owner = app.register_user().await;
@@ -281,6 +293,7 @@ mod update {
     use super::*;
 
     #[tokio::test]
+    #[parallel]
     async fn should_not_error_when_empty_json() {
         let app = get_cached_app().await;
         let user = app.register_user().await;
@@ -292,6 +305,7 @@ mod update {
     }
 
     #[tokio::test]
+    #[parallel]
     async fn must_be_owner() {
         let app = get_cached_app().await;
         let owner = app.register_user().await;
@@ -324,6 +338,7 @@ mod update {
     }
 
     #[tokio::test]
+    #[parallel]
     async fn non_existing_user() {
         let app = get_cached_app().await;
         let owner = app.register_user().await;
@@ -353,6 +368,7 @@ mod update {
     }
 
     #[tokio::test]
+    #[parallel]
     async fn existing_user_but_not_a_team_member() {
         let app = get_cached_app().await;
         let owner = app.register_user().await;
@@ -384,6 +400,7 @@ mod update {
     }
 
     #[tokio::test]
+    #[parallel]
     async fn not_in_team() {
         let app = get_cached_app().await;
         let user = app.register_user().await;
@@ -401,6 +418,7 @@ mod update {
     }
 
     #[tokio::test]
+    #[parallel]
     async fn update_while_locking() {
         let app = get_cached_app().await;
         let user = app.register_user().await;
@@ -420,6 +438,7 @@ mod update {
     }
 
     #[tokio::test]
+    #[parallel]
     async fn locked_team() {
         let app = get_cached_app().await;
         let user = app.register_user().await;
@@ -449,6 +468,7 @@ mod update {
     }
 
     #[tokio::test]
+    #[parallel]
     async fn update_while_unlocking() {
         let app = get_cached_app().await;
         let user = app.register_user().await;
@@ -479,6 +499,7 @@ mod update {
     }
 
     #[tokio::test]
+    #[parallel]
     async fn success_name() {
         let app = get_cached_app().await;
         let user = app.register_user().await;
@@ -514,6 +535,7 @@ mod update {
     }
 
     #[tokio::test]
+    #[parallel]
     async fn success_owner() {
         let app = get_cached_app().await;
         let owner = app.register_user().await;
@@ -554,6 +576,7 @@ mod update {
     }
 
     #[tokio::test]
+    #[parallel]
     async fn success_coowner() {
         let app = get_cached_app().await;
         let owner = app.register_user().await;
@@ -595,6 +618,7 @@ mod update {
     }
 
     #[tokio::test]
+    #[parallel]
     async fn delete_coowner() {
         let app = get_cached_app().await;
         let owner = app.register_user().await;
@@ -632,6 +656,7 @@ mod disband {
     use super::*;
 
     #[tokio::test]
+    #[parallel]
     async fn not_in_team() {
         let app = get_cached_app().await;
         let user = app.register_user().await;
@@ -642,6 +667,7 @@ mod disband {
     }
 
     #[tokio::test]
+    #[parallel]
     async fn not_owner() {
         let app = get_cached_app().await;
         let owner = app.register_user().await;
@@ -656,6 +682,7 @@ mod disband {
     }
 
     #[tokio::test]
+    #[parallel]
     async fn locked_team() {
         let app = get_cached_app().await;
         let owner = app.register_user().await;
@@ -669,6 +696,7 @@ mod disband {
     }
 
     #[tokio::test]
+    #[parallel]
     async fn success() {
         let app = get_cached_app().await;
         let owner = app.register_user().await;
@@ -729,6 +757,7 @@ mod kick {
     use super::*;
 
     #[tokio::test]
+    #[parallel]
     async fn member_cannot_kick() {
         let app = get_cached_app().await;
         let owner = app.register_user().await;
@@ -753,6 +782,7 @@ mod kick {
     }
 
     #[tokio::test]
+    #[parallel]
     async fn locked_team() {
         let app = get_cached_app().await;
         let owner = app.register_user().await;
@@ -776,6 +806,7 @@ mod kick {
     }
 
     #[tokio::test]
+    #[parallel]
     async fn cannot_kick_owner() {
         let app = get_cached_app().await;
         let owner = app.register_user().await;
@@ -808,6 +839,7 @@ mod kick {
     }
 
     #[tokio::test]
+    #[parallel]
     async fn cannot_kick_themself() {
         let app = get_cached_app().await;
         let owner = app.register_user().await;
@@ -840,6 +872,7 @@ mod kick {
     }
 
     #[tokio::test]
+    #[parallel]
     async fn not_member() {
         let app = get_cached_app().await;
         let owner = app.register_user().await;
@@ -860,6 +893,7 @@ mod kick {
     }
 
     #[tokio::test]
+    #[parallel]
     async fn user_not_exists() {
         let app = get_cached_app().await;
         let owner = app.register_user().await;
@@ -878,6 +912,7 @@ mod kick {
     }
 
     #[tokio::test]
+    #[parallel]
     async fn success_owner_kick_member() {
         let app = get_cached_app().await;
         let owner = app.register_user().await;
@@ -927,6 +962,7 @@ mod kick {
     }
 
     #[tokio::test]
+    #[parallel]
     async fn success_owner_kick_coowner() {
         let app = get_cached_app().await;
         let owner = app.register_user().await;
@@ -987,6 +1023,7 @@ mod kick {
     }
 
     #[tokio::test]
+    #[parallel]
     async fn success_coowner_kick_member() {
         let app = get_cached_app().await;
         let owner = app.register_user().await;
@@ -1067,6 +1104,7 @@ mod code {
     use super::*;
 
     #[tokio::test]
+    #[parallel]
     async fn not_coowner() {
         let app = get_cached_app().await;
         let owner = app.register_user().await;
@@ -1081,6 +1119,7 @@ mod code {
     }
 
     #[tokio::test]
+    #[parallel]
     async fn locked_team() {
         let app = get_cached_app().await;
         let owner = app.register_user().await;
@@ -1094,6 +1133,7 @@ mod code {
     }
 
     #[tokio::test]
+    #[parallel]
     async fn success() {
         let app = get_cached_app().await;
         let owner = app.register_user().await;
@@ -1115,8 +1155,71 @@ mod code {
     }
 
     #[tokio::test]
+    #[parallel]
     #[ignore]
     async fn clash() {
         // TODO: test join code clash
+    }
+}
+
+mod get {
+    use super::*;
+
+    #[tokio::test]
+    #[parallel]
+    async fn not_admin() {
+        let app = get_cached_app().await;
+        let user = app.register_user().await;
+
+        let res = app.get("/team").user(&user).send().await;
+
+        assert_error!(res, error::NOT_ENOUGH_PERMISSIONS);
+    }
+
+    #[tokio::test]
+    #[serial]
+    async fn works() {
+        let app = get_cached_app().await;
+        app.clean_database().await;
+
+        let owner = app.register_user().await;
+        let _team = app.create_team(&owner).await;
+
+        let admin = utils::iam::register_user().await;
+        utils::iam::make_admin(&admin).await;
+
+        let res = app.get("/team").user(&admin).send().await;
+
+        assert!(res.status().is_success());
+
+        let body: Value = res.json().await;
+
+        assert!(body.is_array());
+
+        let first = &body.as_array().unwrap()[0];
+
+        assert!(first.get("id").is_some());
+        assert!(first.get("name").is_some());
+        assert!(first.get("join_code").is_some());
+
+        let owner_id = owner.id.strip_prefix("UserID-").unwrap();
+
+        assert_json_include!(
+            actual: body,
+            expected: json!([
+                {
+                    "owner": owner_id,
+                    "co_owner": null,
+                    "locked": false,
+                    "members": [
+                        {
+                            "id": owner_id,
+                            "school": "Test School",
+                            "class": 9,
+                        }
+                    ],
+                }
+            ])
+        )
     }
 }
