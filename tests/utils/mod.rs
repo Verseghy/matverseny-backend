@@ -57,7 +57,7 @@ impl App {
                 let iam = iam::get_iam();
                 let iam_db = iam::get_db().await;
                 let (_, secret) = libiam::testing::apps::create_app(iam_db, &uuid()).await;
-                let iam_app = libiam::App::login(&iam, &secret).await.unwrap();
+                let iam_app = libiam::App::login(iam, &secret).await.unwrap();
 
                 tracing::trace!("creating actions");
 
