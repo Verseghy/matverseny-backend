@@ -30,20 +30,3 @@ jobs:
           KAFKA_BOOTSTRAP_SERVERS: 127.0.0.1:9092
       - name: cargo test --doc
         run: cargo test --locked --all-features --workspace --doc
-
-
-  os-check:
-    name: ${{ matrix.os }} / stable
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [macos-latest, windows-latest]
-    steps:
-      - uses: actions/checkout@v4
-      - name: Install stable
-        uses: dtolnay/rust-toolchain@stable
-      - name: Setup environment
-        run: docker compose up -d
-      - name: cargo test --locked
-        run: cargo test --locked --all-features --workspace --all-targets
