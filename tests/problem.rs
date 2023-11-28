@@ -775,7 +775,7 @@ mod order {
     async fn create_test_problem2<const N: usize>(app: &App, user: &impl UserLike) -> [Uuid; N] {
         let mut ids = [Uuid::nil(); N];
 
-        for i in 0..N {
+        for id_slot in ids.iter_mut() {
             let res = app
                 .post("/problem")
                 .user(user)
@@ -802,7 +802,7 @@ mod order {
 
             assert_eq!(res.status(), StatusCode::NO_CONTENT);
 
-            ids[i] = id;
+            *id_slot = id;
         }
 
         let order = get_order_list(app, user).await;
@@ -881,7 +881,7 @@ mod order {
         let user = utils::iam::register_user().await;
         utils::iam::make_admin(&user).await;
 
-        let id = create_test_problem(&app, &user).await;
+        let id = create_test_problem(app, &user).await;
 
         let res = app
             .post("/problem/order")
@@ -906,8 +906,8 @@ mod order {
         let user = utils::iam::register_user().await;
         utils::iam::make_admin(&user).await;
 
-        let id = create_test_problem(&app, &user).await;
-        let id2 = create_test_problem(&app, &user).await;
+        let id = create_test_problem(app, &user).await;
+        let id2 = create_test_problem(app, &user).await;
 
         let res = app
             .post("/problem/order")
@@ -956,7 +956,7 @@ mod order {
         let user = utils::iam::register_user().await;
         utils::iam::make_admin(&user).await;
 
-        let id = create_test_problem(&app, &user).await;
+        let id = create_test_problem(app, &user).await;
 
         let res = app
             .post("/problem/order")

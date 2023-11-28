@@ -57,7 +57,7 @@ pub async fn register_user() -> User {
 
     let iam = get_iam();
 
-    let user = libiam::User::register(&iam, "Test User", &email, USER_PASSWORD)
+    let user = libiam::User::register(iam, "Test User", &email, USER_PASSWORD)
         .await
         .unwrap();
 
