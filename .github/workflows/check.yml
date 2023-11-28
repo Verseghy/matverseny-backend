@@ -53,6 +53,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: cargo-deny check ${{ matrix.checks }}
-        uses: EmbarkStudio/cargo-deny-action@v1
+        uses: EmbarkStudios/cargo-deny-action@v1
         with:
           command: check ${{ matrix.checks }}
