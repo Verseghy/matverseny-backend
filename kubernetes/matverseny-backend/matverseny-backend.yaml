@@ -2,7 +2,6 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: matverseny-backend
-  namespace: matverseny-backend
 spec:
   replicas: 3
   selector:
@@ -51,31 +50,20 @@ spec:
                   key: IAM_APP_SECRET
                   name: matverseny-backend
             - name: IAM_URL
-              value: https://iam.verseghy-gimnazium.net
+              value: http://iam.matverseny.svc.cluster.local
             - name: IAM_JWT_RSA_PUBLIC
-              value: |
-                -----BEGIN PUBLIC KEY-----
-                MIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEA0OB8OFgGfedGLaQMNtxh
-                Kb9mFA/ro/5NDnoS1ez272/n15YrdSIKMqQ3IfQiNYUVTSvmNhYRameSLSQwVD6E
-                ObdL5m7USwYZGRgfLRj8sxfOJYuE4u4K5VXb4K4uITyiL6aHSGg4/Ab//4nE9dj8
-                JlQubyvrgadCA/+915sgL+dOc7SwFYUnyl6HapGwPhBsgYTjEiXsQe4dKYRowruk
-                tROgURYnrF2l/53o6FS4baK8aBJW15Wb7aECTCEJF6gpjV8W6D/EQZShxLpE09Xs
-                MiJ1M6XpkHbDVnuyQ56DhGGM3VXmV1hMakYb0EyU/bg1wzU4VhZmV0CSQfCYiOgH
-                XTHwbgZytraHeTVJCBKmI0Xzww608W/fZg1JFSd4oAoaUKnIVK41c37r17lUBDfp
-                QsZBfksIjVHwZ0V929QG+emj5W1XdIYbPuCehtjli9CJLLpSYOyf6CLfM8WuAM3t
-                /lV7LxwjjeEWNUVoDl06/MFqQ0lOzBxVUMlfweeZy+uqY+Xk1pzKVOjj5aqO+K5k
-                j2hcctyLt97ArB+3OMiSFaYxIB5nyZGFOEKptyfkWK/Bc0n7PEBYp613hTNIs3US
-                mn13W5bGJrumHz/xXqiu11hhkRGVaZA4Rvsw73rUXomCHrmd9PeHebfJ2bYpE8LJ
-                SslnJeyrVLtjAFOvE6mURIsCAwEAAQ==
-                -----END PUBLIC KEY-----
+              valueFrom:
+                secretKeyRef:
+                  key: public-key
+                  name: jwt
             - name: KAFKA_BOOTSTRAP_SERVERS
-              value: kafka-cluster-kafka-bootstrap.matverseny-backend.svc.cluster.local:9092
+              value: kafka-cluster-kafka-bootstrap.matverseny.svc.cluster.local:9092
 ---
 apiVersion: v1
 kind: Service
 metadata:
   name: matverseny-backend
-  namespace: matverseny-backend
+  namespace: matverseny
 spec:
   selector:
     app: matverseny-backend

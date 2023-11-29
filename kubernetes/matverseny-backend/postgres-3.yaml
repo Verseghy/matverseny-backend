@@ -2,10 +2,10 @@ apiVersion: postgres-operator.crunchydata.com/v1beta1
 kind: PostgresCluster
 metadata:
   name: postgres
-  namespace: matverseny-backend
+  namespace: matverseny
 spec:
-  image: registry.developers.crunchydata.com/crunchydata/crunchy-postgres:ubi8-15.1-0
-  postgresVersion: 15
+  image: registry.developers.crunchydata.com/crunchydata/crunchy-postgres:ubi8-16.0-0
+  postgresVersion: 16
   instances:
     - name: instance1
       replicas: 3
@@ -17,7 +17,7 @@ spec:
             storage: 1Gi
   backups:
     pgbackrest:
-      image: registry.developers.crunchydata.com/crunchydata/crunchy-pgbackrest:ubi8-2.41-2
+      image: registry.developers.crunchydata.com/crunchydata/crunchy-pgbackrest:ubi8-2.47-1
       repos:
         - name: repo1
           volume:

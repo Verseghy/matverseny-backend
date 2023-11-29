@@ -11,10 +11,10 @@ metadata:
     nginx.ingress.kubernetes.io/use-regex: "true"
     nginx.ingress.kubernetes.io/proxy-read-timeout: "36000"
     nginx.ingress.kubernetes.io/proxy-send-timeout: "36000"
-  namespace: matverseny-backend
+  namespace: matverseny
 spec:
   rules:
-    - host: api.192.verseghy-gimnazium.net
+    - host: api.193.verseghy-gimnazium.net
       http:
         paths:
           - path: "/(?!(readiness|liveness)).*"
