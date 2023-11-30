@@ -5,11 +5,12 @@ use super::{super::utils, User};
 pub struct Team {
     owner: User,
     app: App,
+    number: u64,
 }
 
 impl Team {
-    pub(super) fn new(owner: User, app: App) -> Self {
-        Team { owner, app }
+    pub(super) fn new(owner: User, app: App, number: u64) -> Self {
+        Team { owner, app, number }
     }
 
     #[allow(unused)]
@@ -40,5 +41,10 @@ impl Team {
             .await;
 
         assert_eq!(res.status(), StatusCode::NO_CONTENT);
+    }
+
+    #[allow(unused)]
+    pub fn get_name(&self) -> String {
+        format!("Team-{}", self.number)
     }
 }

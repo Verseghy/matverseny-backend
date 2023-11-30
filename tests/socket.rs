@@ -85,7 +85,7 @@ async fn team_info() {
     let app = get_cached_app().await;
     let user = app.register_user().await;
 
-    let _team = app.create_team(&user).await;
+    let team = app.create_team(&user).await;
 
     let mut socket = app.socket("/ws").start().await;
     socket
@@ -102,7 +102,7 @@ async fn team_info() {
         expected: json!({
             "event": "TEAM_INFO",
             "data": {
-                "name": "Team-0",
+                "name": team.get_name(),
                 "members": [{
                     "class": 9,
                     "id": user.id.strip_prefix("UserID-").unwrap(),
