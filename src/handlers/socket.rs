@@ -26,7 +26,7 @@ use rdkafka::{
 use sea_orm::{ColumnTrait, Condition, EntityTrait, QueryFilter, QueryOrder, QuerySelect};
 use serde::{Deserialize, Serialize};
 use std::{borrow::Cow, error::Error as _, mem::MaybeUninit, pin::pin, time::Duration};
-use tokio::time::{self, sleep_until, timeout};
+use tokio::time::{self, sleep, timeout};
 use tokio_tungstenite::tungstenite::error::Error as TungsteniteError;
 use tracing::Instrument;
 use uuid::Uuid;
@@ -162,10 +162,8 @@ async fn socket_handler<S: StateTrait>(state: S, socket: &mut WebSocket) -> Resu
 
         let mut sleep_until_start = pin!({
             let now = Utc::now();
-            let duration = start_time - now;
-
-            let instant = tokio::time::Instant::now() + duration.to_std().unwrap_or(Duration::ZERO);
-            sleep_until(instant)
+            let duration = (start_time - now).to_std().unwrap_or(Duration::ZERO);
+            sleep(duration)
         });
 
         let problems = state.problems();
