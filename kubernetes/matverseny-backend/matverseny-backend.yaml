@@ -2,6 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: matverseny-backend
+  namespace: matverseny
 spec:
   replicas: 3
   selector:
@@ -50,7 +51,7 @@ spec:
                   key: IAM_APP_SECRET
                   name: matverseny-backend
             - name: IAM_URL
-              value: http://iam.matverseny.svc.cluster.local
+              value: http://iam.iam.svc.cluster.local
             - name: IAM_JWT_RSA_PUBLIC
               valueFrom:
                 secretKeyRef:
@@ -77,6 +78,7 @@ apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
   name: matverseny-backend
+  namespace: matverseny
 spec:
   maxUnavailable: 1
   selector:

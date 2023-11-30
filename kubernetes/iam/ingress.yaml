@@ -11,20 +11,20 @@ metadata:
     nginx.ingress.kubernetes.io/use-regex: "true"
     nginx.ingress.kubernetes.io/proxy-read-timeout: "36000"
     nginx.ingress.kubernetes.io/proxy-send-timeout: "36000"
-  namespace: matverseny
+  namespace: iam
 spec:
   rules:
-    - host: api.193.verseghy-gimnazium.net
+    - host: iam.193.verseghy-gimnazium.net
       http:
         paths:
-          - path: "/(?!(readiness|liveness)).*"
+          - path: /
             pathType: Prefix
             backend:
               service:
-                name: matverseny-backend
+                name: iam
                 port:
-                  number: 3002
+                  number: 80
   tls:
     - hosts:
-        - api.193.verseghy-gimnazium.net
+        - iam.193.verseghy-gimnazium.net
       secretName: ingress-tls
