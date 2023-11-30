@@ -157,6 +157,7 @@ async fn dont_send_problems_before_start() {
     assert_eq!(res.status(), StatusCode::NO_CONTENT);
 
     let start = Utc::now() + Duration::from_secs(5);
+    let start = start - Duration::from_nanos(start.timestamp_subsec_nanos() as u64);
 
     let res = app
         .patch("/competition/time")
@@ -198,5 +199,6 @@ async fn dont_send_problems_before_start() {
 
     let diff = after - start;
 
-    assert!(diff < chrono::Duration::seconds(1));
+    assert!(diff.num_milliseconds() >= 0);
+    assert!(diff.num_milliseconds() < 1000);
 }
