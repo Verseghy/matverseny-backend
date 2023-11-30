@@ -1,6 +1,7 @@
 use crate::{handlers::socket::Event, utils::topics};
 use entity::{problems, problems_order};
 use futures::{Stream, StreamExt};
+use pin_project_lite::pin_project;
 use rdkafka::{
     consumer::{Consumer, StreamConsumer},
     ClientConfig, Message, TopicPartitionList,
@@ -30,6 +31,7 @@ pub struct Problem {
     pub next: Option<Uuid>,
 }
 
+#[derive(Debug)]
 pub struct Problems {
     problems: Arc<RwLock<Vec<Problem>>>,
     channel: broadcast::Sender<Event>,
@@ -217,21 +219,37 @@ impl Problems {
         }
 
         (
-            ProblemStream { channel: rx },
-            ProblemStream { channel: rx2 },
+            ProblemStream::Channel { channel: rx },
+            ProblemStream::Channel { channel: rx2 },
         )
     }
 }
+pin_project! {
+    #[project = ProblemStreamProj]
+    pub enum ProblemStream {
+        Empty,
+        Channel {
+            channel: mpsc::UnboundedReceiver<Event>,
+        },
+    }
+}
 
-pub struct ProblemStream {
-    channel: mpsc::UnboundedReceiver<Event>,
+impl ProblemStream {
+    pub fn new_empty() -> Self {
+        ProblemStream::Empty
+    }
 }
 
 impl Stream for ProblemStream {
     type Item = Event;
 
-    fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
-        self.channel.poll_recv(cx)
+    fn poll_next(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
+        let this = self.project();
+
+        match this {
+            ProblemStreamProj::Empty => Poll::Pending,
+            ProblemStreamProj::Channel { channel } => channel.poll_recv(cx),
+        }
     }
 }
 
