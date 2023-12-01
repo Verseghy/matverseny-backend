@@ -25,6 +25,24 @@ mod create {
 
     #[tokio::test]
     #[parallel]
+    async fn success_with_trailing_slash() {
+        let app = get_cached_app().await;
+        let user = app.register_user().await;
+
+        let res = app
+            .post("/team/create/")
+            .user(&user)
+            .json(&json!({
+                "name": uuid(),
+            }))
+            .send()
+            .await;
+
+        assert_eq!(res.status(), StatusCode::CREATED);
+    }
+
+    #[tokio::test]
+    #[parallel]
     async fn name_already_taken() {
         let app = get_cached_app().await;
         let user = app.register_user().await;
