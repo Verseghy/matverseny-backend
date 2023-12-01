@@ -81,7 +81,7 @@ rdkafka = { version = "0.35.0", features = ["tracing", "cmake-build"] }
 rand_chacha = "0.3.1"
 serde_with = "3.4.0"
 tokio-tungstenite = "0.20.1"
-sqlx = { version = "0.7.2", default-features = false, features = ["postgres"] }
+sqlx = { version = "0.7.3", default-features = false, features = ["postgres"] }
 uuid.workspace = true
 bytes = "1.5.0"
 mime = "0.3.17"
