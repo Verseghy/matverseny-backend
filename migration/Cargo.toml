@@ -13,7 +13,7 @@ path = "src/lib.rs"
 workspace = true
 
 [dependencies]
-tokio = { version = "1.33.0", features = ["rt-multi-thread", "macros"] }
+tokio = { version = "1.35.0", features = ["rt-multi-thread", "macros"] }
 sea-orm-migration = { version = "0.12.6", default-features = false, features = ["sqlx-postgres", "runtime-tokio-rustls", "cli"] }
 entity = { path = "../entity" }
 const_format = "0.2.32"
