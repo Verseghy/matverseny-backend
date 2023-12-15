@@ -2,7 +2,7 @@ apiVersion: batch/v1
 kind: Job
 metadata:
   name: matverseny-backend-migration
-  namespace: matverseny-backend
+  namespace: matverseny
 spec:
   ttlSecondsAfterFinished: 3600
   template:
