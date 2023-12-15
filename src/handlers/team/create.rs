@@ -80,11 +80,18 @@ pub async fn create_team<S: StateTrait>(
         state
             .kafka_admin()
             .create_topics(
-                &[NewTopic::new(
-                    &topics::team_info(&result.last_insert_id),
-                    1,
-                    TopicReplication::Fixed(1),
-                )],
+                &[
+                    NewTopic::new(
+                        &topics::team_info(&result.last_insert_id),
+                        1,
+                        TopicReplication::Fixed(1),
+                    ),
+                    NewTopic::new(
+                        &topics::team_solutions(&result.last_insert_id),
+                        1,
+                        TopicReplication::Fixed(1),
+                    ),
+                ],
                 &AdminOptions::new(),
             )
             .await?;
