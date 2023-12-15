@@ -169,7 +169,6 @@ async fn socket_handler<S: StateTrait>(state: S, socket: &mut WebSocket) -> Resu
         let problems = state.problems();
         let mut problems_stream = ProblemStream::new_empty();
 
-        send_answers(&state, socket, team.id).await?;
 
         let mut kafka_stream = consumer.stream();
 
@@ -188,6 +187,8 @@ async fn socket_handler<S: StateTrait>(state: S, socket: &mut WebSocket) -> Resu
                         }
                     }
 
+                    send_answers(&state, socket, team.id).await?;
+
                     has_sent_initial_problems = true;
                 }
                 problems_event = problems_stream.next(), if has_sent_initial_problems => {
@@ -202,7 +203,7 @@ async fn socket_handler<S: StateTrait>(state: S, socket: &mut WebSocket) -> Resu
                         break Err(error::WEBSOCKET_ERROR)
                     }
                 }
-                message = timeout(Duration::from_secs(5), kafka_stream.next()) => {
+                message = timeout(Duration::from_secs(5), kafka_stream.next()), if has_sent_initial_problems => {
                     let Ok(message) = message else {
                         continue;
                     };
