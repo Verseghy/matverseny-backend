@@ -64,8 +64,6 @@ pub async fn get_stats<S: StateTrait>(
               correct
           ) as correct on correct.team = teams.id 
           and correct.correct = bools
-        where 
-          locked = true
         order by
           id,
           bools;
