@@ -2,13 +2,13 @@ apiVersion: kafka.strimzi.io/v1beta2
 kind: Kafka
 metadata:
   name: kafka-cluster
-  namespace: matverseny-backend
+  namespace: matverseny
 spec:
   kafka:
     template:
       podDisruptionBudget:
         maxUnavailable: 0
-    version: 3.4.0
+    version: 3.5.0
     replicas: 1
     listeners:
       - name: plain
