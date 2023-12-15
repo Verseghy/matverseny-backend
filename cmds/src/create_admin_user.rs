@@ -30,6 +30,7 @@ async fn main() {
     assign_action_to_user(&database, "mathcompetition.problems", &id.to_string()).await;
     assign_action_to_user(&database, "mathcompetition.admin", &id.to_string()).await;
     assign_action_to_user(&database, "iam.policy.assign", &id.to_string()).await;
+    assign_action_to_user(&database, "iam.user.list", &id.to_string()).await;
 
     let user = User::login(&iam, &email, "test").await.unwrap();
 
