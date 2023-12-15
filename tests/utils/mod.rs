@@ -57,7 +57,7 @@ impl App {
                 let iam = iam::get_iam();
                 let iam_db = iam::get_db().await;
                 let (_, secret) = libiam::testing::apps::create_app(iam_db, &uuid()).await;
-                let iam_app = libiam::App::login(&iam, &secret).await.unwrap();
+                let iam_app = libiam::App::login(iam, &secret).await.unwrap();
 
                 tracing::trace!("creating actions");
 
@@ -130,18 +130,20 @@ impl App {
     pub async fn create_team(&self, owner: &User) -> Team {
         static TEAM_COUNT: AtomicU64 = AtomicU64::new(0);
 
+        let number = TEAM_COUNT.fetch_add(1, Ordering::Relaxed);
+
         let res = self
             .post("/team/create")
             .user(owner)
             .json(&json!({
-                "name": format!("Team-{}", TEAM_COUNT.fetch_add(1, Ordering::Relaxed))
+                "name": format!("Team-{}", number)
             }))
             .send()
             .await;
 
         assert_eq!(res.status(), StatusCode::CREATED);
 
-        Team::new(owner.clone(), self.clone())
+        Team::new(owner.clone(), self.clone(), number)
     }
 
     #[allow(dead_code)]

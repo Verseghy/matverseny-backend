@@ -1,7 +1,7 @@
 use crate::{
     error,
     iam::{Claims, IamTrait},
-    utils::topics,
+    utils::{topics, ProblemStream},
     Result, StateTrait,
 };
 use axum::{
@@ -25,8 +25,8 @@ use rdkafka::{
 };
 use sea_orm::{ColumnTrait, Condition, EntityTrait, QueryFilter, QueryOrder, QuerySelect};
 use serde::{Deserialize, Serialize};
-use std::{borrow::Cow, error::Error as _, mem::MaybeUninit, time::Duration};
-use tokio::time::{self, timeout};
+use std::{borrow::Cow, error::Error as _, mem::MaybeUninit, pin::pin, time::Duration};
+use tokio::time::{self, sleep, timeout};
 use tokio_tungstenite::tungstenite::error::Error as TungsteniteError;
 use tracing::Instrument;
 use uuid::Uuid;
@@ -156,19 +156,18 @@ async fn socket_handler<S: StateTrait>(state: S, socket: &mut WebSocket) -> Resu
                 error::WEBSOCKET_ERROR
             })?;
 
-        let _start_time = send_times(&state, socket).await?;
+        let start_time = send_times(&state, socket).await?;
+
+        let mut has_sent_initial_problems = false;
+
+        let mut sleep_until_start = pin!({
+            let now = Utc::now();
+            let duration = (start_time - now).to_std().unwrap_or(Duration::ZERO);
+            sleep(duration)
+        });
 
         let problems = state.problems();
-        let (mut initial_problems, mut problems_stream) = problems.stream().await;
-
-        while let Some(event) = initial_problems.next().await {
-            let payload = serde_json::to_string(&event).unwrap();
-            if let Err(err) = socket.send(Message::Text(payload)).await {
-                let tungstenite_error = err.source().unwrap().downcast_ref::<TungsteniteError>().unwrap();
-                error!("websocket error: {:?}", tungstenite_error);
-                return Err(error::WEBSOCKET_ERROR)
-            }
-        }
+        let mut problems_stream = ProblemStream::new_empty();
 
         send_answers(&state, socket, team.id).await?;
 
@@ -176,7 +175,22 @@ async fn socket_handler<S: StateTrait>(state: S, socket: &mut WebSocket) -> Resu
 
         loop {
             tokio::select! {
-                problems_event = problems_stream.next() => {
+                _ = &mut sleep_until_start, if !has_sent_initial_problems => {
+                    let (mut initial_problems, new_problems_stream) = problems.stream().await;
+                    problems_stream = new_problems_stream;
+
+                    while let Some(event) = initial_problems.next().await {
+                        let payload = serde_json::to_string(&event).unwrap();
+                        if let Err(err) = socket.send(Message::Text(payload)).await {
+                            let tungstenite_error = err.source().unwrap().downcast_ref::<TungsteniteError>().unwrap();
+                            error!("websocket error: {:?}", tungstenite_error);
+                            return Err(error::WEBSOCKET_ERROR)
+                        }
+                    }
+
+                    has_sent_initial_problems = true;
+                }
+                problems_event = problems_stream.next(), if has_sent_initial_problems => {
                     let Some(problems_event) = problems_event else {
                         continue
                     };

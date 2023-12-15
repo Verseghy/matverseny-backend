@@ -10,10 +10,12 @@ mod state;
 mod utils;
 
 use crate::{middlewares::middlewares, utils::SignalHandler};
+use axum::ServiceExt;
 use error::{Error, Result};
 use json::*;
 pub use state::*;
 use std::net::TcpListener;
+use tower_http::normalize_path::NormalizePath;
 pub use utils::panic;
 
 pub async fn run<S: StateTrait>(listener: TcpListener, state: S) {
@@ -24,6 +26,7 @@ pub async fn run<S: StateTrait>(listener: TcpListener, state: S) {
 
     let app = handlers::routes::<S>(state.clone());
     let app = middlewares(state, app);
+    let app = NormalizePath::trim_trailing_slash(app);
 
     axum::Server::from_tcp(listener)
         .expect("failed to start server")

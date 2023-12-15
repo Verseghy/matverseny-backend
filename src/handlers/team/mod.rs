@@ -1,14 +1,15 @@
 mod code;
 mod create;
 mod disband;
+mod get;
 mod join;
 mod kick;
 mod leave;
 mod update;
 
-use crate::state::StateTrait;
+use crate::{middlewares::PermissionsLayer, state::StateTrait};
 use axum::{
-    routing::{patch, post},
+    routing::{get, patch, post},
     Router,
 };
 
@@ -28,9 +29,8 @@ use axum::{
 /// POST  /team/code
 ///
 /// # Admin actions
-/// GET /team/:id
-/// GET /teams
-pub fn routes<S: StateTrait>() -> Router<S> {
+/// GET /team
+pub fn routes<S: StateTrait>(state: S) -> Router<S> {
     Router::new()
         .route("/create", post(create::create_team::<S>))
         .route("/join", post(join::join_team::<S>))
@@ -39,4 +39,9 @@ pub fn routes<S: StateTrait>() -> Router<S> {
         .route("/disband", post(disband::disband_team::<S>))
         .route("/kick", post(kick::kick_user::<S>))
         .route("/code", post(code::regenerate_code::<S>))
+        .route(
+            "/",
+            get(get::get_all_teams::<S>)
+                .layer(PermissionsLayer::new(state, &["mathcompetition.admin"])),
+        )
 }

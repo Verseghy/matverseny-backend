@@ -15,7 +15,7 @@ use axum::{
 pub fn routes<S: StateTrait>(state: S) -> Router<S> {
     Router::new()
         .route("/register", post(register::register::<S>))
-        .nest("/team", team::routes::<S>())
+        .nest("/team", team::routes::<S>(state.clone()))
         .nest("/problem", problem::routes::<S>(state.clone()))
         .nest("/competition", competition::routes::<S>(state.clone()))
         .route("/ws", get(socket::ws_handler::<S>))
