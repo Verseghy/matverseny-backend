@@ -122,10 +122,10 @@ impl Problems {
 
                             if let Some(pos) = pos {
                                 if let Some(body) = body {
-                                    guard[pos].body = body.clone();
+                                    guard[pos].body.clone_from(body);
                                 }
                                 if let Some(image) = image {
-                                    guard[pos].image = image.clone();
+                                    guard[pos].image.clone_from(image);
                                 }
                             } else {
                                 warn!("no problems with id: {}", id);
