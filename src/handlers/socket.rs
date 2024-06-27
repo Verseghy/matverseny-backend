@@ -18,11 +18,7 @@ use entity::{
     solutions_history, teams,
     users::{self, Class},
 };
-use futures::StreamExt;
-use rdkafka::{
-    consumer::{Consumer, StreamConsumer},
-    ClientConfig, Message as _, TopicPartitionList,
-};
+use futures::{Stream, StreamExt};
 use sea_orm::{ColumnTrait, Condition, EntityTrait, QueryFilter, QueryOrder, QuerySelect};
 use serde::{Deserialize, Serialize};
 use std::{borrow::Cow, error::Error as _, mem::MaybeUninit, pin::pin, time::Duration};
@@ -137,7 +133,7 @@ async fn socket_handler<S: StateTrait>(state: S, socket: &mut WebSocket) -> Resu
     let claims_span = info_span!("claims", user_id = claims.subject.to_string());
 
     async move {
-        let consumer = create_consumer(&team.id).await?;
+        let mut consumer2 = std::pin::pin!(create_consumer2(&state, &team.id).await?);
 
         socket
             .send(Message::Text(
@@ -168,9 +164,6 @@ async fn socket_handler<S: StateTrait>(state: S, socket: &mut WebSocket) -> Resu
 
         let problems = state.problems();
         let mut problems_stream = ProblemStream::new_empty();
-
-
-        let mut kafka_stream = consumer.stream();
 
         loop {
             tokio::select! {
@@ -203,29 +196,8 @@ async fn socket_handler<S: StateTrait>(state: S, socket: &mut WebSocket) -> Resu
                         break Err(error::WEBSOCKET_ERROR)
                     }
                 }
-                message = timeout(Duration::from_secs(5), kafka_stream.next()), if has_sent_initial_problems => {
-                    let Ok(message) = message else {
-                        continue;
-                    };
-
-                    let Some(message) = message else {
-                        error!("kafka stream closed unexpectedly");
-                        break Err(error::INTERNAL)
-                    };
-
-                    let message = message?;
-
-                    debug!("kafka message: {:?}", message);
-
-                    let Some(payload) = message.payload() else {
-                        warn!("got kafka message without payload");
-                        // This shouldn't happen so if somehow it still happens just ignore it
-                        continue
-                    };
-
-                    // SAFETY: the backend will always send valid utf-8
-                    let payload = unsafe { std::str::from_utf8_unchecked(payload) };
-                    let event = serde_json::from_str(payload)?;
+                Ok(Some(event)) = timeout(Duration::from_secs(5), consumer2.next()), if has_sent_initial_problems => {
+                    let event_text = serde_json::to_string(&event).unwrap();
 
                     if matches!(event, Event::DisbandTeam)
                         || matches!(event, Event::LeaveTeam { user } if user == claims.subject)
@@ -233,7 +205,7 @@ async fn socket_handler<S: StateTrait>(state: S, socket: &mut WebSocket) -> Resu
                     {
                         let _ = socket.send(Message::Close(Some(CloseFrame {
                             code: close_code::NORMAL,
-                            reason: Cow::Owned(payload.to_owned()),
+                            reason: Cow::Owned(event_text),
                         }))).await;
 
                         socket.next().await;
@@ -241,7 +213,7 @@ async fn socket_handler<S: StateTrait>(state: S, socket: &mut WebSocket) -> Resu
                         return Ok(())
                     }
 
-                    if let Err(err) = socket.send(Message::Text(payload.to_owned())).await {
+                    if let Err(err) = socket.send(Message::Text(event_text)).await {
                         let tungstenite_error = err.source().unwrap().downcast_ref::<TungsteniteError>().unwrap();
                         error!("websocket error: {:?}", tungstenite_error);
                         break Err(error::WEBSOCKET_ERROR)
@@ -334,31 +306,6 @@ async fn send_answers<S: StateTrait>(
 
     Ok(())
 }
-
-// async fn wait_for_start<S: StateTrait>(state: &S) -> Result<()> {
-//     loop {
-//         let res = times::Entity::find()
-//             .filter(times::Column::Name.eq("start_time"))
-//             .one(state.db())
-//             .await?;
-//
-//         let start_time = match res {
-//             None => {
-//                 error!("start_time is not found in the database");
-//                 return Err(error::INTERNAL);
-//             }
-//             Some(time) => time.time,
-//         };
-//
-//         if start_time < chrono::Utc::now() {
-//             break;
-//         }
-//
-//         sleep(Duration::from_secs(3)).await;
-//     }
-//
-//     Ok(())
-// }
 
 type TeamInfo = (teams::Model, Vec<Member>, Claims);
 
@@ -456,31 +403,34 @@ async fn socket_auth<S: StateTrait>(state: &S, socket: &mut WebSocket) -> Result
     Ok((result, members, claims))
 }
 
-// TODO: create a global singleton consumer for performance reasons
-async fn create_consumer(team_id: &Uuid) -> Result<StreamConsumer> {
-    let bootstrap_servers = std::env::var("KAFKA_BOOTSTRAP_SERVERS")
-        .expect("environment variable KAFKA_BOOTSTRAP_SERVERS is not set");
+async fn create_consumer2<'a, 'b, S: StateTrait>(
+    state: &'a S,
+    team_id: &'a Uuid,
+) -> Result<impl Stream<Item = Event> + 'b> {
+    async fn convert_message(message: async_nats::Message) -> Option<Event> {
+        serde_json::from_slice::<Event>(&message.payload).ok()
+    }
 
-    let mut buf = [0u8; uuid::fmt::Simple::LENGTH];
-    let id = uuid::Uuid::new_v4().as_simple().encode_lower(&mut buf);
+    let team_info_sub = state
+        .nats()
+        .subscribe(topics::team_info(team_id))
+        .await?
+        .filter_map(convert_message);
 
-    let consumer: StreamConsumer = ClientConfig::new()
-        .set("bootstrap.servers", bootstrap_servers)
-        .set("group.id", id)
-        .set("enable.partition.eof", "false")
-        .set("enable.auto.commit", "false")
-        .set("auto.offset.reset", "latest")
-        .create()?;
+    let solutions_sub = state
+        .nats()
+        .subscribe(topics::team_solutions(team_id))
+        .await?
+        .filter_map(convert_message);
 
-    consumer.assign(&{
-        let mut list = TopicPartitionList::new();
-        list.add_partition(&topics::team_info(team_id), 0);
-        list.add_partition(&topics::team_solutions(team_id), 0);
-        list.add_partition(topics::times(), 0);
-        list
-    })?;
+    let times_sub = state
+        .nats()
+        .subscribe(topics::times())
+        .await?
+        .filter_map(convert_message);
 
-    tokio::time::sleep(std::time::Duration::from_millis(200)).await;
-
-    Ok(consumer)
+    Ok(futures::stream::select(
+        team_info_sub,
+        futures::stream::select(solutions_sub, times_sub),
+    ))
 }

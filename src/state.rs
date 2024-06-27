@@ -1,6 +1,6 @@
 use crate::{
     iam::{Iam, IamTrait},
-    utils::{topics, Problems},
+    utils::Problems,
 };
 use libiam::App;
 use rand::{
@@ -8,12 +8,6 @@ use rand::{
     Rng, SeedableRng,
 };
 use rand_chacha::ChaCha20Core;
-use rdkafka::{
-    admin::{AdminClient, AdminOptions, NewTopic, TopicReplication},
-    client::DefaultClientContext,
-    producer::FutureProducer,
-    ClientConfig,
-};
 use sea_orm::{ConnectOptions, ConnectionTrait, Database, DbConn, TransactionTrait};
 use std::{env, sync::Arc};
 use tracing::log::LevelFilter;
@@ -27,20 +21,18 @@ pub trait StateTrait: Send + Sync + Clone + 'static {
     fn iam(&self) -> &Self::Iam;
     fn iam_app(&self) -> &App;
     fn rng(&self) -> Self::Rand;
-    fn kafka_producer(&self) -> &FutureProducer;
-    fn kafka_admin(&self) -> &AdminClient<DefaultClientContext>;
     fn app_secret(&self) -> &str;
     fn problems(&self) -> Arc<Problems>;
+    fn nats(&self) -> async_nats::Client;
 }
 
 pub struct State {
     database: DbConn,
     iam: Iam,
     iam_app: App,
-    kafka_producer: FutureProducer,
-    kafka_admin: AdminClient<DefaultClientContext>,
     app_secret: String,
     problems: Arc<Problems>,
+    nats: async_nats::Client,
 }
 
 impl State {
@@ -49,53 +41,16 @@ impl State {
     }
 
     pub async fn with_database(iam_app: App, conn: DbConn) -> Arc<Self> {
-        let problems = Problems::new(&conn).await;
+        let nats = Self::connect_nats().await;
+        let problems = Problems::new(&conn, nats.clone()).await;
         Arc::new(Self {
             database: conn,
             iam: Iam::new(),
             iam_app,
-            kafka_producer: Self::create_kafka_producer(),
-            kafka_admin: Self::create_kafka_admin().await,
             app_secret: env::var("IAM_APP_SECRET").expect("IAM_APP_SECRET is not set"),
             problems: Arc::new(problems),
+            nats,
         })
-    }
-
-    fn create_kafka_producer() -> FutureProducer {
-        info!("Creating kafka producer");
-
-        let bootstrap_servers =
-            env::var("KAFKA_BOOTSTRAP_SERVERS").expect("KAFKA_BOOTSTRAP_SERVERS not set");
-
-        ClientConfig::new()
-            .set("bootstrap.servers", bootstrap_servers)
-            .create()
-            .expect("failed to create kafka producer")
-    }
-
-    async fn create_kafka_admin() -> AdminClient<DefaultClientContext> {
-        info!("Creating kafka admin client");
-
-        let bootstrap_servers =
-            env::var("KAFKA_BOOTSTRAP_SERVERS").expect("KAFKA_BOOTSRAP_SERVERS not set");
-
-        let admin = ClientConfig::new()
-            .set("bootstrap.servers", bootstrap_servers)
-            .create::<AdminClient<DefaultClientContext>>()
-            .expect("failed to create kafka admin client");
-
-        admin
-            .create_topics(
-                &[
-                    NewTopic::new(topics::times(), 1, TopicReplication::Fixed(1)),
-                    NewTopic::new(topics::problems(), 1, TopicReplication::Fixed(1)),
-                ],
-                &AdminOptions::new(),
-            )
-            .await
-            .expect("failed to create times topic");
-
-        admin
     }
 
     async fn connect_database() -> DbConn {
@@ -110,6 +65,17 @@ impl State {
         info!("Connected to database");
 
         db
+    }
+
+    async fn connect_nats() -> async_nats::Client {
+        info!("Trying to connect to NATS");
+
+        let url = env::var("NATS_URL").expect("NATS_URL is not set");
+        let client = async_nats::connect(url).await.unwrap();
+
+        info!("Connected to NATS");
+
+        client
     }
 }
 
@@ -141,19 +107,15 @@ impl StateTrait for Arc<State> {
         CHACHA_THREAD_RNG.with(|x| x.clone())
     }
 
-    fn kafka_producer(&self) -> &FutureProducer {
-        &self.kafka_producer
-    }
-
-    fn kafka_admin(&self) -> &AdminClient<DefaultClientContext> {
-        &self.kafka_admin
-    }
-
     fn app_secret(&self) -> &str {
         &self.app_secret
     }
 
     fn problems(&self) -> Arc<Problems> {
         Arc::clone(&self.problems)
+    }
+
+    fn nats(&self) -> async_nats::Client {
+        self.nats.clone()
     }
 }

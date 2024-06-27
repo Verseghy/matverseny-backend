@@ -1,7 +1,7 @@
 use crate::{
     error::{self, DatabaseError, Result},
     iam::Claims,
-    utils::{generate_join_code, topics},
+    utils::generate_join_code,
     StateTrait, ValidatedJson,
 };
 use axum::{extract::State, http::StatusCode};
@@ -10,7 +10,6 @@ use entity::{
     teams::{self, constrains::*},
     users,
 };
-use rdkafka::admin::{AdminOptions, NewTopic, TopicReplication};
 use sea_orm::{EntityTrait, QuerySelect, Set, TransactionTrait};
 use serde::Deserialize;
 use uuid::Uuid;
@@ -76,25 +75,6 @@ pub async fn create_team<S: StateTrait>(
             }
             r => r?,
         };
-
-        state
-            .kafka_admin()
-            .create_topics(
-                &[
-                    NewTopic::new(
-                        &topics::team_info(&result.last_insert_id),
-                        1,
-                        TopicReplication::Fixed(1),
-                    ),
-                    NewTopic::new(
-                        &topics::team_solutions(&result.last_insert_id),
-                        1,
-                        TopicReplication::Fixed(1),
-                    ),
-                ],
-                &AdminOptions::new(),
-            )
-            .await?;
 
         txn.commit().await?;
 

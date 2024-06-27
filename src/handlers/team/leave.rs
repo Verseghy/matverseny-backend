@@ -1,9 +1,7 @@
 use crate::{error, handlers::socket::Event, iam::Claims, utils::topics, Result, StateTrait};
 use axum::{extract::State, http::StatusCode};
 use entity::{team_members, teams, users};
-use rdkafka::producer::FutureRecord;
 use sea_orm::{EntityTrait, QuerySelect, TransactionTrait};
-use std::time::Duration;
 
 pub async fn leave_team<S: StateTrait>(
     State(state): State<S>,
@@ -42,12 +40,12 @@ pub async fn leave_team<S: StateTrait>(
         .await?;
 
     state
-        .kafka_producer()
-        .send(
-            FutureRecord::<(), String>::to(&topics::team_info(&team.id))
-                .partition(0)
-                .payload(&serde_json::to_string(&Event::LeaveTeam { user: user.id }).unwrap()),
-            Duration::from_secs(5),
+        .nats()
+        .publish(
+            topics::team_info(&team.id),
+            serde_json::to_vec(&Event::LeaveTeam { user: user.id })
+                .unwrap()
+                .into(),
         )
         .await?;
 

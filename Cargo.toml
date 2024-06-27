@@ -77,7 +77,6 @@ jsonwebtoken = "9.1.0"
 once_cell = { version = "1.18.0", features = ["parking_lot"] }
 rand = "0.8.5"
 futures = "0.3.29"
-rdkafka = { version = "0.35.0", features = ["tracing", "cmake-build"] }
 rand_chacha = "0.3.1"
 serde_with = "3.4.0"
 tokio-tungstenite = "0.20.1"
@@ -92,6 +91,7 @@ pin-project-lite = "0.2.13"
 reqwest = { version = "0.11.22", default-features = false, features = ["json", "rustls-tls"] }
 libiam = { git = "https://github.com/Verseghy/iam", package = "libiam" }
 chrono = { version = "0.4.31", features = ["serde"] }
+async-nats = "0.35.1"
 
 [workspace.dependencies]
 uuid = { version = "1.5.0", features = ["v4", "fast-rng", "serde"] }

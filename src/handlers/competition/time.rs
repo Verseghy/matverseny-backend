@@ -1,5 +1,3 @@
-use std::time::Duration;
-
 use crate::{
     error::{self, Result},
     handlers::socket::Event,
@@ -10,7 +8,6 @@ use crate::{
 use axum::{extract::State, http::StatusCode};
 use chrono::{NaiveDateTime, TimeZone, Utc};
 use entity::times;
-use rdkafka::producer::FutureRecord;
 use sea_orm::{ColumnTrait, Condition, EntityTrait, QueryFilter, Set, TransactionTrait};
 use serde::{Deserialize, Serialize};
 
@@ -59,16 +56,15 @@ pub async fn set_time_patch<S: StateTrait>(
     }
 
     state
-        .kafka_producer()
-        .send(
-            FutureRecord::<(), String>::to(topics::times()).payload(
-                &serde_json::to_string(&Event::UpdateTime {
-                    start_time: req.start_time,
-                    end_time: req.end_time,
-                })
-                .unwrap(),
-            ),
-            Duration::from_secs(5),
+        .nats()
+        .publish(
+            topics::times(),
+            serde_json::to_vec(&Event::UpdateTime {
+                start_time: req.start_time,
+                end_time: req.end_time,
+            })
+            .unwrap()
+            .into(),
         )
         .await?;
 

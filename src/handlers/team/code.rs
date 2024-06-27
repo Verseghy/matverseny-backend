@@ -7,9 +7,7 @@ use crate::{
 };
 use axum::{extract::State, http::StatusCode};
 use entity::teams::{self, constrains::*};
-use rdkafka::producer::FutureRecord;
 use sea_orm::{EntityTrait, IntoActiveModel, QuerySelect, Set, TransactionTrait};
-use std::time::Duration;
 
 pub async fn regenerate_code<S: StateTrait>(
     State(state): State<S>,
@@ -31,7 +29,7 @@ pub async fn regenerate_code<S: StateTrait>(
         return Err(error::LOCKED_TEAM);
     }
 
-    let kafka_topic = topics::team_info(&team.id);
+    let topic = topics::team_info(&team.id);
     let model = team.into_active_model();
 
     for _ in 0..16 {
@@ -47,7 +45,7 @@ pub async fn regenerate_code<S: StateTrait>(
             r => r?,
         };
 
-        let kafka_payload = serde_json::to_string(&Event::UpdateTeam {
+        let payload = serde_json::to_vec(&Event::UpdateTeam {
             name: None,
             owner: None,
             co_owner: None,
@@ -56,15 +54,7 @@ pub async fn regenerate_code<S: StateTrait>(
         })
         .unwrap();
 
-        state
-            .kafka_producer()
-            .send(
-                FutureRecord::<(), String>::to(&kafka_topic)
-                    .partition(0)
-                    .payload(&kafka_payload),
-                Duration::from_secs(5),
-            )
-            .await?;
+        state.nats().publish(topic, payload.into()).await?;
 
         txn.commit().await?;
 

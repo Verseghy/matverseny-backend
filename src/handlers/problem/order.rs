@@ -1,5 +1,3 @@
-use std::time::Duration;
-
 use crate::{
     error::{self, DatabaseError, Result},
     handlers::socket::Event,
@@ -13,7 +11,6 @@ use entity::{
     problems,
     problems_order::{self, constraints::*},
 };
-use rdkafka::producer::FutureRecord;
 use sea_orm::{
     sea_query::{CaseStatement, Query},
     ActiveValue::NotSet,
@@ -83,20 +80,17 @@ pub async fn change<S: StateTrait>(
                 let res = problems::Entity::find_by_id(id).one(&txn).await?.unwrap();
 
                 state
-                    .kafka_producer()
-                    .send(
-                        FutureRecord::<(), String>::to(topics::problems())
-                            .partition(0)
-                            .payload(
-                                &serde_json::to_string(&Event::InsertProblem {
-                                    before: Some(before),
-                                    id: res.id,
-                                    body: res.body,
-                                    image: res.image,
-                                })
-                                .unwrap(),
-                            ),
-                        Duration::from_secs(5),
+                    .nats()
+                    .publish(
+                        topics::problems(),
+                        serde_json::to_vec(&Event::InsertProblem {
+                            before: Some(before),
+                            id: res.id,
+                            body: res.body,
+                            image: res.image,
+                        })
+                        .unwrap()
+                        .into(),
                     )
                     .await?;
 
@@ -146,20 +140,17 @@ pub async fn change<S: StateTrait>(
                 let res = problems::Entity::find_by_id(id).one(&txn).await?.unwrap();
 
                 state
-                    .kafka_producer()
-                    .send(
-                        FutureRecord::<(), String>::to(topics::problems())
-                            .partition(0)
-                            .payload(
-                                &serde_json::to_string(&Event::InsertProblem {
-                                    before: None,
-                                    id: res.id,
-                                    body: res.body,
-                                    image: res.image,
-                                })
-                                .unwrap(),
-                            ),
-                        Duration::from_secs(5),
+                    .nats()
+                    .publish(
+                        topics::problems(),
+                        serde_json::to_vec(&Event::InsertProblem {
+                            before: None,
+                            id: res.id,
+                            body: res.body,
+                            image: res.image,
+                        })
+                        .unwrap()
+                        .into(),
                     )
                     .await?;
 
@@ -170,12 +161,12 @@ pub async fn change<S: StateTrait>(
             delete_problem(&txn, id).await?;
 
             state
-                .kafka_producer()
-                .send(
-                    FutureRecord::<(), String>::to(topics::problems())
-                        .partition(0)
-                        .payload(&serde_json::to_string(&Event::DeleteProblem { id }).unwrap()),
-                    Duration::from_secs(5),
+                .nats()
+                .publish(
+                    topics::problems(),
+                    serde_json::to_vec(&Event::DeleteProblem { id })
+                        .unwrap()
+                        .into(),
                 )
                 .await?;
 
@@ -267,14 +258,12 @@ pub async fn change<S: StateTrait>(
                 .await?;
 
             state
-                .kafka_producer()
-                .send(
-                    FutureRecord::<(), String>::to(topics::problems())
-                        .partition(0)
-                        .payload(
-                            &serde_json::to_string(&Event::SwapProblems { id1, id2 }).unwrap(),
-                        ),
-                    Duration::from_secs(5),
+                .nats()
+                .publish(
+                    topics::problems(),
+                    serde_json::to_vec(&Event::SwapProblems { id1, id2 })
+                        .unwrap()
+                        .into(),
                 )
                 .await?;
 

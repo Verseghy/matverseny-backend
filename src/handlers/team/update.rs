@@ -8,10 +8,8 @@ use crate::{
 };
 use axum::{extract::State, http::StatusCode};
 use entity::teams;
-use rdkafka::producer::FutureRecord;
 use sea_orm::{ConnectionTrait, EntityTrait, IntoActiveModel, QuerySelect, TransactionTrait};
 use serde::Deserialize;
-use std::time::Duration;
 use uuid::Uuid;
 use validator::Validate;
 
@@ -73,7 +71,7 @@ pub async fn update_team<S: StateTrait>(
         }
     }
 
-    let kafka_payload = serde_json::to_string(&Event::UpdateTeam {
+    let payload = serde_json::to_vec(&Event::UpdateTeam {
         name: request.name.clone(),
         owner: request.owner,
         co_owner: request.co_owner,
@@ -82,7 +80,7 @@ pub async fn update_team<S: StateTrait>(
     })
     .unwrap();
 
-    let kafka_topic = topics::team_info(&team.id);
+    let topic = topics::team_info(&team.id);
 
     let mut active_model = team.into_active_model();
     active_model.name = set_option(request.name);
@@ -92,15 +90,7 @@ pub async fn update_team<S: StateTrait>(
 
     teams::Entity::update(active_model).exec(&txn).await?;
 
-    state
-        .kafka_producer()
-        .send(
-            FutureRecord::<(), String>::to(&kafka_topic)
-                .partition(0)
-                .payload(&kafka_payload),
-            Duration::from_secs(5),
-        )
-        .await?;
+    state.nats().publish(topic, payload.into()).await?;
 
     txn.commit().await?;
     Ok(StatusCode::NO_CONTENT)

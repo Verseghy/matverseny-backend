@@ -1,5 +1,3 @@
-use std::time::Duration;
-
 use crate::{
     error::{self, Result},
     handlers::socket::Event,
@@ -9,7 +7,6 @@ use crate::{
 };
 use axum::{extract::State, http::StatusCode};
 use entity::problems;
-use rdkafka::producer::FutureRecord;
 use sea_orm::{DbErr, EntityTrait, Set, TransactionTrait};
 use serde::Deserialize;
 use uuid::Uuid;
@@ -32,7 +29,7 @@ pub async fn update_problem<S: StateTrait>(
         return Ok(StatusCode::NO_CONTENT);
     }
 
-    let kafka_payload = serde_json::to_string(&Event::UpdateProblem {
+    let payload = serde_json::to_vec(&Event::UpdateProblem {
         id: request.id,
         body: request.body.clone(),
         image: request.image.clone(),
@@ -56,13 +53,8 @@ pub async fn update_problem<S: StateTrait>(
     };
 
     state
-        .kafka_producer()
-        .send(
-            FutureRecord::<(), String>::to(topics::problems())
-                .partition(0)
-                .payload(&kafka_payload),
-            Duration::from_secs(5),
-        )
+        .nats()
+        .publish(topics::problems(), payload.into())
         .await?;
 
     txn.commit().await?;

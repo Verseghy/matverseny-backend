@@ -9,9 +9,9 @@ use axum::{
     response::{IntoResponse, Response},
 };
 use bytes::{BufMut, Bytes, BytesMut};
-use rdkafka::{error::KafkaError, message::OwnedMessage};
 use sea_orm::DbErr;
 use serde_json::json;
+use std::fmt::{Debug, Display};
 
 #[derive(Debug)]
 pub struct Error<'a> {
@@ -104,19 +104,22 @@ impl From<serde_json::Error> for Error<'_> {
     }
 }
 
-impl From<KafkaError> for Error<'_> {
+impl<K> From<async_nats::error::Error<K>> for Error<'_>
+where
+    K: PartialEq + Debug + Display + Clone,
+{
     #[inline]
-    fn from(error: KafkaError) -> Self {
-        error!("kafka error: {:?}", error);
-        constants::KAFKA_ERROR
+    fn from(value: async_nats::error::Error<K>) -> Self {
+        error!("NATS error: {:?}", value);
+        constants::NATS_ERROR
     }
 }
 
-impl From<(KafkaError, OwnedMessage)> for Error<'_> {
+impl From<async_nats::SubscribeError> for Error<'_> {
     #[inline]
-    fn from((error, _): (KafkaError, OwnedMessage)) -> Self {
-        error!("kafka error: {:?}", error);
-        constants::KAFKA_ERROR
+    fn from(value: async_nats::SubscribeError) -> Self {
+        error!("NATS error: {:?}", value);
+        constants::NATS_ERROR
     }
 }
 
