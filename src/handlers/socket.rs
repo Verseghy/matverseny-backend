@@ -133,7 +133,7 @@ async fn socket_handler<S: StateTrait>(state: S, socket: &mut WebSocket) -> Resu
     let claims_span = info_span!("claims", user_id = claims.subject.to_string());
 
     async move {
-        let mut consumer2 = std::pin::pin!(create_consumer2(&state, &team.id).await?);
+        let mut consumer = std::pin::pin!(create_consumer(&state, &team.id).await?);
 
         socket
             .send(Message::Text(
@@ -196,7 +196,7 @@ async fn socket_handler<S: StateTrait>(state: S, socket: &mut WebSocket) -> Resu
                         break Err(error::WEBSOCKET_ERROR)
                     }
                 }
-                Ok(Some(event)) = timeout(Duration::from_secs(5), consumer2.next()), if has_sent_initial_problems => {
+                Ok(Some(event)) = timeout(Duration::from_secs(5), consumer.next()), if has_sent_initial_problems => {
                     let event_text = serde_json::to_string(&event).unwrap();
 
                     if matches!(event, Event::DisbandTeam)
@@ -403,34 +403,19 @@ async fn socket_auth<S: StateTrait>(state: &S, socket: &mut WebSocket) -> Result
     Ok((result, members, claims))
 }
 
-async fn create_consumer2<'a, 'b, S: StateTrait>(
+async fn create_consumer<'a, 'b, S: StateTrait>(
     state: &'a S,
     team_id: &'a Uuid,
 ) -> Result<impl Stream<Item = Event> + 'b> {
-    async fn convert_message(message: async_nats::Message) -> Option<Event> {
+    let nats = state.nats();
+
+    let combined = futures::stream::select_all([
+        nats.subscribe(topics::team_info(team_id)).await?,
+        nats.subscribe(topics::team_solutions(team_id)).await?,
+        nats.subscribe(topics::times()).await?,
+    ]);
+
+    Ok(combined.filter_map(|message| async move {
         serde_json::from_slice::<Event>(&message.payload).ok()
-    }
-
-    let team_info_sub = state
-        .nats()
-        .subscribe(topics::team_info(team_id))
-        .await?
-        .filter_map(convert_message);
-
-    let solutions_sub = state
-        .nats()
-        .subscribe(topics::team_solutions(team_id))
-        .await?
-        .filter_map(convert_message);
-
-    let times_sub = state
-        .nats()
-        .subscribe(topics::times())
-        .await?
-        .filter_map(convert_message);
-
-    Ok(futures::stream::select(
-        team_info_sub,
-        futures::stream::select(solutions_sub, times_sub),
-    ))
+    }))
 }
