@@ -75,7 +75,7 @@ pub async fn join_team<S: StateTrait>(
                 topics::team_info(&team.id),
                 serde_json::to_vec(&Event::JoinTeam {
                     user: user.id,
-                    name: user_info.name.clone(),
+                    name: user_info.name,
                 })
                 .unwrap()
                 .into(),
