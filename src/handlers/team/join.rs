@@ -10,10 +10,8 @@ use entity::{
     team_members::{self, constraints::*},
     teams, users,
 };
-use rdkafka::producer::FutureRecord;
 use sea_orm::{EntityTrait, QuerySelect, Set, TransactionTrait};
 use serde::Deserialize;
-use std::time::Duration;
 
 #[derive(Deserialize)]
 pub struct Request {
@@ -72,18 +70,15 @@ pub async fn join_team<S: StateTrait>(
             })?;
 
         state
-            .kafka_producer()
-            .send(
-                FutureRecord::<(), String>::to(&topics::team_info(&team.id))
-                    .partition(0)
-                    .payload(
-                        &serde_json::to_string(&Event::JoinTeam {
-                            user: user.id,
-                            name: user_info.name,
-                        })
-                        .unwrap(),
-                    ),
-                Duration::from_secs(5),
+            .nats()
+            .publish(
+                topics::team_info(&team.id),
+                serde_json::to_vec(&Event::JoinTeam {
+                    user: user.id,
+                    name: user_info.name,
+                })
+                .unwrap()
+                .into(),
             )
             .await?;
 

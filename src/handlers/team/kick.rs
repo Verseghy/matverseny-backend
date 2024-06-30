@@ -8,10 +8,8 @@ use crate::{
 };
 use axum::{extract::State, http::StatusCode};
 use entity::{team_members, teams, users};
-use rdkafka::producer::FutureRecord;
 use sea_orm::{EntityTrait, IntoActiveModel, QuerySelect, Set, TransactionTrait};
 use serde::Deserialize;
-use std::time::Duration;
 use uuid::Uuid;
 
 #[derive(Deserialize)]
@@ -65,7 +63,7 @@ pub async fn kick_user<S: StateTrait>(
         return Err(error::NO_SUCH_MEMBER);
     }
 
-    let kafka_topic = topics::team_info(&team.id);
+    let topic = topics::team_info(&team.id);
 
     if Some(request.user) == team.co_owner {
         let mut model = team.into_active_model();
@@ -74,12 +72,12 @@ pub async fn kick_user<S: StateTrait>(
     }
 
     state
-        .kafka_producer()
-        .send(
-            FutureRecord::<(), String>::to(&kafka_topic)
-                .partition(0)
-                .payload(&serde_json::to_string(&Event::KickUser { user: request.user }).unwrap()),
-            Duration::from_secs(5),
+        .nats()
+        .publish(
+            topic,
+            serde_json::to_vec(&Event::KickUser { user: request.user })
+                .unwrap()
+                .into(),
         )
         .await?;
 

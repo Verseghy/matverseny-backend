@@ -129,11 +129,6 @@ const_error! {
     const JSON_DESERIALIZE;
 }
 const_error! {
-    #[error("M026", "kafka error")]
-    #[status(INTERNAL_SERVER_ERROR)]
-    const KAFKA_ERROR;
-}
-const_error! {
     #[error("M027", "websocket error")]
     const WEBSOCKET_ERROR;
 }
@@ -156,4 +151,9 @@ const_error! {
     #[error("M031", "seconds are out of range")]
     #[status(BAD_REQUEST)]
     const TIME_SECONDS_OUT_OF_RANGE;
+}
+const_error! {
+    #[error("M032", "NATS error")]
+    #[status(INTERNAL_SERVER_ERROR)]
+    const NATS_ERROR;
 }

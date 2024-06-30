@@ -1,5 +1,3 @@
-use std::time::Duration;
-
 use crate::{
     error::{self, Result},
     handlers::socket::Event,
@@ -11,7 +9,6 @@ use axum::{
     http::StatusCode,
 };
 use entity::{problems, problems_order};
-use rdkafka::producer::FutureRecord;
 use sea_orm::{EntityTrait, TransactionTrait};
 use uuid::Uuid;
 
@@ -34,12 +31,12 @@ pub async fn delete_problem<S: StateTrait>(
     }
 
     state
-        .kafka_producer()
-        .send(
-            FutureRecord::<(), String>::to(topics::problems())
-                .partition(0)
-                .payload(&serde_json::to_string(&Event::DeleteProblem { id }).unwrap()),
-            Duration::from_secs(5),
+        .nats()
+        .publish(
+            topics::problems(),
+            serde_json::to_vec(&Event::DeleteProblem { id })
+                .unwrap()
+                .into(),
         )
         .await?;
 

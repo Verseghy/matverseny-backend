@@ -316,9 +316,9 @@ mod delete {
     #[parallel]
     async fn success() {
         let app = get_cached_app().await;
-
-        let user = utils::iam::register_user().await;
+        let user = app.register_user().await;
         utils::iam::make_admin(&user).await;
+        let _team = app.create_team(&user).await;
 
         let res = app
             .post("/problem")
@@ -338,6 +338,9 @@ mod delete {
             res.json::<Value>().await,
         );
 
+        let mut socket = app.socket("/ws").start().await;
+        assert_team_info!(socket, user);
+
         let body: Value = res.json().await;
         let id = body["id"].as_str().unwrap();
 
@@ -352,6 +355,18 @@ mod delete {
             StatusCode::OK,
             "failed to delete problem: response={:#?}",
             res.json::<Value>().await,
+        );
+
+        let message = utils::get_socket_message(socket.next().await);
+
+        assert_json_eq!(
+            message,
+            json!({
+                "event": "DELETE_PROBLEM",
+                "data": {
+                    "id": id,
+                },
+            }),
         );
     }
 

@@ -2,10 +2,6 @@ use crate::{handlers::socket::Event, utils::topics};
 use entity::{problems, problems_order};
 use futures::{Stream, StreamExt};
 use pin_project_lite::pin_project;
-use rdkafka::{
-    consumer::{Consumer, StreamConsumer},
-    ClientConfig, Message, TopicPartitionList,
-};
 use sea_orm::{
     ConnectionTrait, DbConn, EntityName, EntityTrait, FromQueryResult, JoinType, QuerySelect,
     RelationTrait, TransactionTrait,
@@ -19,7 +15,6 @@ use std::{
 use tokio::{
     sync::{broadcast, mpsc, RwLock},
     task,
-    time::sleep,
 };
 use uuid::Uuid;
 
@@ -38,7 +33,7 @@ pub struct Problems {
 }
 
 impl Problems {
-    pub async fn new(db: &DbConn) -> Self {
+    pub async fn new(db: &DbConn, nats: async_nats::Client) -> Self {
         let txn = db.begin().await.expect("failed to start transaction");
 
         txn.execute_unprepared(&format!(
@@ -64,30 +59,7 @@ impl Problems {
 
         let problems = Arc::new(RwLock::new(sort_initial_problems(res)));
 
-        let bootstrap_servers = std::env::var("KAFKA_BOOTSTRAP_SERVERS")
-            .expect("environment variable KAFKA_BOOTSTRAP_SERVERS is not set");
-
-        let mut buf = [0u8; uuid::fmt::Simple::LENGTH];
-        let id = uuid::Uuid::new_v4().as_simple().encode_lower(&mut buf);
-
-        let consumer: StreamConsumer = ClientConfig::new()
-            .set("bootstrap.servers", bootstrap_servers)
-            .set("group.id", id)
-            .set("enable.partition.eof", "false")
-            .set("enable.auto.commit", "false")
-            .set("auto.offset.reset", "latest")
-            .create()
-            .expect("Failed to create kafka consumer");
-
-        consumer
-            .assign(&{
-                let mut list = TopicPartitionList::new();
-                list.add_partition(topics::problems(), 0);
-                list
-            })
-            .expect("failed to assign topics");
-
-        sleep(std::time::Duration::from_millis(200)).await;
+        let mut subscription = nats.subscribe(topics::problems()).await.unwrap();
 
         txn.commit().await.expect("failed to commit transaction");
 
@@ -97,22 +69,8 @@ impl Problems {
             let problems = Arc::clone(&problems);
             let tx = tx.clone();
             async move {
-                let mut stream = consumer.stream();
-                while let Some(message) = stream.next().await {
-                    let message = match message {
-                        Err(err) => {
-                            error!("kafka error: {err:?}");
-                            break;
-                        }
-                        Ok(message) => message,
-                    };
-
-                    let Some(Ok(payload)) = message.payload_view::<str>() else {
-                        error!("payload is not utf-8 string");
-                        break;
-                    };
-
-                    let event: Event = serde_json::from_str(payload).unwrap();
+                while let Some(message) = subscription.next().await {
+                    let event: Event = serde_json::from_slice(&message.payload).unwrap();
                     debug!("problems message: {event:?}");
 
                     let mut guard = problems.write().await;
@@ -164,10 +122,10 @@ impl Problems {
 
                             if let Some(pos) = pos {
                                 if let Some(body) = body {
-                                    guard[pos].body = body.clone();
+                                    guard[pos].body.clone_from(body);
                                 }
                                 if let Some(image) = image {
-                                    guard[pos].image = image.clone();
+                                    guard[pos].image.clone_from(image);
                                 }
                             } else {
                                 warn!("no problems with id: {}", id);

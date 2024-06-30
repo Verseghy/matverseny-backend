@@ -3,11 +3,9 @@ use crate::utils::topics;
 use crate::{error, error::Result, iam::Claims, json::Json, StateTrait};
 use axum::{extract::State, http::StatusCode};
 use entity::{solutions_history, teams};
-use rdkafka::producer::FutureRecord;
 use sea_orm::ActiveValue::Set;
 use sea_orm::{EntityTrait, QuerySelect, TransactionTrait};
 use serde::Deserialize;
-use std::time::Duration;
 use uuid::Uuid;
 
 #[derive(Debug, Deserialize)]
@@ -43,18 +41,15 @@ pub async fn set_solution<S: StateTrait>(
         .await?;
 
     state
-        .kafka_producer()
-        .send(
-            FutureRecord::<(), String>::to(&topics::team_solutions(&team.id))
-                .partition(0)
-                .payload(
-                    &serde_json::to_string(&Event::SolutionSet {
-                        problem: request.problem,
-                        solution: request.solution,
-                    })
-                    .unwrap(),
-                ),
-            Duration::from_secs(5),
+        .nats()
+        .publish(
+            topics::team_solutions(&team.id),
+            serde_json::to_vec(&Event::SolutionSet {
+                problem: request.problem,
+                solution: request.solution,
+            })
+            .unwrap()
+            .into(),
         )
         .await?;
 
