@@ -16,14 +16,17 @@ use request::*;
 use reqwest::Client;
 use serde_json::{json, Value};
 use std::{
-    net::{Ipv4Addr, SocketAddr, TcpListener},
+    net::{Ipv4Addr, SocketAddr},
     sync::{
         atomic::{AtomicU64, Ordering},
         Arc,
     },
 };
 use team::Team;
-use tokio::sync::{oneshot, OnceCell};
+use tokio::{
+    net::TcpListener,
+    sync::{oneshot, OnceCell},
+};
 use tokio_tungstenite::tungstenite::Message;
 use user::*;
 use uuid::Uuid;
@@ -76,7 +79,9 @@ impl App {
                 tracing::trace!("binding socket");
 
                 let addr = SocketAddr::from((Ipv4Addr::LOCALHOST, 0));
-                let listener = TcpListener::bind(addr).expect("failed to bind tcp listener");
+                let listener = TcpListener::bind(addr)
+                    .await
+                    .expect("failed to bind tcp listener");
                 let state = State::with_database(iam_app, conn.conn()).await;
 
                 let inner = Arc::new(AppInner {
@@ -88,7 +93,7 @@ impl App {
 
                 tracing::trace!("starting app");
 
-                matverseny_backend::run(listener, state).await;
+                matverseny_backend::run(listener, state).await.unwrap();
             });
         });
 
