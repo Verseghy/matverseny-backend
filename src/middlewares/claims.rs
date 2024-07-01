@@ -1,10 +1,8 @@
 use crate::{iam::IamTrait, StateTrait};
-use axum::{
-    headers::{
-        authorization::{Authorization, Bearer},
-        HeaderMapExt,
-    },
-    http::Request,
+use axum::http::Request;
+use headers::{
+    authorization::{Authorization, Bearer},
+    HeaderMapExt,
 };
 use std::{
     future::Future,

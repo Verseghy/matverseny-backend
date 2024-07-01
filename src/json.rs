@@ -1,11 +1,8 @@
 use crate::{error, Error};
 use axum::{
     async_trait,
-    body::HttpBody,
-    extract::{rejection::JsonRejection, FromRequest},
-    http::Request,
+    extract::{rejection::JsonRejection, FromRequest, Request},
     response::{IntoResponse, Response},
-    BoxError,
 };
 use serde::{de::DeserializeOwned, Serialize};
 use validator::Validate;
@@ -13,17 +10,14 @@ use validator::Validate;
 pub struct Json<T>(pub T);
 
 #[async_trait]
-impl<T, S, B> FromRequest<S, B> for Json<T>
+impl<T, S> FromRequest<S> for Json<T>
 where
     T: DeserializeOwned,
-    B: HttpBody + Send + 'static,
-    B::Data: Send,
-    B::Error: Into<BoxError>,
     S: Send + Sync,
 {
     type Rejection = Error<'static>;
 
-    async fn from_request(req: Request<B>, state: &S) -> Result<Self, Self::Rejection> {
+    async fn from_request(req: Request, state: &S) -> Result<Self, Self::Rejection> {
         match axum::Json::<T>::from_request(req, state).await {
             Ok(value) => Ok(Self(value.0)),
             Err(rejection) => match rejection {
@@ -49,17 +43,14 @@ where
 pub struct ValidatedJson<T>(pub T);
 
 #[async_trait]
-impl<T, S, B> FromRequest<S, B> for ValidatedJson<T>
+impl<T, S> FromRequest<S> for ValidatedJson<T>
 where
     T: DeserializeOwned + Validate,
-    B: HttpBody + Send + 'static,
-    B::Data: Send,
-    B::Error: Into<BoxError>,
     S: Send + Sync,
 {
     type Rejection = Error<'static>;
 
-    async fn from_request(req: Request<B>, state: &S) -> Result<Self, Self::Rejection> {
+    async fn from_request(req: Request, state: &S) -> Result<Self, Self::Rejection> {
         let Json(json) = Json::<T>::from_request(req, state).await?;
 
         json.validate().map_err(|_| error::JSON_VALIDATE_INVALID)?;

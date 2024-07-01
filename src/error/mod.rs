@@ -153,7 +153,7 @@ mod tests {
     fn error_response_has_json_content_type() {
         let error = Error::new(Some(StatusCode::OK), "", "");
         let response = error.into_response();
-        let content_type = response.headers().get(http::header::CONTENT_TYPE);
+        let content_type = response.headers().get(header::CONTENT_TYPE);
 
         assert!(content_type.is_some(), "response");
         assert_eq!(content_type.unwrap(), "application/json");

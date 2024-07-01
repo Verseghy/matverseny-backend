@@ -9,20 +9,10 @@ use serde::Deserialize;
 use std::env;
 use uuid::Uuid;
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Clone, Deserialize)]
 pub struct Claims {
-    #[serde(rename = "iss")]
-    pub issuer: String,
     #[serde(rename = "sub", deserialize_with = "deserialize_subject")]
     pub subject: Uuid,
-    #[serde(rename = "aud")]
-    pub audience: Vec<String>,
-    #[serde(rename = "exp")]
-    pub expires_at: i64,
-    #[serde(rename = "nbf")]
-    pub not_before: i64,
-    #[serde(rename = "iat")]
-    pub issued_at: i64,
 }
 
 #[async_trait]
