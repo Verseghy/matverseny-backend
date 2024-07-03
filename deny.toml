@@ -1,13 +1,8 @@
 [advisories]
-vulnerability = "deny"
-unmaintained = "warn"
-notice = "deny"
+version = 2
 
 [licenses]
-unlicensed = "deny"
-copyleft = "warn"
-allow-osi-fsf-free = "neither"
-default = "deny"
+version = 2
 confidence-threshold = 1.0
 allow = [
     "MIT",
