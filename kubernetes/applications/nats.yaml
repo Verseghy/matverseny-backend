@@ -1,0 +1,13 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: nats
+spec:
+  project: default
+  source:
+    repoURL: https://nats-io.github.io/k8s/helm/charts/
+    chart: nats
+    targetRevision: 1.2.0
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: matverseny-backend
