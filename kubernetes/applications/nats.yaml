@@ -8,6 +8,12 @@ spec:
     repoURL: https://nats-io.github.io/k8s/helm/charts/
     chart: nats
     targetRevision: 1.2.0
+    helm:
+      parameters:
+        - name: natsBox.enabled
+          value: 'false'
+        - name: config.cluster.enabled
+          value: 'true'
   destination:
     server: https://kubernetes.default.svc
     namespace: matverseny-backend

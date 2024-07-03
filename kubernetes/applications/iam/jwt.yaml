@@ -1,9 +1,0 @@
-apiVersion: v1
-kind: Secret
-metadata:
-  name: jwt
-data:
-  private-key: |
-    $JWT_PRIVATE
-  public-key: |
-    $JWT_PUBLIC

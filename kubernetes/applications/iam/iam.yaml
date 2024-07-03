@@ -3,7 +3,7 @@ kind: Deployment
 metadata:
   name: iam
 spec:
-  replicas: 3
+  replicas: 1
   selector:
     matchLabels:
       app: iam
@@ -19,7 +19,7 @@ spec:
     spec:
       containers:
         - name: app
-          image: verseghy/iam
+          image: ghcr.io/verseghy/iam
           ports:
             - containerPort: 3001
           imagePullPolicy: Always
@@ -46,24 +46,6 @@ spec:
                   key: mysql-password
             - name: DATABASE_URL
               value: mysql://root:$(DB_PASSWORD)@mysql.iam.svc.cluster.local/iam
-            - name: REDIS_URL
-              value: redis://redis.iam.svc.cluster.local
-            - name: SMTP_HOST
-              value: ""
-            - name: SMTP_USERNAME
-              value: ""
-            - name: SMTP_PASSWORD
-              value: ""
-            - name: JWT_RSA_PRIVATE
-              valueFrom:
-                secretKeyRef:
-                  name: jwt
-                  key: private-key
-            - name: JWT_RSA_PUBLIC
-              valueFrom:
-                secretKeyRef:
-                  name: jwt
-                  key: public-key
 ---
 apiVersion: v1
 kind: Service
