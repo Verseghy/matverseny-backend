@@ -10,6 +10,8 @@ workspace = true
 tokio = { version = "1.33.0", features = ["rt", "macros"] }
 libiam = { git = "https://github.com/Verseghy/iam", package = "libiam" }
 dotenvy = "0.15.7"
+kube = "0.92.1"
+k8s-openapi = { version = "0.22.0", features = ["earliest"] }
 
 [[bin]]
 name = "create_iam_app"
@@ -18,3 +20,7 @@ path = "src/create_iam_app.rs"
 [[bin]]
 name = "create_admin_user"
 path = "src/create_admin_user.rs"
+
+[[bin]]
+name = "setup"
+path = "src/setup.rs"
