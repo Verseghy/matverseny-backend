@@ -38,14 +38,12 @@ spec:
           resources:
             limits:
               memory: 128Mi
+          envFrom:
+            - secretRef:
+                name: mysql
           env:
-            - name: DB_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: mysql
-                  key: mysql-password
             - name: DATABASE_URL
-              value: mysql://root:$(DB_PASSWORD)@mysql.iam.svc.cluster.local/iam
+              value: mysql://root:$(MYSQL_ROOT_PASSWORD)@mysql.matverseny-backend.svc.cluster.local/iam # TODO: namespace?
 ---
 apiVersion: v1
 kind: Service

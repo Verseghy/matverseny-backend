@@ -1,0 +1,51 @@
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: matverseny-setup
+spec:
+  backoffLimit: 100
+  template:
+    spec:
+      serviceAccountName: iam-setup
+      containers:
+        - name: setup
+          image: ghcr.io/verseghy/matverseny-setup
+          imagePullPolicy: Always
+          envFrom:
+            - secretRef:
+                name: mysql
+          env:
+            - name: DATABASE_URL
+              value: mysql://root:$(MYSQL_ROOT_PASSWORD)@mysql.matverseny-backend.svc.cluster.local/iam # TODO: namespace?
+      restartPolicy: OnFailure
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  annotations:
+    kubernetes.io/enforce-mountable-secrets: "true"
+  name: matverseny-setup
+secrets:
+  - name: matverseny-app
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: matverseny-setup
+rules:
+  - apiGroups: [ "" ]
+    resources: [ "secrets" ]
+    verbs: [ "get", "create" ]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: matverseny-setup
+subjects:
+  - kind: ServiceAccount
+    name: matverseny-setup
+roleRef:
+  kind: Role
+  name: matverseny-setup
+  apiGroup: rbac.authorization.k8s.io

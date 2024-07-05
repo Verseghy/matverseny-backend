@@ -27,12 +27,10 @@ spec:
       containers:
         - image: harbor.apps.okd4.home.zoltanszepesi.com/library/mysql
           name: mysql
+          envFrom:
+            - secretRef:
+                name: mysql
           env:
-            - name: MYSQL_ROOT_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: mysql
-                  key: mysql-password
             - name: MYSQL_DATABASE
               value: iam
           ports:

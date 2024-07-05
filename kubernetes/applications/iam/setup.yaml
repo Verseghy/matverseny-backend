@@ -1,0 +1,52 @@
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: iam-setup
+spec:
+  backoffLimit: 100
+  template:
+    spec:
+      serviceAccountName: iam-setup
+      containers:
+        - name: setup
+          image: ghcr.io/verseghy/iam-setup
+          imagePullPolicy: Always
+          env:
+            # NOTE: the password is intentionally left out. It is the job's responsibility to generate/read it from the secret
+            - name: DATABASE_URL
+              value: mysql://root@mysql.matverseny-backend.svc.cluster.local/iam # TODO: namespace?
+            - name: IAM_URL
+              value: http://iam.matverseny-backend.svc.cluster.local
+      restartPolicy: OnFailure
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  annotations:
+    kubernetes.io/enforce-mountable-secrets: "true"
+  name: iam-setup
+secrets:
+  - name: mysql
+  - name: iam
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: iam-setup
+rules:
+  - apiGroups: [ "" ]
+    resources: [ "secrets" ]
+    verbs: [ "get", "create" ]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: iam-setup
+subjects:
+  - kind: ServiceAccount
+    name: iam-setup
+roleRef:
+  kind: Role
+  name: iam-setup
+  apiGroup: rbac.authorization.k8s.io

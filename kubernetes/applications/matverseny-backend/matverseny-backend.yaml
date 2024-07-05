@@ -2,7 +2,6 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: matverseny-backend
-  namespace: matverseny
 spec:
   replicas: 3
   selector:
@@ -20,7 +19,7 @@ spec:
     spec:
       containers:
         - name: app
-          image: verseghy/matverseny-backend
+          image: ghcr.io/verseghy/matverseny-backend
           ports:
             - containerPort: 3002
           imagePullPolicy: Always
@@ -48,23 +47,20 @@ spec:
             - name: IAM_APP_SECRET
               valueFrom:
                 secretKeyRef:
-                  key: IAM_APP_SECRET
-                  name: matverseny-backend
+                  key: iam_secret
+                  name: matverseny-app
             - name: IAM_URL
-              value: http://iam.iam.svc.cluster.local
+              value: http://iam.matverseny-backend.svc.cluster.local # TODO: namespace?
             - name: IAM_JWT_RSA_PUBLIC
-              valueFrom:
-                secretKeyRef:
-                  key: public-key
-                  name: jwt
-            - name: KAFKA_BOOTSTRAP_SERVERS
-              value: kafka-cluster-kafka-bootstrap.matverseny.svc.cluster.local:9092
+              # TODO: DELETE THIS WHEN NOT NEEDED!!!44!4!
+              value: "-----BEGIN PUBLIC KEY-----MIICITANBgkqhkiG9w0BAQEFAAOCAg4AMIICCQKCAgBdptOAsZZBpF7P0+79iKssZuYKq6UMVUYVHYFv2ClXAJmIMU+QXcued9oZA077BXhv5e7Lu8RXqylMNUd3hEEJjisXce3e33bcDrJZmGEljv/I3YCrNWK1LFpqd5YzossJpT+65TPxmeVipqJ65ZUpBCO3V82r3dDMx8d2CGMqOOygI1afeFxoZDVm/H1flR+uDusbB9EvYlKsiCfEGlQz/lnHiHI/bEmdeIzhpCLmRhtWxyyl6wqe07f718JdGpnPo6Aql8UtSMQRjtKcRW2G67hNXGgB7uS5y8qW8fj/fIcyePZGm8TUv3vL+wMUb6+05RN7i9BXt6Eurgok2NQGYvwforJHlCsj3aIzjTcfH3s6jkdZSj9Yho2BgtJi50qWxiWYxTTAmtVSDihjIty2h2NkzlXePWDF+iQW0bkbuYQQKzM6dLGNF0+z8t7ddlvKeqG8CI1+kZ3QR+XsKWSIhhGx+yncbxWUAzqMoLUUK9WlmQttoC8VenFSunNof2QxT+1BbYJt9ZFI5ZltTICR6K9kmRNQQ7qrdQacBsKi2SD+JVK7ESAARj9FZNvf0X78LM+H1NZACe4pT4tlObH4OwkHpl77oCmghNe49Q1CNv7d5QKesOS19kBoQYMYb+jKjKc/uj7iObwTuywX8I1d19gJeHD2XkZS9VVcHbYLUQIDAQAB-----END PUBLIC KEY-----"
+            - name: NATS_URL
+              value: nats.matverseny-backend.svc.cluster.local
 ---
 apiVersion: v1
 kind: Service
 metadata:
   name: matverseny-backend
-  namespace: matverseny
 spec:
   selector:
     app: matverseny-backend
@@ -78,7 +74,6 @@ apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
   name: matverseny-backend
-  namespace: matverseny
 spec:
   maxUnavailable: 1
   selector:
