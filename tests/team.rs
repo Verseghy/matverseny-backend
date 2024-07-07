@@ -958,7 +958,7 @@ mod kick {
         assert_json_eq!(
             utils::get_socket_message(socket1.next().await),
             json!({
-                "event": "KICK_USER",
+                "event": "LEAVE_TEAM",
                 "data": {
                     "user": member.id.strip_prefix("UserID-").unwrap(),
                 }
@@ -969,7 +969,7 @@ mod kick {
             socket2.next().await,
             Normal,
             {
-                "event": "KICK_USER",
+                "event": "LEAVE_TEAM",
                 "data": {
                     "user": member.id.strip_prefix("UserID-").unwrap(),
                 }
@@ -1019,7 +1019,7 @@ mod kick {
         assert_json_eq!(
             utils::get_socket_message(socket1.next().await),
             json!({
-                "event": "KICK_USER",
+                "event": "LEAVE_TEAM",
                 "data": {
                     "user": member.id.strip_prefix("UserID-").unwrap(),
                 }
@@ -1030,7 +1030,7 @@ mod kick {
             socket2.next().await,
             Normal,
             {
-                "event": "KICK_USER",
+                "event": "LEAVE_TEAM",
                 "data": {
                     "user": member.id.strip_prefix("UserID-").unwrap(),
                 }
@@ -1085,7 +1085,7 @@ mod kick {
         assert_json_eq!(
             utils::get_socket_message(socket1.next().await),
             json!({
-                "event": "KICK_USER",
+                "event": "LEAVE_TEAM",
                 "data": {
                     "user": member.id.strip_prefix("UserID-").unwrap(),
                 }
@@ -1095,7 +1095,7 @@ mod kick {
         assert_json_eq!(
             utils::get_socket_message(socket2.next().await),
             json!({
-                "event": "KICK_USER",
+                "event": "LEAVE_TEAM",
                 "data": {
                     "user": member.id.strip_prefix("UserID-").unwrap(),
                 }
@@ -1106,7 +1106,7 @@ mod kick {
             socket3.next().await,
             Normal,
             {
-                "event": "KICK_USER",
+                "event": "LEAVE_TEAM",
                 "data": {
                     "user": member.id.strip_prefix("UserID-").unwrap(),
                 }
