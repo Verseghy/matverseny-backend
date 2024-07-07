@@ -7,4 +7,7 @@ containerfiles/
 tests
 Makefile
 .github/
+.git
 .env
+.env.template
+.gitignore
