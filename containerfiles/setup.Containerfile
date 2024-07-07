@@ -15,7 +15,7 @@ RUN cargo install cargo-chef --locked --version "0.1.67" && \
 FROM chef AS planner
 WORKDIR /planner
 COPY . .
-RUN cargo chef prepare --bin setup --recipe-path recipe.json
+RUN cargo chef prepare --recipe-path recipe.json
 
 
 
