@@ -70,9 +70,6 @@ pub enum Event {
         code: Option<String>,
     },
     DisbandTeam,
-    KickUser {
-        user: Uuid,
-    },
     UpdateTime {
         start_time: Option<i64>,
         end_time: Option<i64>,
@@ -201,7 +198,6 @@ async fn socket_handler<S: StateTrait>(state: S, socket: &mut WebSocket) -> Resu
 
                     if matches!(event, Event::DisbandTeam)
                         || matches!(event, Event::LeaveTeam { user } if user == claims.subject)
-                        || matches!(event, Event::KickUser { user } if user == claims.subject)
                     {
                         let _ = socket.send(Message::Close(Some(CloseFrame {
                             code: close_code::NORMAL,

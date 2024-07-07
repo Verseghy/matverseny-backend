@@ -75,7 +75,7 @@ pub async fn kick_user<S: StateTrait>(
         .nats()
         .publish(
             topic,
-            serde_json::to_vec(&Event::KickUser { user: request.user })
+            serde_json::to_vec(&Event::LeaveTeam { user: request.user })
                 .unwrap()
                 .into(),
         )
