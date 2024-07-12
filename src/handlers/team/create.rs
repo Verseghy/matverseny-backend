@@ -1,6 +1,6 @@
 use crate::{
     error::{self, DatabaseError, Result},
-    iam::Claims,
+    extractors::UserID,
     utils::generate_join_code,
     StateTrait, ValidatedJson,
 };
@@ -23,12 +23,12 @@ pub struct Request {
 
 pub async fn create_team<S: StateTrait>(
     State(state): State<S>,
-    claims: Claims,
+    user_id: UserID,
     ValidatedJson(request): ValidatedJson<Request>,
 ) -> Result<StatusCode> {
     let txn = state.db().begin().await?;
 
-    let user = users::Entity::find_by_id(claims.subject)
+    let user = users::Entity::find_by_id(*user_id)
         .lock_shared()
         .one(&txn)
         .await?

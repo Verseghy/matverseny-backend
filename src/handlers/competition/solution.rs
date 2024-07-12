@@ -1,6 +1,7 @@
+use crate::extractors::UserID;
 use crate::handlers::socket::Event;
 use crate::utils::topics;
-use crate::{error, error::Result, iam::Claims, json::Json, StateTrait};
+use crate::{error, error::Result, json::Json, StateTrait};
 use axum::{extract::State, http::StatusCode};
 use entity::{solutions_history, teams};
 use sea_orm::ActiveValue::Set;
@@ -16,12 +17,12 @@ pub struct Request {
 
 pub async fn set_solution<S: StateTrait>(
     State(state): State<S>,
-    claims: Claims,
+    user_id: UserID,
     Json(request): Json<Request>,
 ) -> Result<StatusCode> {
     let txn = state.db().begin().await?;
 
-    let team = teams::Entity::find_from_member(&claims.subject)
+    let team = teams::Entity::find_from_member(&user_id)
         .lock_exclusive()
         .one(&txn)
         .await?
@@ -31,7 +32,7 @@ pub async fn set_solution<S: StateTrait>(
         id: Set(Uuid::new_v4()),
         team: Set(team.id),
         problem: Set(request.problem),
-        user: Set(claims.subject),
+        user: Set(*user_id),
         solution: Set(request.solution),
         created_at: Default::default(),
     };

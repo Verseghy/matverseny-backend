@@ -9,11 +9,12 @@ use axum::{
     response::{IntoResponse, Response},
 };
 use futures::{future::BoxFuture, Future};
+use libiam::jwt::Claims;
 use serde::Deserialize;
 use serde_json::json;
 use tower::{Layer, Service};
 
-use crate::{error, iam::Claims, StateTrait};
+use crate::{error, StateTrait};
 
 type PermissionList = &'static [&'static str];
 
@@ -79,7 +80,7 @@ where
 
         let json = json!({
             "actions": self.permissions,
-            "user": format!("UserID-{}", claims.subject),
+            "user": claims.sub,
         });
         let token = self.state.iam_app().token().to_owned();
 

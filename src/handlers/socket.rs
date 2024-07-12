@@ -1,6 +1,6 @@
 use crate::{
     error,
-    iam::{Claims, IamTrait},
+    extractors::UserID,
     utils::{topics, ProblemStream},
     Result, StateTrait,
 };
@@ -126,8 +126,8 @@ pub async fn ws_handler<S: StateTrait>(
 }
 
 async fn socket_handler<S: StateTrait>(state: S, socket: &mut WebSocket) -> Result<()> {
-    let (team, members, claims) = socket_auth(&state, socket).await?;
-    let claims_span = info_span!("claims", user_id = claims.subject.to_string());
+    let (team, members, user_id) = socket_auth(&state, socket).await?;
+    let claims_span = info_span!("claims", user_id = user_id.to_string());
 
     async move {
         let mut consumer = std::pin::pin!(create_consumer(&state, &team.id).await?);
@@ -197,7 +197,7 @@ async fn socket_handler<S: StateTrait>(state: S, socket: &mut WebSocket) -> Resu
                     let event_text = serde_json::to_string(&event).unwrap();
 
                     if matches!(event, Event::DisbandTeam)
-                        || matches!(event, Event::LeaveTeam { user } if user == claims.subject)
+                        || matches!(event, Event::LeaveTeam { user } if user == *user_id)
                     {
                         let _ = socket.send(Message::Close(Some(CloseFrame {
                             code: close_code::NORMAL,
@@ -303,7 +303,7 @@ async fn send_answers<S: StateTrait>(
     Ok(())
 }
 
-type TeamInfo = (teams::Model, Vec<Member>, Claims);
+type TeamInfo = (teams::Model, Vec<Member>, UserID);
 
 #[derive(Serialize, Deserialize)]
 struct TokenJSON {
@@ -349,9 +349,15 @@ async fn socket_auth<S: StateTrait>(state: &S, socket: &mut WebSocket) -> Result
     let token_json: TokenJSON =
         serde_json::from_str(&token_str).map_err(|_| error::JWT_INVALID_TOKEN)?;
 
-    let claims = state.iam().get_claims(&token_json.token)?;
+    let claims = &state
+        .jwt()
+        .get_claims(&token_json.token)
+        .await
+        .map_err(|_| error::INTERNAL)?;
 
-    let user = users::Entity::find_by_id(claims.subject)
+    let user_id = UserID::parse_str(&claims.sub)?;
+
+    let user = users::Entity::find_by_id(*user_id)
         .one(state.db())
         .await?
         .ok_or(error::USER_NOT_REGISTERED)?;
@@ -396,7 +402,7 @@ async fn socket_auth<S: StateTrait>(state: &S, socket: &mut WebSocket) -> Result
         })
     }
 
-    Ok((result, members, claims))
+    Ok((result, members, user_id))
 }
 
 async fn create_consumer<'a, 'b, S: StateTrait>(

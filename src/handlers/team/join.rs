@@ -1,7 +1,7 @@
 use crate::{
     error::{self, DatabaseError as _},
+    extractors::UserID,
     handlers::socket::Event,
-    iam::Claims,
     utils::topics,
     Json, Result, StateTrait,
 };
@@ -20,7 +20,7 @@ pub struct Request {
 
 pub async fn join_team<S: StateTrait>(
     State(state): State<S>,
-    claims: Claims,
+    user_id: UserID,
     Json(request): Json<Request>,
 ) -> Result<StatusCode> {
     let txn = state.db().begin().await?;
@@ -37,7 +37,7 @@ pub async fn join_team<S: StateTrait>(
             return Err(error::LOCKED_TEAM);
         }
 
-        let user = users::Entity::find_by_id(claims.subject)
+        let user = users::Entity::find_by_id(*user_id)
             .lock_exclusive()
             .one(&txn)
             .await?

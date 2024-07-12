@@ -2,8 +2,7 @@ mod claims;
 mod permissions;
 
 use crate::StateTrait;
-use axum::{http::header::AUTHORIZATION, Router};
-pub use claims::*;
+use axum::{http::header::AUTHORIZATION, middleware, Router};
 pub use permissions::*;
 use std::iter;
 use tower::ServiceBuilder;
@@ -22,7 +21,10 @@ pub fn middlewares<S: StateTrait>(state: S, router: Router<S>) -> Router {
         .catch_panic()
         .sensitive_headers(iter::once(AUTHORIZATION))
         .propagate_x_request_id()
-        .layer(GetClaimsLayer::new(state.clone()))
+        .layer(middleware::from_fn_with_state(
+            state.clone(),
+            claims::get_claims::<S>,
+        ))
         .compression()
         .decompression()
         .layer(cors_layer)
