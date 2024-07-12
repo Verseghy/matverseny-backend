@@ -6,7 +6,7 @@ use crate::{
     StateTrait,
 };
 use axum::{extract::State, http::StatusCode};
-use chrono::{NaiveDateTime, TimeZone, Utc};
+use chrono::DateTime;
 use entity::times;
 use sea_orm::{ColumnTrait, Condition, EntityTrait, QueryFilter, Set, TransactionTrait};
 use serde::{Deserialize, Serialize};
@@ -24,12 +24,10 @@ pub async fn set_time_patch<S: StateTrait>(
     let txn = state.db().begin().await?;
 
     if let Some(start_time) = req.start_time {
-        let Some(naive) = NaiveDateTime::from_timestamp_opt(start_time, 0) else {
+        let Some(time) = DateTime::from_timestamp(start_time, 0) else {
             error!("start_time seconds out of range!");
             return Err(error::TIME_SECONDS_OUT_OF_RANGE);
         };
-
-        let time = Utc.from_utc_datetime(&naive);
 
         let model = times::ActiveModel {
             name: Set(times::constants::START_TIME.to_owned()),
@@ -40,12 +38,10 @@ pub async fn set_time_patch<S: StateTrait>(
     }
 
     if let Some(end_time) = req.end_time {
-        let Some(naive) = NaiveDateTime::from_timestamp_opt(end_time, 0) else {
+        let Some(time) = DateTime::from_timestamp(end_time, 0) else {
             error!("end_time seconds out of range!");
             return Err(error::TIME_SECONDS_OUT_OF_RANGE);
         };
-
-        let time = Utc.from_utc_datetime(&naive);
 
         let model = times::ActiveModel {
             name: Set(times::constants::END_TIME.to_owned()),

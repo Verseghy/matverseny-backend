@@ -12,7 +12,7 @@ impl UserID {
             return Err(error::COULD_NOT_GET_CLAIMS);
         };
 
-        let Ok(user_id) = Uuid::parse_str(&user_id) else {
+        let Ok(user_id) = Uuid::parse_str(user_id) else {
             return Err(error::COULD_NOT_GET_CLAIMS);
         };
 
