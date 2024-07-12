@@ -16,9 +16,9 @@ pub async fn login() -> anyhow::Result<App> {
 
     let iam = Iam::new(&iam_url);
 
-    Ok(App::login(&iam, &app_secret)
+    App::login(&iam, &app_secret)
         .await
-        .inspect_err(|_| error!("failed to login into the iam"))?)
+        .inspect_err(|_| error!("failed to login into the iam"))
 }
 
 #[tokio::main]

@@ -1,8 +1,7 @@
 use crate::{
-    error,
-    error::Result,
+    error::{self, Result},
+    extractors::UserID,
     handlers::socket::Event,
-    iam::Claims,
     utils::{set_option, topics},
     StateTrait, ValidatedJson,
 };
@@ -25,18 +24,18 @@ pub struct Request {
 
 pub async fn update_team<S: StateTrait>(
     State(state): State<S>,
-    claims: Claims,
+    user_id: UserID,
     ValidatedJson(request): ValidatedJson<Request>,
 ) -> Result<StatusCode> {
     let txn = state.db().begin().await?;
 
-    let team = teams::Entity::find_from_member(&claims.subject)
+    let team = teams::Entity::find_from_member(&user_id)
         .lock_exclusive()
         .one(&txn)
         .await?
         .ok_or(error::USER_NOT_IN_TEAM)?;
 
-    if team.owner != claims.subject {
+    if team.owner != *user_id {
         return Err(error::USER_NOT_OWNER);
     }
 
@@ -56,7 +55,7 @@ pub async fn update_team<S: StateTrait>(
     }
 
     if let Some(owner) = &request.owner {
-        if owner == &claims.subject {
+        if owner == &*user_id {
             return Ok(StatusCode::NO_CONTENT);
         }
 

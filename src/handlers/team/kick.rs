@@ -1,7 +1,7 @@
 use crate::{
     error::{self, Result},
+    extractors::UserID,
     handlers::socket::Event,
-    iam::Claims,
     json::Json,
     utils::topics,
     StateTrait,
@@ -19,18 +19,18 @@ pub struct Request {
 
 pub async fn kick_user<S: StateTrait>(
     State(state): State<S>,
-    claims: Claims,
+    user_id: UserID,
     Json(request): Json<Request>,
 ) -> Result<StatusCode> {
     let txn = state.db().begin().await?;
 
-    let team = teams::Entity::find_from_member(&claims.subject)
+    let team = teams::Entity::find_from_member(&user_id)
         .lock_exclusive()
         .one(&txn)
         .await?
         .ok_or(error::USER_NOT_IN_TEAM)?;
 
-    if team.owner != claims.subject && team.co_owner.as_ref() != Some(&claims.subject) {
+    if team.owner != *user_id && team.co_owner.as_ref() != Some(&user_id) {
         return Err(error::USER_NOT_COOWNER);
     }
 
@@ -42,7 +42,7 @@ pub async fn kick_user<S: StateTrait>(
         return Err(error::CANNOT_KICK_OWNER);
     }
 
-    if request.user == claims.subject {
+    if request.user == *user_id {
         return Err(error::CANNOT_KICK_THEMSELF);
     }
 

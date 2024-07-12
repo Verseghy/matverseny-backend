@@ -2,8 +2,8 @@
 extern crate tracing;
 
 pub mod error;
+mod extractors;
 mod handlers;
-mod iam;
 mod json;
 mod middlewares;
 mod state;

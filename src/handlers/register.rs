@@ -1,4 +1,8 @@
-use crate::{error, error::DatabaseError, iam::Claims, Json, Result, StateTrait};
+use crate::{
+    error::{self, DatabaseError},
+    extractors::UserID,
+    Json, Result, StateTrait,
+};
 use axum::{extract::State, http::StatusCode};
 use entity::users::{self, constraints::*, Class};
 use sea_orm::{EntityTrait, Set};
@@ -12,11 +16,11 @@ pub struct Request {
 
 pub async fn register<S: StateTrait>(
     State(state): State<S>,
-    claims: Claims,
+    user_id: UserID,
     Json(request): Json<Request>,
 ) -> Result<StatusCode> {
     let user = users::ActiveModel {
-        id: Set(claims.subject),
+        id: Set(*user_id),
         school: Set(request.school),
         class: Set(request.class),
     };

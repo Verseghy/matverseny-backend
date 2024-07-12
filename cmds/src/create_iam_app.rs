@@ -14,6 +14,6 @@ async fn main() {
     assign_action_to_app(&database, "iam.policy.assign", &id.to_string()).await;
     assign_action_to_app(&database, "iam.user.get", &id.to_string()).await;
 
-    println!("id: {}", id.to_string());
+    println!("id: {}", id);
     println!("secret: {}", secret);
 }

@@ -1,15 +1,17 @@
-use crate::{error, handlers::socket::Event, iam::Claims, utils::topics, Result, StateTrait};
+use crate::{
+    error, extractors::UserID, handlers::socket::Event, utils::topics, Result, StateTrait,
+};
 use axum::{extract::State, http::StatusCode};
 use entity::{team_members, teams, users};
 use sea_orm::{EntityTrait, QuerySelect, TransactionTrait};
 
 pub async fn leave_team<S: StateTrait>(
     State(state): State<S>,
-    claims: Claims,
+    user_id: UserID,
 ) -> Result<StatusCode> {
     let txn = state.db().begin().await?;
 
-    let user = users::Entity::find_by_id(claims.subject)
+    let user = users::Entity::find_by_id(*user_id)
         .lock_exclusive()
         .one(&txn)
         .await?

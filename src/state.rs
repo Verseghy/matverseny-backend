@@ -1,8 +1,5 @@
-use crate::{
-    iam::{Iam, IamTrait},
-    utils::Problems,
-};
-use libiam::App;
+use crate::utils::Problems;
+use libiam::{jwt::Jwt, App};
 use rand::{
     rngs::{adapter::ReseedingRng, OsRng},
     Rng, SeedableRng,
@@ -14,25 +11,24 @@ use tracing::log::LevelFilter;
 
 pub trait StateTrait: Send + Sync + Clone + 'static {
     type Db: ConnectionTrait + TransactionTrait + Clone;
-    type Iam: IamTrait;
     type Rand: Rng;
 
     fn db(&self) -> &Self::Db;
-    fn iam(&self) -> &Self::Iam;
     fn iam_app(&self) -> &App;
     fn rng(&self) -> Self::Rand;
     fn app_secret(&self) -> &str;
     fn problems(&self) -> Arc<Problems>;
     fn nats(&self) -> async_nats::Client;
+    fn jwt(&self) -> &Jwt;
 }
 
 pub struct State {
     database: DbConn,
-    iam: Iam,
     iam_app: App,
     app_secret: String,
     problems: Arc<Problems>,
     nats: async_nats::Client,
+    jwt: Jwt,
 }
 
 impl State {
@@ -43,13 +39,17 @@ impl State {
     pub async fn with_database(iam_app: App, conn: DbConn) -> Arc<Self> {
         let nats = Self::connect_nats().await;
         let problems = Problems::new(&conn, nats.clone()).await;
+
+        let iam_base = env::var("IAM_URL").unwrap();
+        let iam = libiam::Iam::new(&iam_base);
+
         Arc::new(Self {
             database: conn,
-            iam: Iam::new(),
             iam_app,
             app_secret: env::var("IAM_APP_SECRET").expect("IAM_APP_SECRET is not set"),
             problems: Arc::new(problems),
             nats,
+            jwt: Jwt::new(iam.api()).await.expect("Failed to get IAM jwks"),
         })
     }
 
@@ -88,15 +88,10 @@ thread_local! {
 
 impl StateTrait for Arc<State> {
     type Db = DbConn;
-    type Iam = Iam;
     type Rand = ReseedingRng<ChaCha20Core, OsRng>;
 
     fn db(&self) -> &Self::Db {
         &self.database
-    }
-
-    fn iam(&self) -> &Self::Iam {
-        &self.iam
     }
 
     fn iam_app(&self) -> &App {
@@ -117,5 +112,9 @@ impl StateTrait for Arc<State> {
 
     fn nats(&self) -> async_nats::Client {
         self.nats.clone()
+    }
+
+    fn jwt(&self) -> &Jwt {
+        &self.jwt
     }
 }

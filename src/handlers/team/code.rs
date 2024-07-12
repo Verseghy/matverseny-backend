@@ -1,7 +1,7 @@
 use crate::{
     error::{self, DatabaseError, Result},
+    extractors::UserID,
     handlers::socket::Event,
-    iam::Claims,
     utils::{self, topics},
     StateTrait,
 };
@@ -11,17 +11,17 @@ use sea_orm::{EntityTrait, IntoActiveModel, QuerySelect, Set, TransactionTrait};
 
 pub async fn regenerate_code<S: StateTrait>(
     State(state): State<S>,
-    claims: Claims,
+    user_id: UserID,
 ) -> Result<StatusCode> {
     let txn = state.db().begin().await?;
 
-    let team = teams::Entity::find_from_member(&claims.subject)
+    let team = teams::Entity::find_from_member(&user_id)
         .lock_exclusive()
         .one(&txn)
         .await?
         .ok_or(error::USER_NOT_IN_TEAM)?;
 
-    if team.owner != claims.subject && team.co_owner != Some(claims.subject) {
+    if team.owner != *user_id && team.co_owner != Some(*user_id) {
         return Err(error::USER_NOT_COOWNER);
     }
 
