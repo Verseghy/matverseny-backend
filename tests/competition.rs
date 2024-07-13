@@ -6,36 +6,33 @@ mod time {
     use super::*;
 
     #[tokio::test]
-    #[parallel]
     async fn put_not_admin() {
-        let app = get_cached_app().await;
-        let user = utils::iam::register_user().await;
+        let env = setup().await;
+        let user = iam::register_user(&env).await;
 
-        let res = app.put("/competition/time").user(&user).send().await;
+        let res = env.put("/competition/time").user(&user).send().await;
 
         assert_error!(res, error::NOT_ENOUGH_PERMISSIONS);
     }
 
     #[tokio::test]
-    #[parallel]
     async fn patch_not_admin() {
-        let app = get_cached_app().await;
-        let user = utils::iam::register_user().await;
+        let env = setup().await;
+        let user = iam::register_user(&env).await;
 
-        let res = app.patch("/competition/time").user(&user).send().await;
+        let res = env.patch("/competition/time").user(&user).send().await;
 
         assert_error!(res, error::NOT_ENOUGH_PERMISSIONS);
     }
 
     #[tokio::test]
-    #[serial]
     async fn success_start_time() {
-        let app = get_cached_app().await;
+        let env = setup().await;
 
-        let user = utils::iam::register_user().await;
-        utils::iam::make_admin(&user).await;
+        let user = iam::register_user(&env).await;
+        iam::make_admin(&env, &user).await;
 
-        let res = app
+        let res = env
             .patch("/competition/time")
             .user(&user)
             .json(&json!({
@@ -46,7 +43,7 @@ mod time {
 
         assert_eq!(res.status(), StatusCode::NO_CONTENT);
 
-        let res = app.get("/competition/time").user(&user).send().await;
+        let res = env.get("/competition/time").user(&user).send().await;
 
         assert_eq!(res.status(), StatusCode::OK);
 
@@ -61,14 +58,13 @@ mod time {
     }
 
     #[tokio::test]
-    #[serial]
     async fn success_end_time() {
-        let app = get_cached_app().await;
+        let env = setup().await;
 
-        let user = utils::iam::register_user().await;
-        utils::iam::make_admin(&user).await;
+        let user = iam::register_user(&env).await;
+        iam::make_admin(&env, &user).await;
 
-        let res = app
+        let res = env
             .patch("/competition/time")
             .user(&user)
             .json(&json!({
@@ -79,7 +75,7 @@ mod time {
 
         assert_eq!(res.status(), StatusCode::NO_CONTENT);
 
-        let res = app.get("/competition/time").user(&user).send().await;
+        let res = env.get("/competition/time").user(&user).send().await;
 
         assert_eq!(res.status(), StatusCode::OK);
 
@@ -94,14 +90,13 @@ mod time {
     }
 
     #[tokio::test]
-    #[serial]
     async fn success_both_time() {
-        let app = get_cached_app().await;
+        let env = setup().await;
 
-        let user = utils::iam::register_user().await;
-        utils::iam::make_admin(&user).await;
+        let user = iam::register_user(&env).await;
+        iam::make_admin(&env, &user).await;
 
-        let res = app
+        let res = env
             .patch("/competition/time")
             .user(&user)
             .json(&json!({
@@ -113,7 +108,7 @@ mod time {
 
         assert_eq!(res.status(), StatusCode::NO_CONTENT);
 
-        let res = app.get("/competition/time").user(&user).send().await;
+        let res = env.get("/competition/time").user(&user).send().await;
 
         assert_eq!(res.status(), StatusCode::OK);
 
@@ -129,19 +124,18 @@ mod time {
     }
 
     #[tokio::test]
-    #[serial]
     async fn success_socket_events() {
-        let app = get_cached_app().await;
+        let env = setup().await;
 
-        let admin = utils::iam::register_user().await;
-        utils::iam::make_admin(&admin).await;
+        let admin = iam::register_user(&env).await;
+        iam::make_admin(&env, &admin).await;
 
-        let owner = app.register_user().await;
-        let _ = app.create_team(&owner).await;
-        let mut socket = app.socket("/ws").start().await;
+        let owner = env.register_user().await;
+        let _ = env.create_team(&owner).await;
+        let mut socket = env.socket("/ws").start().await;
         assert_team_info!(socket, owner);
 
-        let res = app
+        let res = env
             .put("/competition/time")
             .user(&admin)
             .json(&json!({

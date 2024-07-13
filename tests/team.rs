@@ -6,12 +6,11 @@ mod create {
     use super::*;
 
     #[tokio::test]
-    #[parallel]
     async fn success() {
-        let app = get_cached_app().await;
-        let user = app.register_user().await;
+        let env = setup().await;
+        let user = env.register_user().await;
 
-        let res = app
+        let res = env
             .post("/team/create")
             .user(&user)
             .json(&json!({
@@ -24,12 +23,11 @@ mod create {
     }
 
     #[tokio::test]
-    #[parallel]
     async fn success_with_trailing_slash() {
-        let app = get_cached_app().await;
-        let user = app.register_user().await;
+        let env = setup().await;
+        let user = env.register_user().await;
 
-        let res = app
+        let res = env
             .post("/team/create/")
             .user(&user)
             .json(&json!({
@@ -42,12 +40,11 @@ mod create {
     }
 
     #[tokio::test]
-    #[parallel]
     async fn name_already_taken() {
-        let app = get_cached_app().await;
-        let user = app.register_user().await;
+        let env = setup().await;
+        let user = env.register_user().await;
 
-        let res = app
+        let res = env
             .post("/team/create")
             .user(&user)
             .json(&json!({
@@ -58,9 +55,9 @@ mod create {
 
         assert_eq!(res.status(), StatusCode::CREATED);
 
-        let user2 = app.register_user().await;
+        let user2 = env.register_user().await;
 
-        let res = app
+        let res = env
             .post("/team/create")
             .user(&user2)
             .json(&json!({
@@ -73,12 +70,11 @@ mod create {
     }
 
     #[tokio::test]
-    #[parallel]
     async fn already_in_team() {
-        let app = get_cached_app().await;
-        let user = app.register_user().await;
+        let env = setup().await;
+        let user = env.register_user().await;
 
-        let res = app
+        let res = env
             .post("/team/create")
             .user(&user)
             .json(&json!({
@@ -89,7 +85,7 @@ mod create {
 
         assert_eq!(res.status(), StatusCode::CREATED);
 
-        let res = app
+        let res = env
             .post("/team/create")
             .user(&user)
             .json(&json!({
@@ -102,12 +98,11 @@ mod create {
     }
 
     #[tokio::test]
-    #[parallel]
     async fn not_registered() {
-        let app = get_cached_app().await;
-        let user = utils::iam::register_user().await;
+        let env = setup().await;
+        let user = iam::register_user(&env).await;
 
-        let res = app
+        let res = env
             .post("/team/create")
             .user(&user)
             .json(&json!({
@@ -124,19 +119,18 @@ mod join {
     use super::*;
 
     #[tokio::test]
-    #[parallel]
     async fn success() {
-        let app = get_cached_app().await;
-        let owner = app.register_user().await;
-        let team = app.create_team(&owner).await;
+        let env = setup().await;
+        let owner = env.register_user().await;
+        let team = env.create_team(&owner).await;
 
-        let mut socket = app.socket("/ws").start().await;
+        let mut socket = env.socket("/ws").start().await;
         assert_team_info!(socket, owner);
 
         let join_code = team.get_code().await;
-        let user = app.register_user().await;
+        let user = env.register_user().await;
 
-        let res = app
+        let res = env
             .post("/team/join")
             .user(&user)
             .json(&json!({
@@ -149,8 +143,7 @@ mod join {
 
         let message = utils::get_socket_message(socket.next().await);
 
-        let user_info =
-            libiam::testing::users::get_user(utils::iam::get_db().await, &user.id).await;
+        let user_info = libiam::testing::users::get_user(env.iam_db(), &user.id).await;
 
         assert_json_eq!(
             message,
@@ -167,12 +160,11 @@ mod join {
     }
 
     #[tokio::test]
-    #[parallel]
     async fn wrong_code() {
-        let app = get_cached_app().await;
-        let user = app.register_user().await;
+        let env = setup().await;
+        let user = env.register_user().await;
 
-        let res = app
+        let res = env
             .post("/team/join")
             .user(&user)
             .json(&json!({
@@ -185,16 +177,15 @@ mod join {
     }
 
     #[tokio::test]
-    #[parallel]
     async fn already_in_team() {
-        let app = get_cached_app().await;
-        let user1 = app.register_user().await;
-        let _team1 = app.create_team(&user1).await;
+        let env = setup().await;
+        let user1 = env.register_user().await;
+        let _team1 = env.create_team(&user1).await;
 
-        let user2 = app.register_user().await;
-        let team2 = app.create_team(&user2).await;
+        let user2 = env.register_user().await;
+        let team2 = env.create_team(&user2).await;
 
-        let res = app
+        let res = env
             .post("/team/join")
             .user(&user1)
             .json(&json!({
@@ -207,17 +198,16 @@ mod join {
     }
 
     #[tokio::test]
-    #[parallel]
     async fn locked_team() {
-        let app = get_cached_app().await;
-        let owner = app.register_user().await;
-        let team = app.create_team(&owner).await;
+        let env = setup().await;
+        let owner = env.register_user().await;
+        let team = env.create_team(&owner).await;
 
         team.lock().await;
 
-        let user = app.register_user().await;
+        let user = env.register_user().await;
 
-        let res = app
+        let res = env
             .post("/team/join")
             .user(&user)
             .json(&json!({
@@ -234,19 +224,18 @@ mod leave {
     use super::*;
 
     #[tokio::test]
-    #[parallel]
     async fn success() {
-        let app = get_cached_app().await;
-        let owner = app.register_user().await;
-        let team = app.create_team(&owner).await;
+        let env = setup().await;
+        let owner = env.register_user().await;
+        let team = env.create_team(&owner).await;
 
-        let member = app.register_user().await;
+        let member = env.register_user().await;
         member.join(&team.get_code().await).await;
 
-        let mut socket = app.socket("/ws").start().await;
+        let mut socket = env.socket("/ws").start().await;
         assert_team_info!(socket, owner);
 
-        let res = app.post("/team/leave").user(&member).send().await;
+        let res = env.post("/team/leave").user(&member).send().await;
         assert_eq!(res.status(), StatusCode::OK);
 
         let message = utils::get_socket_message(socket.next().await);
@@ -265,43 +254,40 @@ mod leave {
     }
 
     #[tokio::test]
-    #[parallel]
     async fn not_in_team() {
-        let app = get_cached_app().await;
-        let owner = app.register_user().await;
-        let _team = app.create_team(&owner).await;
+        let env = setup().await;
+        let owner = env.register_user().await;
+        let _team = env.create_team(&owner).await;
 
-        let user = app.register_user().await;
+        let user = env.register_user().await;
 
-        let res = app.post("/team/leave").user(&user).send().await;
+        let res = env.post("/team/leave").user(&user).send().await;
 
         assert_error!(res, error::USER_NOT_IN_TEAM);
     }
 
     #[tokio::test]
-    #[parallel]
     async fn locked_team() {
-        let app = get_cached_app().await;
-        let owner = app.register_user().await;
-        let team = app.create_team(&owner).await;
+        let env = setup().await;
+        let owner = env.register_user().await;
+        let team = env.create_team(&owner).await;
 
-        let member = app.register_user().await;
+        let member = env.register_user().await;
         member.join(&team.get_code().await).await;
 
         team.lock().await;
 
-        let res = app.post("/team/leave").user(&member).send().await;
+        let res = env.post("/team/leave").user(&member).send().await;
         assert_error!(res, error::LOCKED_TEAM);
     }
 
     #[tokio::test]
-    #[parallel]
     async fn owner_cannot_leave() {
-        let app = get_cached_app().await;
-        let owner = app.register_user().await;
-        let _team = app.create_team(&owner).await;
+        let env = setup().await;
+        let owner = env.register_user().await;
+        let _team = env.create_team(&owner).await;
 
-        let res = app.post("/team/leave").user(&owner).send().await;
+        let res = env.post("/team/leave").user(&owner).send().await;
 
         assert_error!(res, error::OWNER_CANNOT_LEAVE);
     }
@@ -311,28 +297,26 @@ mod update {
     use super::*;
 
     #[tokio::test]
-    #[parallel]
     async fn should_not_error_when_empty_json() {
-        let app = get_cached_app().await;
-        let user = app.register_user().await;
-        let _team = app.create_team(&user).await;
+        let env = setup().await;
+        let user = env.register_user().await;
+        let _team = env.create_team(&user).await;
 
-        let res = app.patch("/team").user(&user).json(&json!({})).send().await;
+        let res = env.patch("/team").user(&user).json(&json!({})).send().await;
 
         assert_eq!(res.status(), StatusCode::NO_CONTENT);
     }
 
     #[tokio::test]
-    #[parallel]
     async fn must_be_owner() {
-        let app = get_cached_app().await;
-        let owner = app.register_user().await;
-        let team = app.create_team(&owner).await;
+        let env = setup().await;
+        let owner = env.register_user().await;
+        let team = env.create_team(&owner).await;
 
-        let member = app.register_user().await;
+        let member = env.register_user().await;
         member.join(&team.get_code().await).await;
 
-        let res = app
+        let res = env
             .patch("/team")
             .user(&member)
             .json(&json!({
@@ -343,7 +327,7 @@ mod update {
 
         assert_error!(res, error::USER_NOT_OWNER);
 
-        let res = app
+        let res = env
             .patch("/team")
             .user(&member)
             .json(&json!({
@@ -356,13 +340,12 @@ mod update {
     }
 
     #[tokio::test]
-    #[parallel]
     async fn non_existing_user() {
-        let app = get_cached_app().await;
-        let owner = app.register_user().await;
-        let _team = app.create_team(&owner).await;
+        let env = setup().await;
+        let owner = env.register_user().await;
+        let _team = env.create_team(&owner).await;
 
-        let res = app
+        let res = env
             .patch("/team")
             .user(&owner)
             .json(&json!({
@@ -373,7 +356,7 @@ mod update {
 
         assert_error!(res, error::NO_SUCH_MEMBER);
 
-        let res = app
+        let res = env
             .patch("/team")
             .user(&owner)
             .json(&json!({
@@ -386,15 +369,14 @@ mod update {
     }
 
     #[tokio::test]
-    #[parallel]
     async fn existing_user_but_not_a_team_member() {
-        let app = get_cached_app().await;
-        let owner = app.register_user().await;
-        let _team = app.create_team(&owner).await;
+        let env = setup().await;
+        let owner = env.register_user().await;
+        let _team = env.create_team(&owner).await;
 
-        let user = app.register_user().await;
+        let user = env.register_user().await;
 
-        let res = app
+        let res = env
             .patch("/team")
             .user(&owner)
             .json(&json!({
@@ -405,7 +387,7 @@ mod update {
 
         assert_error!(res, error::NO_SUCH_MEMBER);
 
-        let res = app
+        let res = env
             .patch("/team")
             .user(&owner)
             .json(&json!({
@@ -418,12 +400,11 @@ mod update {
     }
 
     #[tokio::test]
-    #[parallel]
     async fn not_in_team() {
-        let app = get_cached_app().await;
-        let user = app.register_user().await;
+        let env = setup().await;
+        let user = env.register_user().await;
 
-        let res = app
+        let res = env
             .patch("/team")
             .user(&user)
             .json(&json!({
@@ -436,13 +417,12 @@ mod update {
     }
 
     #[tokio::test]
-    #[parallel]
     async fn update_while_locking() {
-        let app = get_cached_app().await;
-        let user = app.register_user().await;
-        let _team = app.create_team(&user).await;
+        let env = setup().await;
+        let user = env.register_user().await;
+        let _team = env.create_team(&user).await;
 
-        let res = app
+        let res = env
             .patch("/team")
             .user(&user)
             .json(&json!({
@@ -456,13 +436,12 @@ mod update {
     }
 
     #[tokio::test]
-    #[parallel]
     async fn locked_team() {
-        let app = get_cached_app().await;
-        let user = app.register_user().await;
-        let _team = app.create_team(&user).await;
+        let env = setup().await;
+        let user = env.register_user().await;
+        let _team = env.create_team(&user).await;
 
-        let res = app
+        let res = env
             .patch("/team")
             .user(&user)
             .json(&json!({
@@ -473,7 +452,7 @@ mod update {
 
         assert_eq!(res.status(), StatusCode::NO_CONTENT);
 
-        let res = app
+        let res = env
             .patch("/team")
             .user(&user)
             .json(&json!({
@@ -486,13 +465,12 @@ mod update {
     }
 
     #[tokio::test]
-    #[parallel]
     async fn update_while_unlocking() {
-        let app = get_cached_app().await;
-        let user = app.register_user().await;
-        let _team = app.create_team(&user).await;
+        let env = setup().await;
+        let user = env.register_user().await;
+        let _team = env.create_team(&user).await;
 
-        let res = app
+        let res = env
             .patch("/team")
             .user(&user)
             .json(&json!({
@@ -503,7 +481,7 @@ mod update {
 
         assert_eq!(res.status(), StatusCode::NO_CONTENT);
 
-        let res = app
+        let res = env
             .patch("/team")
             .user(&user)
             .json(&json!({
@@ -517,16 +495,15 @@ mod update {
     }
 
     #[tokio::test]
-    #[parallel]
     async fn success_name() {
-        let app = get_cached_app().await;
-        let user = app.register_user().await;
-        let _team = app.create_team(&user).await;
+        let env = setup().await;
+        let user = env.register_user().await;
+        let _team = env.create_team(&user).await;
 
-        let mut socket = app.socket("/ws").start().await;
+        let mut socket = env.socket("/ws").start().await;
         assert_team_info!(socket, user);
 
-        let res = app
+        let res = env
             .patch("/team")
             .user(&user)
             .json(&json!({
@@ -553,21 +530,20 @@ mod update {
     }
 
     #[tokio::test]
-    #[parallel]
     async fn success_owner() {
-        let app = get_cached_app().await;
-        let owner = app.register_user().await;
-        let team = app.create_team(&owner).await;
+        let env = setup().await;
+        let owner = env.register_user().await;
+        let team = env.create_team(&owner).await;
 
-        let member = app.register_user().await;
+        let member = env.register_user().await;
         member.join(&team.get_code().await).await;
 
-        let mut socket = app.socket("/ws").start().await;
+        let mut socket = env.socket("/ws").start().await;
         assert_team_info!(socket, owner);
 
         let member_uuid = member.id.strip_prefix("UserID-").unwrap();
 
-        let res = app
+        let res = env
             .patch("/team")
             .user(&owner)
             .json(&json!({
@@ -594,21 +570,20 @@ mod update {
     }
 
     #[tokio::test]
-    #[parallel]
     async fn success_coowner() {
-        let app = get_cached_app().await;
-        let owner = app.register_user().await;
-        let team = app.create_team(&owner).await;
+        let env = setup().await;
+        let owner = env.register_user().await;
+        let team = env.create_team(&owner).await;
 
-        let member = app.register_user().await;
+        let member = env.register_user().await;
         member.join(&team.get_code().await).await;
 
-        let mut socket = app.socket("/ws").start().await;
+        let mut socket = env.socket("/ws").start().await;
         assert_team_info!(socket, owner);
 
         let member_id = member.id.strip_prefix("UserID-").unwrap();
 
-        let res = app
+        let res = env
             .patch("/team")
             .user(&owner)
             .json(&json!({
@@ -636,16 +611,15 @@ mod update {
     }
 
     #[tokio::test]
-    #[parallel]
     async fn delete_coowner() {
-        let app = get_cached_app().await;
-        let owner = app.register_user().await;
-        let _team = app.create_team(&owner).await;
+        let env = setup().await;
+        let owner = env.register_user().await;
+        let _team = env.create_team(&owner).await;
 
-        let mut socket = app.socket("/ws").start().await;
+        let mut socket = env.socket("/ws").start().await;
         assert_team_info!(socket, owner);
 
-        let res = app
+        let res = env
             .patch("/team")
             .user(&owner)
             .json(&json!({ "co_owner": null }))
@@ -674,69 +648,65 @@ mod disband {
     use super::*;
 
     #[tokio::test]
-    #[parallel]
     async fn not_in_team() {
-        let app = get_cached_app().await;
-        let user = app.register_user().await;
+        let env = setup().await;
+        let user = env.register_user().await;
 
-        let res = app.post("/team/disband").user(&user).send().await;
+        let res = env.post("/team/disband").user(&user).send().await;
 
         assert_error!(res, error::USER_NOT_IN_TEAM);
     }
 
     #[tokio::test]
-    #[parallel]
     async fn not_owner() {
-        let app = get_cached_app().await;
-        let owner = app.register_user().await;
-        let team = app.create_team(&owner).await;
+        let env = setup().await;
+        let owner = env.register_user().await;
+        let team = env.create_team(&owner).await;
 
-        let member = app.register_user().await;
+        let member = env.register_user().await;
         member.join(&team.get_code().await).await;
 
-        let res = app.post("/team/disband").user(&member).send().await;
+        let res = env.post("/team/disband").user(&member).send().await;
 
         assert_error!(res, error::USER_NOT_OWNER);
     }
 
     #[tokio::test]
-    #[parallel]
     async fn locked_team() {
-        let app = get_cached_app().await;
-        let owner = app.register_user().await;
-        let team = app.create_team(&owner).await;
+        let env = setup().await;
+        let owner = env.register_user().await;
+        let team = env.create_team(&owner).await;
 
         team.lock().await;
 
-        let res = app.post("/team/disband").user(&owner).send().await;
+        let res = env.post("/team/disband").user(&owner).send().await;
 
         assert_error!(res, error::LOCKED_TEAM);
     }
 
     #[tokio::test]
-    #[parallel]
     async fn success() {
-        let app = get_cached_app().await;
-        let owner = app.register_user().await;
-        let team = app.create_team(&owner).await;
+        let env = setup().await;
+        let owner = env.register_user().await;
+        let team = env.create_team(&owner).await;
 
-        let member1 = app.register_user().await;
+        let member1 = env.register_user().await;
         member1.join(&team.get_code().await).await;
 
-        let member2 = app.register_user().await;
+        let member2 = env.register_user().await;
         member2.join(&team.get_code().await).await;
 
-        let mut socket1 = app.socket("/ws").start().await;
+        let mut socket1 = env.socket("/ws").start().await;
         assert_team_info!(socket1, owner);
-        let mut socket2 = app.socket("/ws").start().await;
+        let mut socket2 = env.socket("/ws").start().await;
         assert_team_info!(socket2, member1);
-        let mut socket3 = app.socket("/ws").start().await;
+        let mut socket3 = env.socket("/ws").start().await;
         assert_team_info!(socket3, member2);
 
-        let res = app.post("/team/disband").user(&owner).send().await;
+        let res = env.post("/team/disband").user(&owner).send().await;
         assert_eq!(res.status(), StatusCode::NO_CONTENT);
 
-        let res = app.post("/team/leave").user(&owner).send().await;
+        let res = env.post("/team/leave").user(&owner).send().await;
         assert_error!(res, error::USER_NOT_IN_TEAM);
         let message = socket1.next().await;
         assert_close_frame!(
@@ -747,7 +717,7 @@ mod disband {
             },
         );
 
-        let res = app.post("/team/leave").user(&member1).send().await;
+        let res = env.post("/team/leave").user(&member1).send().await;
         assert_error!(res, error::USER_NOT_IN_TEAM);
         let message = socket2.next().await;
         assert_close_frame!(
@@ -758,7 +728,7 @@ mod disband {
             },
         );
 
-        let res = app.post("/team/leave").user(&member2).send().await;
+        let res = env.post("/team/leave").user(&member2).send().await;
         assert_error!(res, error::USER_NOT_IN_TEAM);
         let message = socket3.next().await;
         assert_close_frame!(
@@ -775,19 +745,18 @@ mod kick {
     use super::*;
 
     #[tokio::test]
-    #[parallel]
     async fn member_cannot_kick() {
-        let app = get_cached_app().await;
-        let owner = app.register_user().await;
-        let team = app.create_team(&owner).await;
+        let env = setup().await;
+        let owner = env.register_user().await;
+        let team = env.create_team(&owner).await;
 
-        let member1 = app.register_user().await;
+        let member1 = env.register_user().await;
         member1.join(&team.get_code().await).await;
 
-        let member2 = app.register_user().await;
+        let member2 = env.register_user().await;
         member2.join(&team.get_code().await).await;
 
-        let res = app
+        let res = env
             .post("/team/kick")
             .user(&member1)
             .json(&json!({
@@ -800,18 +769,17 @@ mod kick {
     }
 
     #[tokio::test]
-    #[parallel]
     async fn locked_team() {
-        let app = get_cached_app().await;
-        let owner = app.register_user().await;
-        let team = app.create_team(&owner).await;
+        let env = setup().await;
+        let owner = env.register_user().await;
+        let team = env.create_team(&owner).await;
 
-        let member = app.register_user().await;
+        let member = env.register_user().await;
         member.join(&team.get_code().await).await;
 
         team.lock().await;
 
-        let res = app
+        let res = env
             .post("/team/kick")
             .user(&owner)
             .json(&json!({
@@ -824,16 +792,15 @@ mod kick {
     }
 
     #[tokio::test]
-    #[parallel]
     async fn cannot_kick_owner() {
-        let app = get_cached_app().await;
-        let owner = app.register_user().await;
-        let team = app.create_team(&owner).await;
+        let env = setup().await;
+        let owner = env.register_user().await;
+        let team = env.create_team(&owner).await;
 
-        let member = app.register_user().await;
+        let member = env.register_user().await;
         member.join(&team.get_code().await).await;
 
-        let res = app
+        let res = env
             .patch("/team")
             .user(&owner)
             .json(&json!({
@@ -844,7 +811,7 @@ mod kick {
 
         assert_eq!(res.status(), StatusCode::NO_CONTENT);
 
-        let res = app
+        let res = env
             .post("/team/kick")
             .user(&member)
             .json(&json!({
@@ -857,16 +824,15 @@ mod kick {
     }
 
     #[tokio::test]
-    #[parallel]
     async fn cannot_kick_themself() {
-        let app = get_cached_app().await;
-        let owner = app.register_user().await;
-        let team = app.create_team(&owner).await;
+        let env = setup().await;
+        let owner = env.register_user().await;
+        let team = env.create_team(&owner).await;
 
-        let member = app.register_user().await;
+        let member = env.register_user().await;
         member.join(&team.get_code().await).await;
 
-        let res = app
+        let res = env
             .patch("/team")
             .user(&owner)
             .json(&json!({
@@ -877,7 +843,7 @@ mod kick {
 
         assert_eq!(res.status(), StatusCode::NO_CONTENT);
 
-        let res = app
+        let res = env
             .post("/team/kick")
             .user(&member)
             .json(&json!({
@@ -890,15 +856,14 @@ mod kick {
     }
 
     #[tokio::test]
-    #[parallel]
     async fn not_member() {
-        let app = get_cached_app().await;
-        let owner = app.register_user().await;
-        let _team = app.create_team(&owner).await;
+        let env = setup().await;
+        let owner = env.register_user().await;
+        let _team = env.create_team(&owner).await;
 
-        let member = app.register_user().await;
+        let member = env.register_user().await;
 
-        let res = app
+        let res = env
             .post("/team/kick")
             .user(&owner)
             .json(&json!({
@@ -911,13 +876,12 @@ mod kick {
     }
 
     #[tokio::test]
-    #[parallel]
     async fn user_not_exists() {
-        let app = get_cached_app().await;
-        let owner = app.register_user().await;
-        let _team = app.create_team(&owner).await;
+        let env = setup().await;
+        let owner = env.register_user().await;
+        let _team = env.create_team(&owner).await;
 
-        let res = app
+        let res = env
             .post("/team/kick")
             .user(&owner)
             .json(&json!({
@@ -930,21 +894,20 @@ mod kick {
     }
 
     #[tokio::test]
-    #[parallel]
     async fn success_owner_kick_member() {
-        let app = get_cached_app().await;
-        let owner = app.register_user().await;
-        let team = app.create_team(&owner).await;
+        let env = setup().await;
+        let owner = env.register_user().await;
+        let team = env.create_team(&owner).await;
 
-        let member = app.register_user().await;
+        let member = env.register_user().await;
         member.join(&team.get_code().await).await;
 
-        let mut socket1 = app.socket("/ws").start().await;
+        let mut socket1 = env.socket("/ws").start().await;
         assert_team_info!(socket1, owner);
-        let mut socket2 = app.socket("/ws").start().await;
+        let mut socket2 = env.socket("/ws").start().await;
         assert_team_info!(socket2, member);
 
-        let res = app
+        let res = env
             .post("/team/kick")
             .user(&owner)
             .json(&json!({
@@ -980,16 +943,15 @@ mod kick {
     }
 
     #[tokio::test]
-    #[parallel]
     async fn success_owner_kick_coowner() {
-        let app = get_cached_app().await;
-        let owner = app.register_user().await;
-        let team = app.create_team(&owner).await;
+        let env = setup().await;
+        let owner = env.register_user().await;
+        let team = env.create_team(&owner).await;
 
-        let member = app.register_user().await;
+        let member = env.register_user().await;
         member.join(&team.get_code().await).await;
 
-        let res = app
+        let res = env
             .patch("/team")
             .user(&owner)
             .json(&json!({
@@ -1000,12 +962,12 @@ mod kick {
 
         assert_eq!(res.status(), StatusCode::NO_CONTENT);
 
-        let mut socket1 = app.socket("/ws").start().await;
+        let mut socket1 = env.socket("/ws").start().await;
         assert_team_info!(socket1, owner);
-        let mut socket2 = app.socket("/ws").start().await;
+        let mut socket2 = env.socket("/ws").start().await;
         assert_team_info!(socket2, member);
 
-        let res = app
+        let res = env
             .post("/team/kick")
             .user(&owner)
             .json(&json!({
@@ -1041,19 +1003,18 @@ mod kick {
     }
 
     #[tokio::test]
-    #[parallel]
     async fn success_coowner_kick_member() {
-        let app = get_cached_app().await;
-        let owner = app.register_user().await;
-        let team = app.create_team(&owner).await;
+        let env = setup().await;
+        let owner = env.register_user().await;
+        let team = env.create_team(&owner).await;
 
-        let coowner = app.register_user().await;
+        let coowner = env.register_user().await;
         coowner.join(&team.get_code().await).await;
 
-        let member = app.register_user().await;
+        let member = env.register_user().await;
         member.join(&team.get_code().await).await;
 
-        let res = app
+        let res = env
             .patch("/team")
             .user(&owner)
             .json(&json!({
@@ -1064,14 +1025,14 @@ mod kick {
 
         assert_eq!(res.status(), StatusCode::NO_CONTENT);
 
-        let mut socket1 = app.socket("/ws").start().await;
+        let mut socket1 = env.socket("/ws").start().await;
         assert_team_info!(socket1, owner);
-        let mut socket2 = app.socket("/ws").start().await;
+        let mut socket2 = env.socket("/ws").start().await;
         assert_team_info!(socket2, coowner);
-        let mut socket3 = app.socket("/ws").start().await;
+        let mut socket3 = env.socket("/ws").start().await;
         assert_team_info!(socket3, member);
 
-        let res = app
+        let res = env
             .post("/team/kick")
             .user(&coowner)
             .json(&json!({
@@ -1122,45 +1083,42 @@ mod code {
     use super::*;
 
     #[tokio::test]
-    #[parallel]
     async fn not_coowner() {
-        let app = get_cached_app().await;
-        let owner = app.register_user().await;
-        let team = app.create_team(&owner).await;
+        let env = setup().await;
+        let owner = env.register_user().await;
+        let team = env.create_team(&owner).await;
 
-        let member = app.register_user().await;
+        let member = env.register_user().await;
         member.join(&team.get_code().await).await;
 
-        let res = app.post("/team/code").user(&member).send().await;
+        let res = env.post("/team/code").user(&member).send().await;
 
         assert_error!(res, error::USER_NOT_COOWNER);
     }
 
     #[tokio::test]
-    #[parallel]
     async fn locked_team() {
-        let app = get_cached_app().await;
-        let owner = app.register_user().await;
-        let team = app.create_team(&owner).await;
+        let env = setup().await;
+        let owner = env.register_user().await;
+        let team = env.create_team(&owner).await;
 
         team.lock().await;
 
-        let res = app.post("/team/code").user(&owner).send().await;
+        let res = env.post("/team/code").user(&owner).send().await;
 
         assert_error!(res, error::LOCKED_TEAM);
     }
 
     #[tokio::test]
-    #[parallel]
     async fn success() {
-        let app = get_cached_app().await;
-        let owner = app.register_user().await;
-        let _team = app.create_team(&owner).await;
+        let env = setup().await;
+        let owner = env.register_user().await;
+        let _team = env.create_team(&owner).await;
 
-        let mut socket = app.socket("/ws").start().await;
+        let mut socket = env.socket("/ws").start().await;
         assert_team_info!(socket, owner);
 
-        let res = app.post("/team/code").user(&owner).send().await;
+        let res = env.post("/team/code").user(&owner).send().await;
 
         assert_eq!(res.status(), StatusCode::NO_CONTENT);
 
@@ -1173,7 +1131,6 @@ mod code {
     }
 
     #[tokio::test]
-    #[parallel]
     #[ignore]
     async fn clash() {
         // TODO: test join code clash
@@ -1184,29 +1141,26 @@ mod get {
     use super::*;
 
     #[tokio::test]
-    #[parallel]
     async fn not_admin() {
-        let app = get_cached_app().await;
-        let user = app.register_user().await;
+        let env = setup().await;
+        let user = env.register_user().await;
 
-        let res = app.get("/team").user(&user).send().await;
+        let res = env.get("/team").user(&user).send().await;
 
         assert_error!(res, error::NOT_ENOUGH_PERMISSIONS);
     }
 
     #[tokio::test]
-    #[serial]
     async fn works() {
-        let app = get_cached_app().await;
-        app.clean_database().await;
+        let env = setup().await;
 
-        let owner = app.register_user().await;
-        let _team = app.create_team(&owner).await;
+        let owner = env.register_user().await;
+        let _team = env.create_team(&owner).await;
 
-        let admin = utils::iam::register_user().await;
-        utils::iam::make_admin(&admin).await;
+        let admin = iam::register_user(&env).await;
+        iam::make_admin(&env, &admin).await;
 
-        let res = app.get("/team").user(&admin).send().await;
+        let res = env.get("/team").user(&admin).send().await;
 
         assert!(res.status().is_success());
 

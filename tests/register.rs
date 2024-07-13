@@ -5,18 +5,18 @@ use utils::prelude::*;
 
 #[tokio::test]
 async fn no_claims() {
-    let app = get_cached_app().await;
+    let env = setup().await;
 
-    let res = app.post("/register").json(&json!({})).send().await;
+    let res = env.post("/register").json(&json!({})).send().await;
 
     assert_error!(res, error::COULD_NOT_GET_CLAIMS);
 }
 
 #[tokio::test]
 async fn not_bearer_token() {
-    let app = get_cached_app().await;
+    let env = setup().await;
 
-    let res = app
+    let res = env
         .post("/register")
         .header(AUTHORIZATION, "asd")
         .json(&json!({}))
@@ -28,9 +28,9 @@ async fn not_bearer_token() {
 
 #[tokio::test]
 async fn invalid_claims() {
-    let app = get_cached_app().await;
+    let env = setup().await;
 
-    let res = app
+    let res = env
         .post("/register")
         .header(AUTHORIZATION, "Bearer test.test.test")
         .json(&json!({}))
@@ -48,10 +48,10 @@ async fn wrong_jwt_signature() {
 
 #[tokio::test]
 async fn success() {
-    let app = get_cached_app().await;
-    let user = utils::iam::register_user().await;
+    let env = setup().await;
+    let user = iam::register_user(&env).await;
 
-    let res = app
+    let res = env
         .post("/register")
         .user(&user)
         .json(&json!({
@@ -66,10 +66,10 @@ async fn success() {
 
 #[tokio::test]
 async fn already_registered() {
-    let app = get_cached_app().await;
-    let user = utils::iam::register_user().await;
+    let env = setup().await;
+    let user = iam::register_user(&env).await;
 
-    let res = app
+    let res = env
         .post("/register")
         .user(&user)
         .json(&json!({
@@ -81,7 +81,7 @@ async fn already_registered() {
 
     assert_eq!(res.status(), StatusCode::CREATED);
 
-    let res = app
+    let res = env
         .post("/register")
         .user(&user)
         .json(&json!({
