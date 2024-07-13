@@ -3,6 +3,7 @@ use super::{
     request::{RequestBuilder, SocketRequestBuilder},
     team::Team,
     user::{User, UserLike},
+    uuid,
 };
 use http::StatusCode;
 use libiam::{
@@ -28,14 +29,6 @@ use std::{
 use testcontainers::{runners::AsyncRunner, ContainerAsync, ImageExt};
 use testcontainers_modules::postgres::Postgres;
 use tokio::net::TcpListener;
-use uuid::Uuid;
-
-fn uuid() -> String {
-    Uuid::new_v4()
-        .as_simple()
-        .encode_lower(&mut Uuid::encode_buffer())
-        .to_owned()
-}
 
 async fn setup_iam() -> (App, Iam, libiam::testing::Database) {
     let db = testing::Database::connect("mysql://iam:secret@127.0.0.1:3306/iam").await;
