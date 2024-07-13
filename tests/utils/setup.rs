@@ -213,10 +213,3 @@ impl Env {
         Team::new(self, owner.clone(), number)
     }
 }
-
-impl Env {
-    #[allow(unused)]
-    pub fn iam_db(&self) -> &libiam::testing::Database {
-        &self.iam_db
-    }
-}

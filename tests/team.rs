@@ -143,7 +143,7 @@ mod join {
 
         let message = utils::get_socket_message(socket.next().await);
 
-        let user_info = libiam::testing::users::get_user(env.iam_db(), &user.id).await;
+        let user_info = libiam::testing::users::get_user(&env.iam_db, &user.id).await;
 
         assert_json_eq!(
             message,

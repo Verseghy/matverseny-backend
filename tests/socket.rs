@@ -108,7 +108,7 @@ async fn team_info() {
     );
 
     assert!(message["data"].get("code").is_some());
-    let user = libiam::testing::users::get_user(env.iam_db(), &user.id).await;
+    let user = libiam::testing::users::get_user(&env.iam_db, &user.id).await;
     assert_eq!(message["data"]["members"][0]["name"], user.name);
 
     socket.close(None).await.unwrap();
