@@ -21,10 +21,6 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
       - name: Setup environment
         run: docker compose up -d
-      - name: Run migrations
-        run: cargo run -p migration
-        env:
-          DATABASE_URL: 'postgres://matverseny:secret@127.0.0.1:5432/matverseny'
       - name: cargo test --locked
         run: cargo test --locked --all-features --workspace --all-targets
         env:
