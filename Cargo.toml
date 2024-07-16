@@ -104,4 +104,4 @@ http = "1.1.0"
 migration = { path = "./migration" }
 assert-json-diff = "2.0.2"
 testcontainers = "0.20.0"
-testcontainers-modules = { version = "0.8.0", features = ["postgres"] }
+testcontainers-modules = { version = "0.8.0", features = ["nats", "postgres"] }

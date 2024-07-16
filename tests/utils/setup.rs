@@ -27,8 +27,10 @@ use std::{
     },
 };
 use testcontainers::{runners::AsyncRunner, ContainerAsync, ImageExt};
-use testcontainers_modules::postgres::Postgres;
+use testcontainers_modules::{nats::Nats, postgres::Postgres};
 use tokio::net::TcpListener;
+
+const REGISTRY: &str = "docker.io";
 
 async fn setup_iam() -> (App, Iam, libiam::testing::Database) {
     let db = testing::Database::connect("mysql://iam:secret@127.0.0.1:3306/iam").await;
@@ -46,7 +48,12 @@ async fn setup_iam() -> (App, Iam, libiam::testing::Database) {
 }
 
 async fn setup_database() -> (ContainerAsync<Postgres>, DbConn) {
-    let container = Postgres::default().with_tag("16").start().await.unwrap();
+    let container = Postgres::default()
+        .with_name(format!("{REGISTRY}/library/postgres"))
+        .with_tag("16")
+        .start()
+        .await
+        .unwrap();
 
     let connection_string = format!(
         "postgres://postgres:postgres@{}:{}/postgres",
@@ -62,6 +69,26 @@ async fn setup_database() -> (ContainerAsync<Postgres>, DbConn) {
         .expect("failed to apply migrations");
 
     (container, db)
+}
+
+async fn setup_nats() -> ContainerAsync<Nats> {
+    let container = Nats::default()
+        .with_name(format!("{REGISTRY}/library/nats"))
+        .with_tag("2")
+        .start()
+        .await
+        .unwrap();
+
+    let connection_string = format!(
+        "{}:{}",
+        container.get_host().await.unwrap(),
+        container.get_host_port_ipv4(4222).await.unwrap(),
+    );
+
+    // TODO: fix this
+    env::set_var("NATS_URL", connection_string);
+
+    container
 }
 
 async fn setup_backend(app: App, db: DbConn) -> SocketAddr {
@@ -81,8 +108,11 @@ async fn setup_backend(app: App, db: DbConn) -> SocketAddr {
 pub async fn setup() -> Env {
     dotenvy::dotenv().ok();
 
-    let (app, iam, iam_db) = setup_iam().await;
-    let (container, db) = setup_database().await;
+    let (iam, db, nats) = tokio::join!(setup_iam(), setup_database(), setup_nats());
+
+    let (app, iam, iam_db) = iam;
+    let (container, db) = db;
+    let nats = nats;
 
     let addr = setup_backend(app, db).await;
 
@@ -93,6 +123,7 @@ pub async fn setup() -> Env {
         iam_db,
         team_num: Arc::new(AtomicU64::new(0)),
         _container: Arc::new(container),
+        _nats: Arc::new(nats),
     }
 }
 
@@ -103,7 +134,8 @@ pub struct Env {
     pub iam: Iam,
     pub iam_db: libiam::testing::Database,
     pub team_num: Arc<AtomicU64>,
-    pub _container: Arc<ContainerAsync<Postgres>>,
+    _container: Arc<ContainerAsync<Postgres>>,
+    _nats: Arc<ContainerAsync<Nats>>,
 }
 
 impl Drop for Env {
