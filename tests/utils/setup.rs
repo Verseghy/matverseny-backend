@@ -29,8 +29,22 @@ use std::{
 use testcontainers::{runners::AsyncRunner, ContainerAsync, ImageExt};
 use testcontainers_modules::{nats::Nats, postgres::Postgres};
 use tokio::net::TcpListener;
+use tracing::level_filters::LevelFilter;
+use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt, EnvFilter, Layer};
 
 const REGISTRY: &str = "docker.io";
+
+fn setup_logging() {
+    let env_filter = EnvFilter::builder()
+        .with_default_directive(LevelFilter::DEBUG.into())
+        .from_env_lossy();
+
+    let layer = tracing_subscriber::fmt::layer()
+        .with_line_number(true)
+        .with_filter(env_filter);
+
+    tracing_subscriber::registry().with(layer).init();
+}
 
 async fn setup_iam() -> (App, Iam, libiam::testing::Database) {
     let db = testing::Database::connect("mysql://iam:secret@127.0.0.1:3306/iam").await;
@@ -107,6 +121,8 @@ async fn setup_backend(app: App, db: DbConn) -> SocketAddr {
 #[allow(unused)]
 pub async fn setup() -> Env {
     dotenvy::dotenv().ok();
+
+    setup_logging();
 
     let (iam, db, nats) = tokio::join!(setup_iam(), setup_database(), setup_nats());
 

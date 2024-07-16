@@ -16,7 +16,7 @@ use uuid::Uuid;
 pub fn get_socket_message(
     message: Option<Result<Message, tokio_tungstenite::tungstenite::Error>>,
 ) -> Value {
-    tracing::debug!("socket  message: {message:?}");
+    tracing::debug!("socket message: {message:?}");
     if let Some(Ok(Message::Text(message))) = message {
         serde_json::from_str(&message).expect("not json")
     } else {
