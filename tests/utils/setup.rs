@@ -47,6 +47,8 @@ fn setup_logging() {
 }
 
 async fn setup_iam() -> (App, Iam, libiam::testing::Database) {
+    tracing::debug!("Setup IAM");
+
     let db = testing::Database::connect("mysql://iam:secret@127.0.0.1:3306/iam").await;
     let base = env::var("IAM_URL").unwrap();
     let iam = Iam::new(&base);
@@ -62,12 +64,16 @@ async fn setup_iam() -> (App, Iam, libiam::testing::Database) {
 }
 
 async fn setup_database() -> (ContainerAsync<Postgres>, DbConn) {
+    tracing::debug!("Starting Postgres");
+
     let container = Postgres::default()
         .with_name(format!("{REGISTRY}/library/postgres"))
         .with_tag("16")
         .start()
         .await
         .unwrap();
+
+    tracing::debug!("Postgres started");
 
     let connection_string = format!(
         "postgres://postgres:postgres@{}:{}/postgres",
@@ -78,6 +84,8 @@ async fn setup_database() -> (ContainerAsync<Postgres>, DbConn) {
     let opts = ConnectOptions::new(connection_string);
     let db = Database::connect(opts).await.unwrap();
 
+    tracing::debug!("Running migrations");
+
     migration::Migrator::fresh(&db)
         .await
         .expect("failed to apply migrations");
@@ -86,6 +94,8 @@ async fn setup_database() -> (ContainerAsync<Postgres>, DbConn) {
 }
 
 async fn setup_nats() -> ContainerAsync<Nats> {
+    tracing::debug!("Starting NATS");
+
     let container = Nats::default()
         .with_name(format!("{REGISTRY}/library/nats"))
         .with_tag("2")
@@ -101,6 +111,8 @@ async fn setup_nats() -> ContainerAsync<Nats> {
 
     // TODO: fix this
     env::set_var("NATS_URL", connection_string);
+
+    tracing::debug!("NATS started");
 
     container
 }
