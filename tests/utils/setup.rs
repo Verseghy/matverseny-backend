@@ -82,7 +82,10 @@ async fn setup_database() -> (ContainerAsync<Postgres>, DbConn) {
     );
 
     let opts = ConnectOptions::new(connection_string);
-    let db = Database::connect(opts).await.unwrap();
+    let db = Database::connect(opts)
+        .await
+        .inspect_err(|err| tracing::error!("postgres connect err: {err:?}"))
+        .unwrap();
 
     tracing::debug!("Running migrations");
 
