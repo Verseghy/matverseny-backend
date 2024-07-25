@@ -46,10 +46,13 @@ fn setup_logging() {
     tracing_subscriber::registry().with(layer).init();
 }
 
-async fn setup_iam() -> (App, Iam, libiam::testing::Database) {
+async fn setup_iam() -> (App, Iam, DbConn) {
     tracing::debug!("Setup IAM");
 
-    let db = testing::Database::connect("mysql://iam:secret@127.0.0.1:3306/iam").await;
+    let db = Database::connect("mysql://iam:secret@127.0.0.1:3306/iam")
+        .await
+        .unwrap();
+
     let base = env::var("IAM_URL").unwrap();
     let iam = Iam::new(&base);
     let (_, secret) = testing::apps::create_app(&db, &uuid()).await;
@@ -163,23 +166,10 @@ pub struct Env {
     pub addr: SocketAddr,
     pub client: Client,
     pub iam: Iam,
-    pub iam_db: libiam::testing::Database,
+    pub iam_db: DbConn,
     pub team_num: Arc<AtomicU64>,
     _container: Arc<ContainerAsync<Postgres>>,
     _nats: Arc<ContainerAsync<Nats>>,
-}
-
-impl Drop for Env {
-    fn drop(&mut self) {
-        // TODO: This is a HACK, remove this when possible:
-        //       `libiam::testing::Database`'s Drop is dropping a tokio runtime in the current thread,
-        //       which is not possible when inside another async runtime. All tests starts it's own
-        //       runtime so all tests would panic.
-        //       This causes a leak, but after this struct is dropped, the whole process exists so
-        //       this shouldn't be a problem.
-        #[allow(clippy::mem_forget)]
-        std::mem::forget(self.iam_db.clone());
-    }
 }
 
 impl Env {
