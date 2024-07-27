@@ -20,10 +20,9 @@ license-file = "LICENSE"
 rust_2018_idioms = "warn"
 future_incompatible = "warn"
 nonstandard_style = "warn"
-elided_lifetimes_in_paths = "allow"
+elided_lifetimes_in_paths = { level = "allow", priority = 1 }
 
 [workspace.lints.clippy]
-all = "warn"
 dbg_macro = "warn"
 todo = "warn"
 empty_enum = "warn"
@@ -32,10 +31,7 @@ mem_forget = "warn"
 unused_self = "warn"
 filter_map_next = "warn"
 needless_continue = "warn"
-needless_borrow = "warn"
 match_wildcard_for_single_variants = "warn"
-if_let_mutex = "warn"
-await_holding_lock = "warn"
 match_on_vec_items = "warn"
 imprecise_flops = "warn"
 suboptimal_flops = "warn"
@@ -48,7 +44,6 @@ linkedlist = "warn"
 macro_use_imports = "warn"
 unnested_or_patterns = "warn"
 str_to_string = "warn"
-type_complexity = "allow"
 
 
 
