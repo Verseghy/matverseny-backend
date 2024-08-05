@@ -20,10 +20,10 @@ license-file = "LICENSE"
 rust_2018_idioms = "warn"
 future_incompatible = "warn"
 nonstandard_style = "warn"
-elided_lifetimes_in_paths = "allow"
+elided_lifetimes_in_paths = { level = "allow", priority = 1 }
 
 [workspace.lints.clippy]
-all = "warn"
+all = { level = "warn", priority = -1 }
 dbg_macro = "warn"
 todo = "warn"
 empty_enum = "warn"
