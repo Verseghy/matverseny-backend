@@ -1,5 +1,9 @@
 [advisories]
 version = 2
+ignore = [
+    # RSA Marvin Attack
+    "RUSTSEC-2023-0071",
+]
 
 [licenses]
 version = 2
@@ -32,6 +36,7 @@ license-files = [{ path = "LICENSE", hash = 0x001c7e6c }]
 
 [bans]
 multiple-versions = "allow"
+workspace-dependencies.duplicates = "deny"
 
 [sources]
 unknown-registry = "deny"
