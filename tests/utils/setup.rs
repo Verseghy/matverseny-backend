@@ -26,7 +26,10 @@ use std::{
         Arc,
     },
 };
-use testcontainers::{runners::AsyncRunner, ContainerAsync, ImageExt};
+use testcontainers::{
+    core::logs::consumer::logging_consumer::LoggingConsumer, runners::AsyncRunner, ContainerAsync,
+    ImageExt,
+};
 use testcontainers_modules::{nats::Nats, postgres::Postgres};
 use tokio::net::TcpListener;
 use tracing::level_filters::LevelFilter;
@@ -72,6 +75,7 @@ async fn setup_database() -> (ContainerAsync<Postgres>, DbConn) {
     let container = Postgres::default()
         .with_name(format!("{REGISTRY}/library/postgres"))
         .with_tag("16")
+        .with_log_consumer(LoggingConsumer::new())
         .start()
         .await
         .unwrap();
