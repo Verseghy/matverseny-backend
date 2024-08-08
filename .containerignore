@@ -2,6 +2,7 @@ target
 deny.toml
 LICENSE
 compose.yaml
+compose.local.yaml
 Containerfile
 containerfiles/
 tests

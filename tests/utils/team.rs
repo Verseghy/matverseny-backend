@@ -1,21 +1,26 @@
-use super::prelude::*;
-use super::{super::utils, User};
+use super::{macros::assert_team_info, setup::Env, user::User};
+use http::StatusCode;
+use serde_json::json;
 
 #[allow(unused)]
 pub struct Team {
     owner: User,
-    app: App,
     number: u64,
+    env: Env,
 }
 
 impl Team {
-    pub(super) fn new(owner: User, app: App, number: u64) -> Self {
-        Team { owner, app, number }
+    pub(super) fn new(env: &Env, owner: User, number: u64) -> Self {
+        Team {
+            owner,
+            number,
+            env: env.clone(),
+        }
     }
 
     #[allow(unused)]
     pub async fn get_code(&self) -> String {
-        let mut socket = self.app.socket("/ws").start().await;
+        let mut socket = self.env.socket("/ws").start().await;
         let message = assert_team_info!(socket, self.owner);
 
         let code = message["data"]["code"]
@@ -31,7 +36,7 @@ impl Team {
     #[allow(unused)]
     pub async fn lock(&self) {
         let res = self
-            .app
+            .env
             .patch("/team")
             .user(&self.owner)
             .json(&json!({
@@ -45,6 +50,6 @@ impl Team {
 
     #[allow(unused)]
     pub fn get_name(&self) -> String {
-        format!("Team-{}", self.number)
+        format!("Test Team {}", self.number)
     }
 }

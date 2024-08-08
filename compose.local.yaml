@@ -1,0 +1,16 @@
+services:
+  db:
+    image: docker.io/postgres:16
+    environment:
+      POSTGRES_USER: matverseny
+      POSTGRES_PASSWORD: secret
+      POSTGRES_DB: matverseny
+    ports:
+      - 5432:5432
+
+  nats:
+    image: docker.io/nats:2
+    ports:
+      - 4222:4222
+      - 6222:6222
+      - 8222:8222

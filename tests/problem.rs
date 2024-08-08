@@ -6,13 +6,12 @@ mod create {
     use super::*;
 
     #[tokio::test]
-    #[parallel]
     async fn success() {
-        let app = get_cached_app().await;
-        let user = utils::iam::register_user().await;
-        utils::iam::make_admin(&user).await;
+        let env = setup().await;
+        let user = iam::register_user(&env).await;
+        iam::make_admin(&env, &user).await;
 
-        let res = app
+        let res = env
             .post("/problem")
             .user(&user)
             .json(&json!({
@@ -39,13 +38,12 @@ mod create {
     }
 
     #[tokio::test]
-    #[parallel]
     async fn optional_image() {
-        let app = get_cached_app().await;
-        let user = utils::iam::register_user().await;
-        utils::iam::make_admin(&user).await;
+        let env = setup().await;
+        let user = iam::register_user(&env).await;
+        iam::make_admin(&env, &user).await;
 
-        let res = app
+        let res = env
             .post("/problem")
             .user(&user)
             .json(&json!({
@@ -59,12 +57,11 @@ mod create {
     }
 
     #[tokio::test]
-    #[parallel]
     async fn not_admin() {
-        let app = get_cached_app().await;
-        let user = utils::iam::register_user().await;
+        let env = setup().await;
+        let user = iam::register_user(&env).await;
 
-        let res = app
+        let res = env
             .post("/problem")
             .user(&user)
             .json(&json!({
@@ -82,15 +79,13 @@ mod get {
     use super::*;
 
     #[tokio::test]
-    #[serial]
     async fn no_such_problem() {
-        let app = get_cached_app().await;
-        app.clean_database().await;
+        let env = setup().await;
 
-        let user = utils::iam::register_user().await;
-        utils::iam::make_admin(&user).await;
+        let user = iam::register_user(&env).await;
+        iam::make_admin(&env, &user).await;
 
-        let res = app
+        let res = env
             .get(&format!("/problem/{}", uuid()))
             .user(&user)
             .send()
@@ -100,15 +95,13 @@ mod get {
     }
 
     #[tokio::test]
-    #[serial]
     async fn success() {
-        let app = get_cached_app().await;
-        app.clean_database().await;
+        let env = setup().await;
 
-        let user = utils::iam::register_user().await;
-        utils::iam::make_admin(&user).await;
+        let user = iam::register_user(&env).await;
+        iam::make_admin(&env, &user).await;
 
-        let res = app
+        let res = env
             .post("/problem")
             .user(&user)
             .json(&json!({
@@ -129,7 +122,7 @@ mod get {
         let body: Value = res.json().await;
         let id = body["id"].as_str().unwrap();
 
-        let res = app
+        let res = env
             .get(&format!("/problem/{}", id))
             .user(&user)
             .send()
@@ -156,24 +149,22 @@ mod get {
     }
 
     #[tokio::test]
-    #[parallel]
     async fn not_uuid() {
-        let app = get_cached_app().await;
-        let user = utils::iam::register_user().await;
-        utils::iam::make_admin(&user).await;
+        let env = setup().await;
+        let user = iam::register_user(&env).await;
+        iam::make_admin(&env, &user).await;
 
-        let res = app.get("/problem/test").user(&user).send().await;
+        let res = env.get("/problem/test").user(&user).send().await;
 
         assert_error!(res, error::PROBLEM_NOT_FOUND);
     }
 
     #[tokio::test]
-    #[parallel]
     async fn not_admin() {
-        let app = get_cached_app().await;
-        let user = utils::iam::register_user().await;
+        let env = setup().await;
+        let user = iam::register_user(&env).await;
 
-        let res = app
+        let res = env
             .get(&format!("/problem/{}", uuid()))
             .user(&user)
             .send()
@@ -187,21 +178,19 @@ mod list {
     use super::*;
 
     #[tokio::test]
-    #[serial]
     async fn success() {
-        let app = get_cached_app().await;
-        app.clean_database().await;
+        let env = setup().await;
 
-        let user = utils::iam::register_user().await;
-        utils::iam::make_admin(&user).await;
+        let user = iam::register_user(&env).await;
+        iam::make_admin(&env, &user).await;
 
-        let res = app.get("/problem").user(&user).send().await;
+        let res = env.get("/problem").user(&user).send().await;
 
         assert_eq!(res.status(), StatusCode::OK);
         let body: Value = res.json().await;
         assert_json_eq!(body, json!([]));
 
-        let res = app
+        let res = env
             .post("/problem")
             .user(&user)
             .json(&json!({
@@ -222,7 +211,7 @@ mod list {
         let body: Value = res.json().await;
         let id1 = body["id"].as_str().unwrap();
 
-        let res = app.get("/problem").user(&user).send().await;
+        let res = env.get("/problem").user(&user).send().await;
 
         assert_eq!(res.status(), StatusCode::OK);
         let body: Value = res.json().await;
@@ -236,7 +225,7 @@ mod list {
             }])
         );
 
-        let res = app
+        let res = env
             .post("/problem")
             .user(&user)
             .json(&json!({
@@ -257,7 +246,7 @@ mod list {
         let body: Value = res.json().await;
         let id2 = body["id"].as_str().unwrap();
 
-        let res = app.get("/problem").user(&user).send().await;
+        let res = env.get("/problem").user(&user).send().await;
 
         assert_eq!(res.status(), StatusCode::OK);
         let body: Value = res.json().await;
@@ -281,12 +270,11 @@ mod list {
     }
 
     #[tokio::test]
-    #[parallel]
     async fn not_admin() {
-        let app = get_cached_app().await;
-        let user = utils::iam::register_user().await;
+        let env = setup().await;
+        let user = iam::register_user(&env).await;
 
-        let res = app.get("/problem").user(&user).send().await;
+        let res = env.get("/problem").user(&user).send().await;
 
         assert_error!(res, error::NOT_ENOUGH_PERMISSIONS);
     }
@@ -296,14 +284,13 @@ mod delete {
     use super::*;
 
     #[tokio::test]
-    #[parallel]
     async fn not_found() {
-        let app = get_cached_app().await;
+        let env = setup().await;
 
-        let user = utils::iam::register_user().await;
-        utils::iam::make_admin(&user).await;
+        let user = iam::register_user(&env).await;
+        iam::make_admin(&env, &user).await;
 
-        let res = app
+        let res = env
             .delete(&format!("/problem/{}", uuid()))
             .user(&user)
             .send()
@@ -313,14 +300,13 @@ mod delete {
     }
 
     #[tokio::test]
-    #[parallel]
     async fn success() {
-        let app = get_cached_app().await;
-        let user = app.register_user().await;
-        utils::iam::make_admin(&user).await;
-        let _team = app.create_team(&user).await;
+        let env = setup().await;
+        let user = env.register_user().await;
+        iam::make_admin(&env, &user).await;
+        let _team = env.create_team(&user).await;
 
-        let res = app
+        let res = env
             .post("/problem")
             .user(&user)
             .json(&json!({
@@ -338,13 +324,13 @@ mod delete {
             res.json::<Value>().await,
         );
 
-        let mut socket = app.socket("/ws").start().await;
+        let mut socket = env.socket("/ws").start().await;
         assert_team_info!(socket, user);
 
         let body: Value = res.json().await;
         let id = body["id"].as_str().unwrap();
 
-        let res = app
+        let res = env
             .delete(&format!("/problem/{}", id))
             .user(&user)
             .send()
@@ -371,12 +357,11 @@ mod delete {
     }
 
     #[tokio::test]
-    #[parallel]
     async fn not_admin() {
-        let app = get_cached_app().await;
-        let user = utils::iam::register_user().await;
+        let env = setup().await;
+        let user = iam::register_user(&env).await;
 
-        let res = app.delete("/problem").user(&user).send().await;
+        let res = env.delete("/problem").user(&user).send().await;
 
         assert_error!(res, error::NOT_ENOUGH_PERMISSIONS);
     }
@@ -389,16 +374,15 @@ mod update {
         use super::*;
 
         #[tokio::test]
-        #[parallel]
         async fn not_found() {
-            let app = get_cached_app().await;
+            let env = setup().await;
 
-            let user = utils::iam::register_user().await;
-            utils::iam::make_admin(&user).await;
+            let user = iam::register_user(&env).await;
+            iam::make_admin(&env, &user).await;
 
             let id = uuid();
 
-            let res = app
+            let res = env
                 .put(&format!("/problem/{}", id))
                 .user(&user)
                 .json(&json!({
@@ -414,14 +398,13 @@ mod update {
         }
 
         #[tokio::test]
-        #[parallel]
         async fn delete_image() {
-            let app = get_cached_app().await;
+            let env = setup().await;
 
-            let user = utils::iam::register_user().await;
-            utils::iam::make_admin(&user).await;
+            let user = iam::register_user(&env).await;
+            iam::make_admin(&env, &user).await;
 
-            let res = app
+            let res = env
                 .post("/problem")
                 .user(&user)
                 .json(&json!({
@@ -442,7 +425,7 @@ mod update {
             let body: Value = res.json().await;
             let id = body["id"].as_str().unwrap();
 
-            let res = app
+            let res = env
                 .put(&format!("/problem/{}", id))
                 .user(&user)
                 .json(&json!({
@@ -461,7 +444,7 @@ mod update {
                 res.json::<Value>().await
             );
 
-            let res = app
+            let res = env
                 .get(&format!("/problem/{}", id))
                 .user(&user)
                 .send()
@@ -480,14 +463,13 @@ mod update {
         }
 
         #[tokio::test]
-        #[parallel]
         async fn success() {
-            let app = get_cached_app().await;
+            let env = setup().await;
 
-            let user = utils::iam::register_user().await;
-            utils::iam::make_admin(&user).await;
+            let user = iam::register_user(&env).await;
+            iam::make_admin(&env, &user).await;
 
-            let res = app
+            let res = env
                 .post("/problem")
                 .user(&user)
                 .json(&json!({
@@ -508,7 +490,7 @@ mod update {
             let body: Value = res.json().await;
             let id = body["id"].as_str().unwrap();
 
-            let res = app
+            let res = env
                 .put(&format!("/problem/{}", id))
                 .user(&user)
                 .json(&json!({
@@ -527,7 +509,7 @@ mod update {
                 res.json::<Value>().await
             );
 
-            let res = app
+            let res = env
                 .get(&format!("/problem/{}", id))
                 .user(&user)
                 .send()
@@ -547,12 +529,11 @@ mod update {
         }
 
         #[tokio::test]
-        #[parallel]
         async fn not_admin() {
-            let app = get_cached_app().await;
-            let user = utils::iam::register_user().await;
+            let env = setup().await;
+            let user = iam::register_user(&env).await;
 
-            let res = app
+            let res = env
                 .put(&format!("/problem/{}", uuid()))
                 .user(&user)
                 .send()
@@ -563,16 +544,15 @@ mod update {
     }
 
     #[tokio::test]
-    #[parallel]
     async fn not_found() {
-        let app = get_cached_app().await;
+        let env = setup().await;
 
-        let user = utils::iam::register_user().await;
-        utils::iam::make_admin(&user).await;
+        let user = iam::register_user(&env).await;
+        iam::make_admin(&env, &user).await;
 
         let id = uuid();
 
-        let res = app
+        let res = env
             .patch(&format!("/problem/{}", id))
             .user(&user)
             .json(&json!({
@@ -588,14 +568,13 @@ mod update {
     }
 
     #[tokio::test]
-    #[parallel]
     async fn delete_image() {
-        let app = get_cached_app().await;
+        let env = setup().await;
 
-        let user = utils::iam::register_user().await;
-        utils::iam::make_admin(&user).await;
+        let user = iam::register_user(&env).await;
+        iam::make_admin(&env, &user).await;
 
-        let res = app
+        let res = env
             .post("/problem")
             .user(&user)
             .json(&json!({
@@ -616,7 +595,7 @@ mod update {
         let body: Value = res.json().await;
         let id = body["id"].as_str().unwrap();
 
-        let res = app
+        let res = env
             .patch(&format!("/problem/{}", id))
             .user(&user)
             .json(&json!({
@@ -635,7 +614,7 @@ mod update {
             res.json::<Value>().await
         );
 
-        let res = app
+        let res = env
             .get(&format!("/problem/{}", id))
             .user(&user)
             .send()
@@ -654,14 +633,13 @@ mod update {
     }
 
     #[tokio::test]
-    #[parallel]
     async fn everything_is_optional() {
-        let app = get_cached_app().await;
+        let env = setup().await;
 
-        let user = utils::iam::register_user().await;
-        utils::iam::make_admin(&user).await;
+        let user = iam::register_user(&env).await;
+        iam::make_admin(&env, &user).await;
 
-        let res = app
+        let res = env
             .post("/problem")
             .user(&user)
             .json(&json!({
@@ -682,7 +660,7 @@ mod update {
         let body: Value = res.json().await;
         let id = body["id"].as_str().unwrap();
 
-        let res = app
+        let res = env
             .patch(&format!("/problem/{}", id))
             .user(&user)
             .json(&json!({
@@ -700,14 +678,13 @@ mod update {
     }
 
     #[tokio::test]
-    #[parallel]
     async fn success() {
-        let app = get_cached_app().await;
+        let env = setup().await;
 
-        let user = utils::iam::register_user().await;
-        utils::iam::make_admin(&user).await;
+        let user = iam::register_user(&env).await;
+        iam::make_admin(&env, &user).await;
 
-        let res = app
+        let res = env
             .post("/problem")
             .user(&user)
             .json(&json!({
@@ -728,7 +705,7 @@ mod update {
         let body: Value = res.json().await;
         let id = body["id"].as_str().unwrap();
 
-        let res = app
+        let res = env
             .patch(&format!("/problem/{}", id))
             .user(&user)
             .json(&json!({
@@ -747,7 +724,7 @@ mod update {
             res.json::<Value>().await
         );
 
-        let res = app
+        let res = env
             .get(&format!("/problem/{}", id))
             .user(&user)
             .send()
@@ -767,12 +744,11 @@ mod update {
     }
 
     #[tokio::test]
-    #[parallel]
     async fn not_admin() {
-        let app = get_cached_app().await;
-        let user = utils::iam::register_user().await;
+        let env = setup().await;
+        let user = iam::register_user(&env).await;
 
-        let res = app
+        let res = env
             .patch(&format!("/problem/{}", uuid()))
             .user(&user)
             .send()
@@ -783,15 +759,16 @@ mod update {
 }
 
 mod order {
+    use utils::setup::Env;
     use uuid::Uuid;
 
     use super::*;
 
-    async fn create_test_problem2<const N: usize>(app: &App, user: &impl UserLike) -> [Uuid; N] {
+    async fn create_test_problem2<const N: usize>(env: &Env, user: &impl UserLike) -> [Uuid; N] {
         let mut ids = [Uuid::nil(); N];
 
         for id_slot in ids.iter_mut() {
-            let res = app
+            let res = env
                 .post("/problem")
                 .user(user)
                 .json(&json!({
@@ -805,7 +782,7 @@ mod order {
 
             let id = Uuid::parse_str(res.json::<Value>().await["id"].as_str().unwrap()).unwrap();
 
-            let res = app
+            let res = env
                 .post("/problem/order")
                 .user(user)
                 .json(&json!({
@@ -820,7 +797,7 @@ mod order {
             *id_slot = id;
         }
 
-        let order = get_order_list(app, user).await;
+        let order = get_order_list(env, user).await;
         assert_eq!(
             order,
             ids.iter().map(|id| id.to_string()).collect::<Vec<String>>()
@@ -829,8 +806,8 @@ mod order {
         ids
     }
 
-    async fn create_test_problem(app: &App, user: &impl UserLike) -> Uuid {
-        let res = app
+    async fn create_test_problem(env: &Env, user: &impl UserLike) -> Uuid {
+        let res = env
             .post("/problem")
             .user(user)
             .json(&json!({
@@ -846,14 +823,13 @@ mod order {
     }
 
     #[tokio::test]
-    #[parallel]
     async fn insert_not_found() {
-        let app = get_cached_app().await;
+        let env = setup().await;
 
-        let user = utils::iam::register_user().await;
-        utils::iam::make_admin(&user).await;
+        let user = iam::register_user(&env).await;
+        iam::make_admin(&env, &user).await;
 
-        let res = app
+        let res = env
             .post("/problem/order")
             .user(&user)
             .json(&json!({
@@ -867,14 +843,13 @@ mod order {
     }
 
     #[tokio::test]
-    #[parallel]
     async fn insert_before_not_found_before() {
-        let app = get_cached_app().await;
+        let env = setup().await;
 
-        let user = utils::iam::register_user().await;
-        utils::iam::make_admin(&user).await;
+        let user = iam::register_user(&env).await;
+        iam::make_admin(&env, &user).await;
 
-        let res = app
+        let res = env
             .post("/problem/order")
             .user(&user)
             .json(&json!({
@@ -889,16 +864,15 @@ mod order {
     }
 
     #[tokio::test]
-    #[parallel]
     async fn insert_before_not_found_id() {
-        let app = get_cached_app().await;
+        let env = setup().await;
 
-        let user = utils::iam::register_user().await;
-        utils::iam::make_admin(&user).await;
+        let user = iam::register_user(&env).await;
+        iam::make_admin(&env, &user).await;
 
-        let id = create_test_problem(app, &user).await;
+        let id = create_test_problem(&env, &user).await;
 
-        let res = app
+        let res = env
             .post("/problem/order")
             .user(&user)
             .json(&json!({
@@ -913,18 +887,16 @@ mod order {
     }
 
     #[tokio::test]
-    #[serial]
     async fn insert_before_problem_already_in() {
-        let app = get_cached_app().await;
-        app.clean_database().await;
+        let env = setup().await;
 
-        let user = utils::iam::register_user().await;
-        utils::iam::make_admin(&user).await;
+        let user = iam::register_user(&env).await;
+        iam::make_admin(&env, &user).await;
 
-        let id = create_test_problem(app, &user).await;
-        let id2 = create_test_problem(app, &user).await;
+        let id = create_test_problem(&env, &user).await;
+        let id2 = create_test_problem(&env, &user).await;
 
-        let res = app
+        let res = env
             .post("/problem/order")
             .user(&user)
             .json(&json!({
@@ -936,7 +908,7 @@ mod order {
 
         assert_eq!(res.status(), StatusCode::NO_CONTENT);
 
-        let res = app
+        let res = env
             .post("/problem/order")
             .user(&user)
             .json(&json!({
@@ -948,7 +920,7 @@ mod order {
 
         assert_eq!(res.status(), StatusCode::NO_CONTENT);
 
-        let res = app
+        let res = env
             .post("/problem/order")
             .user(&user)
             .json(&json!({
@@ -963,17 +935,15 @@ mod order {
     }
 
     #[tokio::test]
-    #[serial]
     async fn problem_already_in() {
-        let app = get_cached_app().await;
-        app.clean_database().await;
+        let env = setup().await;
 
-        let user = utils::iam::register_user().await;
-        utils::iam::make_admin(&user).await;
+        let user = iam::register_user(&env).await;
+        iam::make_admin(&env, &user).await;
 
-        let id = create_test_problem(app, &user).await;
+        let id = create_test_problem(&env, &user).await;
 
-        let res = app
+        let res = env
             .post("/problem/order")
             .user(&user)
             .json(&json!({
@@ -985,7 +955,7 @@ mod order {
 
         assert_eq!(res.status(), StatusCode::NO_CONTENT);
 
-        let res = app
+        let res = env
             .post("/problem/order")
             .user(&user)
             .json(&json!({
@@ -999,14 +969,13 @@ mod order {
     }
 
     #[tokio::test]
-    #[parallel]
     async fn delete_not_found() {
-        let app = get_cached_app().await;
+        let env = setup().await;
 
-        let user = utils::iam::register_user().await;
-        utils::iam::make_admin(&user).await;
+        let user = iam::register_user(&env).await;
+        iam::make_admin(&env, &user).await;
 
-        let res = app
+        let res = env
             .post("/problem/order")
             .user(&user)
             .json(&json!({
@@ -1020,14 +989,13 @@ mod order {
     }
 
     #[tokio::test]
-    #[parallel]
     async fn swap_not_found() {
-        let app = get_cached_app().await;
+        let env = setup().await;
 
-        let user = utils::iam::register_user().await;
-        utils::iam::make_admin(&user).await;
+        let user = iam::register_user(&env).await;
+        iam::make_admin(&env, &user).await;
 
-        let res = app
+        let res = env
             .post("/problem/order")
             .user(&user)
             .json(&json!({
@@ -1041,8 +1009,8 @@ mod order {
         assert_error!(res, error::PROBLEM_NOT_FOUND);
     }
 
-    async fn get_order_list(app: &App, user: &impl UserLike) -> Vec<String> {
-        let res = app.get("/problem/order").user(user).send().await;
+    async fn get_order_list(env: &Env, user: &impl UserLike) -> Vec<String> {
+        let res = env.get("/problem/order").user(user).send().await;
 
         assert_eq!(res.status(), StatusCode::OK);
 
@@ -1059,20 +1027,18 @@ mod order {
     }
 
     #[tokio::test]
-    #[serial]
     async fn success_insert() {
-        let app = get_cached_app().await;
-        app.clean_database().await;
+        let env = setup().await;
 
-        let user = utils::iam::register_user().await;
-        utils::iam::make_admin(&user).await;
+        let user = iam::register_user(&env).await;
+        iam::make_admin(&env, &user).await;
 
-        let order = get_order_list(app, &user).await;
+        let order = get_order_list(&env, &user).await;
         assert!(order.is_empty());
 
-        let id = create_test_problem(app, &user).await;
+        let id = create_test_problem(&env, &user).await;
 
-        let res = app
+        let res = env
             .post("/problem/order")
             .user(&user)
             .json(&json!({
@@ -1084,12 +1050,12 @@ mod order {
 
         assert_eq!(res.status(), StatusCode::NO_CONTENT);
 
-        let order = get_order_list(app, &user).await;
+        let order = get_order_list(&env, &user).await;
         assert_eq!(order, [id.to_string()]);
 
-        let id2 = create_test_problem(app, &user).await;
+        let id2 = create_test_problem(&env, &user).await;
 
-        let res = app
+        let res = env
             .post("/problem/order")
             .user(&user)
             .json(&json!({
@@ -1101,26 +1067,24 @@ mod order {
 
         assert_eq!(res.status(), StatusCode::NO_CONTENT);
 
-        let order = get_order_list(app, &user).await;
+        let order = get_order_list(&env, &user).await;
         assert_eq!(order, [id.to_string(), id2.to_string()]);
     }
 
     #[tokio::test]
-    #[serial]
     async fn success_insert_before_front() {
-        let app = get_cached_app().await;
-        app.clean_database().await;
+        let env = setup().await;
 
-        let user = utils::iam::register_user().await;
-        utils::iam::make_admin(&user).await;
+        let user = iam::register_user(&env).await;
+        iam::make_admin(&env, &user).await;
 
-        let order = get_order_list(app, &user).await;
+        let order = get_order_list(&env, &user).await;
         assert!(order.is_empty());
 
-        let id = create_test_problem(app, &user).await;
-        let id2 = create_test_problem(app, &user).await;
+        let id = create_test_problem(&env, &user).await;
+        let id2 = create_test_problem(&env, &user).await;
 
-        let res = app
+        let res = env
             .post("/problem/order")
             .user(&user)
             .json(&json!({
@@ -1132,10 +1096,10 @@ mod order {
 
         assert_eq!(res.status(), StatusCode::NO_CONTENT);
 
-        let order = get_order_list(app, &user).await;
+        let order = get_order_list(&env, &user).await;
         assert_eq!(order, [id.to_string()]);
 
-        let res = app
+        let res = env
             .post("/problem/order")
             .user(&user)
             .json(&json!({
@@ -1148,27 +1112,25 @@ mod order {
 
         assert_eq!(res.status(), StatusCode::NO_CONTENT);
 
-        let order = get_order_list(app, &user).await;
+        let order = get_order_list(&env, &user).await;
         assert_eq!(order, [id2.to_string(), id.to_string()]);
     }
 
     #[tokio::test]
-    #[serial]
     async fn success_insert_before_middle() {
-        let app = get_cached_app().await;
-        app.clean_database().await;
+        let env = setup().await;
 
-        let user = utils::iam::register_user().await;
-        utils::iam::make_admin(&user).await;
+        let user = iam::register_user(&env).await;
+        iam::make_admin(&env, &user).await;
 
-        let order = get_order_list(app, &user).await;
+        let order = get_order_list(&env, &user).await;
         assert!(order.is_empty());
 
-        let id = create_test_problem(app, &user).await;
-        let id2 = create_test_problem(app, &user).await;
-        let id3 = create_test_problem(app, &user).await;
+        let id = create_test_problem(&env, &user).await;
+        let id2 = create_test_problem(&env, &user).await;
+        let id3 = create_test_problem(&env, &user).await;
 
-        let res = app
+        let res = env
             .post("/problem/order")
             .user(&user)
             .json(&json!({
@@ -1180,7 +1142,7 @@ mod order {
 
         assert_eq!(res.status(), StatusCode::NO_CONTENT);
 
-        let res = app
+        let res = env
             .post("/problem/order")
             .user(&user)
             .json(&json!({
@@ -1192,10 +1154,10 @@ mod order {
 
         assert_eq!(res.status(), StatusCode::NO_CONTENT);
 
-        let order = get_order_list(app, &user).await;
+        let order = get_order_list(&env, &user).await;
         assert_eq!(order, [id.to_string(), id3.to_string()]);
 
-        let res = app
+        let res = env
             .post("/problem/order")
             .user(&user)
             .json(&json!({
@@ -1208,22 +1170,20 @@ mod order {
 
         assert_eq!(res.status(), StatusCode::NO_CONTENT);
 
-        let order = get_order_list(app, &user).await;
+        let order = get_order_list(&env, &user).await;
         assert_eq!(order, [id.to_string(), id2.to_string(), id3.to_string()]);
     }
 
     #[tokio::test]
-    #[serial]
     async fn success_delete_from_front() {
-        let app = get_cached_app().await;
-        app.clean_database().await;
+        let env = setup().await;
 
-        let user = utils::iam::register_user().await;
-        utils::iam::make_admin(&user).await;
+        let user = iam::register_user(&env).await;
+        iam::make_admin(&env, &user).await;
 
-        let [id, id2] = create_test_problem2(app, &user).await;
+        let [id, id2] = create_test_problem2(&env, &user).await;
 
-        let res = app
+        let res = env
             .post("/problem/order")
             .user(&user)
             .json(&json!({
@@ -1235,22 +1195,20 @@ mod order {
 
         assert_eq!(res.status(), StatusCode::NO_CONTENT);
 
-        let order = get_order_list(app, &user).await;
+        let order = get_order_list(&env, &user).await;
         assert_eq!(order, [id2.to_string()]);
     }
 
     #[tokio::test]
-    #[serial]
     async fn success_delete_from_middle() {
-        let app = get_cached_app().await;
-        app.clean_database().await;
+        let env = setup().await;
 
-        let user = utils::iam::register_user().await;
-        utils::iam::make_admin(&user).await;
+        let user = iam::register_user(&env).await;
+        iam::make_admin(&env, &user).await;
 
-        let [id, id2, id3] = create_test_problem2(app, &user).await;
+        let [id, id2, id3] = create_test_problem2(&env, &user).await;
 
-        let res = app
+        let res = env
             .post("/problem/order")
             .user(&user)
             .json(&json!({
@@ -1262,22 +1220,20 @@ mod order {
 
         assert_eq!(res.status(), StatusCode::NO_CONTENT);
 
-        let order = get_order_list(app, &user).await;
+        let order = get_order_list(&env, &user).await;
         assert_eq!(order, [id.to_string(), id3.to_string()]);
     }
 
     #[tokio::test]
-    #[serial]
     async fn success_delete_from_end() {
-        let app = get_cached_app().await;
-        app.clean_database().await;
+        let env = setup().await;
 
-        let user = utils::iam::register_user().await;
-        utils::iam::make_admin(&user).await;
+        let user = iam::register_user(&env).await;
+        iam::make_admin(&env, &user).await;
 
-        let [id, id2] = create_test_problem2(app, &user).await;
+        let [id, id2] = create_test_problem2(&env, &user).await;
 
-        let res = app
+        let res = env
             .post("/problem/order")
             .user(&user)
             .json(&json!({
@@ -1289,22 +1245,20 @@ mod order {
 
         assert_eq!(res.status(), StatusCode::NO_CONTENT);
 
-        let order = get_order_list(app, &user).await;
+        let order = get_order_list(&env, &user).await;
         assert_eq!(order, [id.to_string()]);
     }
 
     #[tokio::test]
-    #[serial]
     async fn success_swap_adjacent_start() {
-        let app = get_cached_app().await;
-        app.clean_database().await;
+        let env = setup().await;
 
-        let user = utils::iam::register_user().await;
-        utils::iam::make_admin(&user).await;
+        let user = iam::register_user(&env).await;
+        iam::make_admin(&env, &user).await;
 
-        let [id1, id2, id3] = create_test_problem2(app, &user).await;
+        let [id1, id2, id3] = create_test_problem2(&env, &user).await;
 
-        let res = app
+        let res = env
             .post("/problem/order")
             .user(&user)
             .json(&json!({
@@ -1317,22 +1271,20 @@ mod order {
 
         assert_eq!(res.status(), StatusCode::NO_CONTENT);
 
-        let order = get_order_list(app, &user).await;
+        let order = get_order_list(&env, &user).await;
         assert_eq!(order, [id2.to_string(), id1.to_string(), id3.to_string()]);
     }
 
     #[tokio::test]
-    #[serial]
     async fn success_swap_adjacent_start2() {
-        let app = get_cached_app().await;
-        app.clean_database().await;
+        let env = setup().await;
 
-        let user = utils::iam::register_user().await;
-        utils::iam::make_admin(&user).await;
+        let user = iam::register_user(&env).await;
+        iam::make_admin(&env, &user).await;
 
-        let [id1, id2, id3] = create_test_problem2(app, &user).await;
+        let [id1, id2, id3] = create_test_problem2(&env, &user).await;
 
-        let res = app
+        let res = env
             .post("/problem/order")
             .user(&user)
             .json(&json!({
@@ -1345,22 +1297,20 @@ mod order {
 
         assert_eq!(res.status(), StatusCode::NO_CONTENT);
 
-        let order = get_order_list(app, &user).await;
+        let order = get_order_list(&env, &user).await;
         assert_eq!(order, [id2.to_string(), id1.to_string(), id3.to_string()]);
     }
 
     #[tokio::test]
-    #[serial]
     async fn success_swap_adjacent() {
-        let app = get_cached_app().await;
-        app.clean_database().await;
+        let env = setup().await;
 
-        let user = utils::iam::register_user().await;
-        utils::iam::make_admin(&user).await;
+        let user = iam::register_user(&env).await;
+        iam::make_admin(&env, &user).await;
 
-        let [id1, id2, id3] = create_test_problem2(app, &user).await;
+        let [id1, id2, id3] = create_test_problem2(&env, &user).await;
 
-        let res = app
+        let res = env
             .post("/problem/order")
             .user(&user)
             .json(&json!({
@@ -1373,22 +1323,20 @@ mod order {
 
         assert_eq!(res.status(), StatusCode::NO_CONTENT);
 
-        let order = get_order_list(app, &user).await;
+        let order = get_order_list(&env, &user).await;
         assert_eq!(order, [id1.to_string(), id3.to_string(), id2.to_string()]);
     }
 
     #[tokio::test]
-    #[serial]
     async fn success_swap_adjacent2() {
-        let app = get_cached_app().await;
-        app.clean_database().await;
+        let env = setup().await;
 
-        let user = utils::iam::register_user().await;
-        utils::iam::make_admin(&user).await;
+        let user = iam::register_user(&env).await;
+        iam::make_admin(&env, &user).await;
 
-        let [id1, id2, id3] = create_test_problem2(app, &user).await;
+        let [id1, id2, id3] = create_test_problem2(&env, &user).await;
 
-        let res = app
+        let res = env
             .post("/problem/order")
             .user(&user)
             .json(&json!({
@@ -1401,22 +1349,20 @@ mod order {
 
         assert_eq!(res.status(), StatusCode::NO_CONTENT);
 
-        let order = get_order_list(app, &user).await;
+        let order = get_order_list(&env, &user).await;
         assert_eq!(order, [id1.to_string(), id3.to_string(), id2.to_string()]);
     }
 
     #[tokio::test]
-    #[serial]
     async fn success_swap() {
-        let app = get_cached_app().await;
-        app.clean_database().await;
+        let env = setup().await;
 
-        let user = utils::iam::register_user().await;
-        utils::iam::make_admin(&user).await;
+        let user = iam::register_user(&env).await;
+        iam::make_admin(&env, &user).await;
 
-        let [id1, id2, id3, id4] = create_test_problem2(app, &user).await;
+        let [id1, id2, id3, id4] = create_test_problem2(&env, &user).await;
 
-        let res = app
+        let res = env
             .post("/problem/order")
             .user(&user)
             .json(&json!({
@@ -1429,7 +1375,7 @@ mod order {
 
         assert_eq!(res.status(), StatusCode::NO_CONTENT);
 
-        let order = get_order_list(app, &user).await;
+        let order = get_order_list(&env, &user).await;
         assert_eq!(
             order,
             [
@@ -1442,17 +1388,15 @@ mod order {
     }
 
     #[tokio::test]
-    #[serial]
     async fn success_swap2() {
-        let app = get_cached_app().await;
-        app.clean_database().await;
+        let env = setup().await;
 
-        let user = utils::iam::register_user().await;
-        utils::iam::make_admin(&user).await;
+        let user = iam::register_user(&env).await;
+        iam::make_admin(&env, &user).await;
 
-        let [id1, id2, id3, id4] = create_test_problem2(app, &user).await;
+        let [id1, id2, id3, id4] = create_test_problem2(&env, &user).await;
 
-        let res = app
+        let res = env
             .post("/problem/order")
             .user(&user)
             .json(&json!({
@@ -1465,7 +1409,7 @@ mod order {
 
         assert_eq!(res.status(), StatusCode::NO_CONTENT);
 
-        let order = get_order_list(app, &user).await;
+        let order = get_order_list(&env, &user).await;
         assert_eq!(
             order,
             [
@@ -1478,20 +1422,18 @@ mod order {
     }
 
     #[tokio::test]
-    #[serial]
     async fn success_swap_start() {
-        let app = get_cached_app().await;
-        app.clean_database().await;
+        let env = setup().await;
 
-        let user = utils::iam::register_user().await;
-        utils::iam::make_admin(&user).await;
+        let user = iam::register_user(&env).await;
+        iam::make_admin(&env, &user).await;
 
-        let [id1, id2, id3] = create_test_problem2(app, &user).await;
+        let [id1, id2, id3] = create_test_problem2(&env, &user).await;
 
-        let order = get_order_list(app, &user).await;
+        let order = get_order_list(&env, &user).await;
         tracing::debug!("original order: {order:?}");
 
-        let res = app
+        let res = env
             .post("/problem/order")
             .user(&user)
             .json(&json!({
@@ -1504,25 +1446,23 @@ mod order {
 
         assert_eq!(res.status(), StatusCode::NO_CONTENT);
 
-        let order = get_order_list(app, &user).await;
+        let order = get_order_list(&env, &user).await;
         assert_eq!(order, [id3.to_string(), id2.to_string(), id1.to_string()]);
     }
 
     #[tokio::test]
-    #[serial]
     async fn success_swap_start2() {
-        let app = get_cached_app().await;
-        app.clean_database().await;
+        let env = setup().await;
 
-        let user = utils::iam::register_user().await;
-        utils::iam::make_admin(&user).await;
+        let user = iam::register_user(&env).await;
+        iam::make_admin(&env, &user).await;
 
-        let [id1, id2, id3] = create_test_problem2(app, &user).await;
+        let [id1, id2, id3] = create_test_problem2(&env, &user).await;
 
-        let order = get_order_list(app, &user).await;
+        let order = get_order_list(&env, &user).await;
         tracing::debug!("original order: {order:?}");
 
-        let res = app
+        let res = env
             .post("/problem/order")
             .user(&user)
             .json(&json!({
@@ -1535,17 +1475,16 @@ mod order {
 
         assert_eq!(res.status(), StatusCode::NO_CONTENT);
 
-        let order = get_order_list(app, &user).await;
+        let order = get_order_list(&env, &user).await;
         assert_eq!(order, [id3.to_string(), id2.to_string(), id1.to_string()]);
     }
 
     #[tokio::test]
-    #[parallel]
     async fn not_admin() {
-        let app = get_cached_app().await;
-        let user = utils::iam::register_user().await;
+        let env = setup().await;
+        let user = iam::register_user(&env).await;
 
-        let res = app.delete("/problem").user(&user).send().await;
+        let res = env.delete("/problem").user(&user).send().await;
 
         assert_error!(res, error::NOT_ENOUGH_PERMISSIONS);
     }
