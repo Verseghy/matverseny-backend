@@ -82,11 +82,13 @@ async fn setup_database() -> (ContainerAsync<Postgres>, DbConn) {
 
     tracing::debug!("Postgres started");
 
-    let connection_string = format!(
+    let connection_string = &format!(
         "postgres://postgres:postgres@{}:{}/postgres",
         container.get_host().await.unwrap(),
         container.get_host_port_ipv4(5432).await.unwrap(),
     );
+
+    tracing::debug!("Connecting to Postgres at {connection_string:?}");
 
     let db = Database::connect(connection_string)
         .await
