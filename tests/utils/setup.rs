@@ -16,7 +16,7 @@ use libiam::{
 use matverseny_backend::State;
 use migration::MigratorTrait;
 use reqwest::Client;
-use sea_orm::{ConnectOptions, Database, DbConn};
+use sea_orm::{Database, DbConn};
 use serde_json::json;
 use std::{
     env,
@@ -84,8 +84,7 @@ async fn setup_database() -> (ContainerAsync<Postgres>, DbConn) {
         container.get_host_port_ipv4(5432).await.unwrap(),
     );
 
-    let opts = ConnectOptions::new(connection_string);
-    let db = Database::connect(opts)
+    let db = Database::connect(connection_string)
         .await
         .inspect_err(|err| tracing::error!("postgres connect err: {err:?}"))
         .unwrap();
@@ -142,11 +141,9 @@ pub async fn setup() -> Env {
 
     setup_logging();
 
-    let (iam, db, nats) = tokio::join!(setup_iam(), setup_database(), setup_nats());
-
-    let (app, iam, iam_db) = iam;
-    let (container, db) = db;
-    let nats = nats;
+    let (app, iam, iam_db) = setup_iam().await;
+    let (container, db) = setup_database().await;
+    let nats = setup_nats().await;
 
     let addr = setup_backend(app, db).await;
 
