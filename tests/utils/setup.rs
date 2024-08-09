@@ -25,13 +25,14 @@ use std::{
         atomic::{AtomicU64, Ordering},
         Arc,
     },
+    time::Duration,
 };
 use testcontainers::{
     core::logs::consumer::logging_consumer::LoggingConsumer, runners::AsyncRunner, ContainerAsync,
     ImageExt,
 };
 use testcontainers_modules::{nats::Nats, postgres::Postgres};
-use tokio::net::TcpListener;
+use tokio::{net::TcpListener, time::sleep};
 use tracing::level_filters::LevelFilter;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt, EnvFilter, Layer};
 
@@ -88,7 +89,9 @@ async fn setup_database() -> (ContainerAsync<Postgres>, DbConn) {
         container.get_host_port_ipv4(5432).await.unwrap(),
     );
 
-    tracing::debug!("Connecting to Postgres at {connection_string:?}");
+    sleep(Duration::from_secs(5)).await;
+
+    tracing::debug!("Connecting to Postgres at {:?}", connection_string);
 
     let db = Database::connect(connection_string)
         .await
