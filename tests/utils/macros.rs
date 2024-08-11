@@ -20,6 +20,9 @@ macro_rules! assert_ws_handshake {
 macro_rules! assert_team_info {
     ($socket:expr, $user:expr) => {{
         use ::tokio_tungstenite::tungstenite::Message;
+        use ::futures::{SinkExt, StreamExt};
+        use crate::utils::{self, user::UserLike};
+
         $socket
             .send(Message::Text(json!({"token": $user.access_token().to_owned()}).to_string()))
             .await

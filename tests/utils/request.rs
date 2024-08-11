@@ -1,4 +1,4 @@
-use super::{response::TestResponse, UserLike};
+use super::{response::TestResponse, user::UserLike};
 use reqwest::header::{HeaderName, HeaderValue};
 use serde::Serialize;
 use tokio::net::TcpStream;

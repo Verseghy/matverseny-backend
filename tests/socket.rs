@@ -8,21 +8,19 @@ use utils::prelude::*;
 use uuid::Uuid;
 
 #[tokio::test]
-#[parallel]
 async fn timeout() {
-    let app = get_cached_app().await;
+    let env = setup().await;
 
-    let mut socket = app.socket("/ws").start().await;
+    let mut socket = env.socket("/ws").start().await;
 
     assert_close_frame_error!(socket.next().await, error::WEBSOCKET_AUTH_TIMEOUT);
 }
 
 #[tokio::test]
-#[parallel]
 async fn wrong_token() {
-    let app = get_cached_app().await;
+    let env = setup().await;
 
-    let mut socket = app.socket("/ws").start().await;
+    let mut socket = env.socket("/ws").start().await;
 
     socket
         .send(Message::Text("some random invalid token".to_owned()))
@@ -32,11 +30,10 @@ async fn wrong_token() {
 }
 
 #[tokio::test]
-#[parallel]
 async fn wrong_message_type() {
-    let app = get_cached_app().await;
+    let env = setup().await;
 
-    let mut socket = app.socket("/ws").start().await;
+    let mut socket = env.socket("/ws").start().await;
 
     socket
         .send(Message::Binary(Vec::from("asd".as_bytes())))
@@ -46,12 +43,11 @@ async fn wrong_message_type() {
 }
 
 #[tokio::test]
-#[parallel]
 async fn user_not_registered() {
-    let app = get_cached_app().await;
-    let user = utils::iam::register_user().await;
+    let env = setup().await;
+    let user = iam::register_user(&env).await;
 
-    let mut socket = app.socket("/ws").start().await;
+    let mut socket = env.socket("/ws").start().await;
 
     socket
         .send(Message::Text(
@@ -63,12 +59,11 @@ async fn user_not_registered() {
 }
 
 #[tokio::test]
-#[parallel]
 async fn no_team() {
-    let app = get_cached_app().await;
-    let user = app.register_user().await;
+    let env = setup().await;
+    let user = env.register_user().await;
 
-    let mut socket = app.socket("/ws").start().await;
+    let mut socket = env.socket("/ws").start().await;
 
     socket
         .send(Message::Text(
@@ -80,14 +75,13 @@ async fn no_team() {
 }
 
 #[tokio::test]
-#[parallel]
 async fn team_info() {
-    let app = get_cached_app().await;
-    let user = app.register_user().await;
+    let env = setup().await;
+    let user = env.register_user().await;
 
-    let team = app.create_team(&user).await;
+    let team = env.create_team(&user).await;
 
-    let mut socket = app.socket("/ws").start().await;
+    let mut socket = env.socket("/ws").start().await;
     socket
         .send(Message::Text(
             json!({"token": user.access_token().to_owned()}).to_string(),
@@ -114,22 +108,20 @@ async fn team_info() {
     );
 
     assert!(message["data"].get("code").is_some());
-    let user = libiam::testing::users::get_user(utils::iam::get_db().await, &user.id).await;
+    let user = libiam::testing::users::get_user(&env.iam_db, &user.id).await;
     assert_eq!(message["data"]["members"][0]["name"], user.name);
 
     socket.close(None).await.unwrap();
 }
 
 #[tokio::test]
-#[serial]
 async fn dont_send_problems_before_start() {
-    let app = get_cached_app().await;
-    app.clean_database().await;
+    let env = setup().await;
 
-    let admin = utils::iam::register_user().await;
-    utils::iam::make_admin(&admin).await;
+    let admin = iam::register_user(&env).await;
+    iam::make_admin(&env, &admin).await;
 
-    let res = app
+    let res = env
         .post("/problem")
         .user(&admin)
         .json(&json!({
@@ -144,7 +136,7 @@ async fn dont_send_problems_before_start() {
 
     let id = Uuid::parse_str(res.json::<Value>().await["id"].as_str().unwrap()).unwrap();
 
-    let res = app
+    let res = env
         .post("/problem/order")
         .user(&admin)
         .json(&json!({
@@ -159,7 +151,7 @@ async fn dont_send_problems_before_start() {
     let start = Utc::now() + Duration::from_secs(5);
     let start = start - Duration::from_nanos(start.timestamp_subsec_nanos() as u64);
 
-    let res = app
+    let res = env
         .patch("/competition/time")
         .user(&admin)
         .json(&json!({
@@ -170,12 +162,12 @@ async fn dont_send_problems_before_start() {
 
     assert_eq!(res.status(), StatusCode::NO_CONTENT);
 
-    let owner = app.register_user().await;
+    let owner = env.register_user().await;
 
-    let team = app.create_team(&owner).await;
+    let team = env.create_team(&owner).await;
     team.lock().await;
 
-    let mut socket = app.socket("/ws").start().await;
+    let mut socket = env.socket("/ws").start().await;
 
     socket
         .send(Message::Text(

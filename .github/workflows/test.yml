@@ -11,6 +11,9 @@ concurrency:
 
 name: test
 
+env:
+  CARGO_TERM_COLOR: always
+
 jobs:
   required:
     name: ubuntu
@@ -19,17 +22,13 @@ jobs:
       - uses: actions/checkout@v4
       - name: Install stable
         uses: dtolnay/rust-toolchain@stable
+      - name: Install nextest
+        uses: taiki-e/install-action@nextest
       - name: Setup environment
         run: docker compose up -d
-      - name: Run migrations
-        run: cargo run -p migration
-        env:
-          DATABASE_URL: 'postgres://matverseny:secret@127.0.0.1:5432/matverseny'
-      - name: cargo test --locked
-        run: cargo test --locked --all-features --workspace --all-targets
+      - name: cargo nextest run
+        run: cargo nextest run
         env:
           IAM_URL: http://127.0.0.1:3001
           IAM_APP_SECRET: QXBwSUQtNzAwNzk1N2QtN2Q5OC0xMWVlLTg4NTktNzY2NTY0MDAwMDAwOndhdDRUSGdwcEJJdWExa095Z3R5R3hpU3hpRkVSZFZ4
           NATS_URL: 127.0.0.1
-      - name: cargo test --doc
-        run: cargo test --locked --all-features --workspace --doc

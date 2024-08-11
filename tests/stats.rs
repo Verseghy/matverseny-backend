@@ -4,9 +4,8 @@ use chrono::Utc;
 use utils::prelude::*;
 
 #[tokio::test]
-#[parallel]
 async fn not_admin() {
-    let app = get_cached_app().await;
+    let app = setup().await;
     let user = app.register_user().await;
 
     let res = app
@@ -22,17 +21,15 @@ async fn not_admin() {
 }
 
 #[tokio::test]
-#[serial]
 async fn empty() {
-    let app = get_cached_app().await;
-    app.clean_database().await;
+    let env = setup().await;
 
-    let admin_user = utils::iam::register_user().await;
-    utils::iam::make_admin(&admin_user).await;
+    let admin_user = iam::register_user(&env).await;
+    iam::make_admin(&env, &admin_user).await;
 
     let time = Utc::now().to_rfc3339();
 
-    let res = app
+    let res = env
         .post("/stats")
         .user(&admin_user)
         .json(&json!({
@@ -52,16 +49,14 @@ async fn empty() {
 }
 
 #[tokio::test]
-#[serial]
 async fn works() {
-    let app = get_cached_app().await;
-    app.clean_database().await;
+    let env = setup().await;
 
-    let admin_user = utils::iam::register_user().await;
-    utils::iam::make_admin(&admin_user).await;
+    let admin_user = iam::register_user(&env).await;
+    iam::make_admin(&env, &admin_user).await;
 
     // Setup
-    let res = app
+    let res = env
         .post("/problem")
         .user(&admin_user)
         .json(&json!({
@@ -77,12 +72,12 @@ async fn works() {
     let body: Value = res.json().await;
     let id = body.get("id").unwrap();
 
-    let owner = app.register_user().await;
-    let team = app.create_team(&owner).await;
+    let owner = env.register_user().await;
+    let team = env.create_team(&owner).await;
 
     team.lock().await;
 
-    let res = app
+    let res = env
         .post("/competition/solution")
         .user(&owner)
         .json(&json!({
@@ -96,7 +91,7 @@ async fn works() {
 
     let time = Utc::now().to_rfc3339();
 
-    let res = app
+    let res = env
         .post("/stats")
         .user(&admin_user)
         .json(&json!({
@@ -119,16 +114,14 @@ async fn works() {
 }
 
 #[tokio::test]
-#[serial]
 async fn works_after_delete() {
-    let app = get_cached_app().await;
-    app.clean_database().await;
+    let env = setup().await;
 
-    let admin_user = utils::iam::register_user().await;
-    utils::iam::make_admin(&admin_user).await;
+    let admin_user = iam::register_user(&env).await;
+    iam::make_admin(&env, &admin_user).await;
 
     // Setup
-    let res = app
+    let res = env
         .post("/problem")
         .user(&admin_user)
         .json(&json!({
@@ -144,12 +137,12 @@ async fn works_after_delete() {
     let body: Value = res.json().await;
     let id = body.get("id").unwrap();
 
-    let owner = app.register_user().await;
-    let team = app.create_team(&owner).await;
+    let owner = env.register_user().await;
+    let team = env.create_team(&owner).await;
 
     team.lock().await;
 
-    let res = app
+    let res = env
         .post("/competition/solution")
         .user(&owner)
         .json(&json!({
@@ -163,7 +156,7 @@ async fn works_after_delete() {
 
     let time = Utc::now().to_rfc3339();
 
-    let res = app
+    let res = env
         .post("/competition/solution")
         .user(&owner)
         .json(&json!({
@@ -177,7 +170,7 @@ async fn works_after_delete() {
 
     let time2 = Utc::now().to_rfc3339();
 
-    let res = app
+    let res = env
         .post("/stats")
         .user(&admin_user)
         .json(&json!({
@@ -198,7 +191,7 @@ async fn works_after_delete() {
         }])
     );
 
-    let res = app
+    let res = env
         .post("/stats")
         .user(&admin_user)
         .json(&json!({
@@ -221,16 +214,14 @@ async fn works_after_delete() {
 }
 
 #[tokio::test]
-#[serial]
 async fn works_with_wrong() {
-    let app = get_cached_app().await;
-    app.clean_database().await;
+    let env = setup().await;
 
-    let admin_user = utils::iam::register_user().await;
-    utils::iam::make_admin(&admin_user).await;
+    let admin_user = iam::register_user(&env).await;
+    iam::make_admin(&env, &admin_user).await;
 
     // Setup
-    let res = app
+    let res = env
         .post("/problem")
         .user(&admin_user)
         .json(&json!({
@@ -246,12 +237,12 @@ async fn works_with_wrong() {
     let body: Value = res.json().await;
     let id = body.get("id").unwrap();
 
-    let owner = app.register_user().await;
-    let team = app.create_team(&owner).await;
+    let owner = env.register_user().await;
+    let team = env.create_team(&owner).await;
 
     team.lock().await;
 
-    let res = app
+    let res = env
         .post("/competition/solution")
         .user(&owner)
         .json(&json!({
@@ -265,7 +256,7 @@ async fn works_with_wrong() {
 
     let time = Utc::now().to_rfc3339();
 
-    let res = app
+    let res = env
         .post("/stats")
         .user(&admin_user)
         .json(&json!({
