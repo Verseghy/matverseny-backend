@@ -25,14 +25,13 @@ use std::{
         atomic::{AtomicU64, Ordering},
         Arc,
     },
-    time::Duration,
 };
 use testcontainers::{
     core::logs::consumer::logging_consumer::LoggingConsumer, runners::AsyncRunner, ContainerAsync,
     ImageExt,
 };
 use testcontainers_modules::{nats::Nats, postgres::Postgres};
-use tokio::{net::TcpListener, time::sleep};
+use tokio::net::TcpListener;
 use tracing::level_filters::LevelFilter;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt, EnvFilter, Layer};
 
@@ -70,7 +69,7 @@ async fn setup_iam() -> (App, Iam, DbConn) {
     (app, iam, db)
 }
 
-async fn setup_database() -> (ContainerAsync<Postgres>, DbConn) {
+async fn setup_database() -> ContainerAsync<Postgres> {
     tracing::debug!("Starting Postgres");
 
     let container = Postgres::default()
@@ -89,7 +88,9 @@ async fn setup_database() -> (ContainerAsync<Postgres>, DbConn) {
         container.get_host_port_ipv4(5432).await.unwrap(),
     );
 
-    sleep(Duration::from_secs(5)).await;
+    env::set_var("DATABASE_URL", connection_string);
+
+    // sleep(Duration::from_secs(5)).await;
 
     tracing::debug!("Connecting to Postgres at {:?}", connection_string);
 
@@ -104,7 +105,7 @@ async fn setup_database() -> (ContainerAsync<Postgres>, DbConn) {
         .await
         .expect("failed to apply migrations");
 
-    (container, db)
+    container
 }
 
 async fn setup_nats() -> ContainerAsync<Nats> {
@@ -123,7 +124,6 @@ async fn setup_nats() -> ContainerAsync<Nats> {
         container.get_host_port_ipv4(4222).await.unwrap(),
     );
 
-    // TODO: fix this
     env::set_var("NATS_URL", connection_string);
 
     tracing::debug!("NATS started");
@@ -131,9 +131,9 @@ async fn setup_nats() -> ContainerAsync<Nats> {
     container
 }
 
-async fn setup_backend(app: App, db: DbConn) -> SocketAddr {
+async fn setup_backend(app: App) -> SocketAddr {
     let listener = TcpListener::bind("0.0.0.0:0").await.unwrap();
-    let state = State::with_database(app, db).await;
+    let state = State::new(app).await;
 
     let addr = listener.local_addr().unwrap();
 
@@ -151,10 +151,10 @@ pub async fn setup() -> Env {
     setup_logging();
 
     let (app, iam, iam_db) = setup_iam().await;
-    let (container, db) = setup_database().await;
-    let nats = setup_nats().await;
+    let db_container = setup_database().await;
+    let nats_container = setup_nats().await;
 
-    let addr = setup_backend(app, db).await;
+    let addr = setup_backend(app).await;
 
     Env {
         addr,
@@ -162,8 +162,8 @@ pub async fn setup() -> Env {
         iam,
         iam_db,
         team_num: Arc::new(AtomicU64::new(0)),
-        _container: Arc::new(container),
-        _nats: Arc::new(nats),
+        _db_container: Arc::new(db_container),
+        _nats_container: Arc::new(nats_container),
     }
 }
 
@@ -174,8 +174,8 @@ pub struct Env {
     pub iam: Iam,
     pub iam_db: DbConn,
     pub team_num: Arc<AtomicU64>,
-    _container: Arc<ContainerAsync<Postgres>>,
-    _nats: Arc<ContainerAsync<Nats>>,
+    _db_container: Arc<ContainerAsync<Postgres>>,
+    _nats_container: Arc<ContainerAsync<Nats>>,
 }
 
 impl Env {
