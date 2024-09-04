@@ -80,7 +80,7 @@ futures = "0.3.29"
 rand_chacha = "0.3.1"
 serde_with = "3.4.0"
 tokio-tungstenite = "0.23.1"
-sqlx = { version = "0.7.2", default-features = false, features = ["postgres"] }
+sqlx = { version = "0.8.2", default-features = false, features = ["postgres"] }
 uuid.workspace = true
 bytes = "1.5.0"
 mime = "0.3.17"
