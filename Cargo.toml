@@ -100,7 +100,7 @@ const_format = "0.2.32"
 entity = { path = "./entity" }
 sea-orm = { version = "0.12.7", default-features = false, features = ["runtime-tokio-rustls", "sqlx-postgres", "with-uuid", "with-chrono"] }
 serde = { version = "1.0.193", features = ["derive"] }
-tokio = { version = "1.33.0", features = ["rt-multi-thread", "parking_lot", "macros"] }
+tokio = { version = "1.40.0", features = ["rt-multi-thread", "parking_lot", "macros"] }
 uuid = { version = "1.5.0", features = ["v4", "fast-rng", "serde"] }
 
 [dev-dependencies]
