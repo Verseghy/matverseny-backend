@@ -57,7 +57,7 @@ impl Problems {
             .await
             .expect("failed to query the problems");
 
-        let problems = Arc::new(RwLock::new(sort_initial_problems(res)));
+        let problems = Arc::new(RwLock::new(sort_linked(res)));
 
         let mut subscription = nats.subscribe(topics::problems()).await.unwrap();
 
@@ -211,8 +211,37 @@ impl Stream for ProblemStream {
     }
 }
 
-fn sort_initial_problems(problems: Vec<Problem>) -> Vec<Problem> {
-    let length = problems.len();
+pub trait Linked {
+    fn get_id(&self) -> Uuid;
+    fn get_next(&self) -> Option<Uuid>;
+}
+
+impl Linked for Problem {
+    #[inline]
+    fn get_id(&self) -> Uuid {
+        self.id
+    }
+
+    #[inline]
+    fn get_next(&self) -> Option<Uuid> {
+        self.next
+    }
+}
+
+impl Linked for problems_order::Model {
+    #[inline]
+    fn get_id(&self) -> Uuid {
+        self.id
+    }
+
+    #[inline]
+    fn get_next(&self) -> Option<Uuid> {
+        self.next
+    }
+}
+
+pub fn sort_linked<T: Linked>(list: Vec<T>) -> Vec<T> {
+    let length = list.len();
 
     if length == 0 {
         return Vec::new();
@@ -220,22 +249,22 @@ fn sort_initial_problems(problems: Vec<Problem>) -> Vec<Problem> {
 
     let mut map = HashMap::new();
 
-    for problem in problems {
-        map.insert(problem.next, problem);
+    for item in list {
+        map.insert(item.get_next(), item);
     }
 
     let mut result = Vec::with_capacity(length);
 
     let mut last_id = {
         let last = map.remove(&None).unwrap();
-        let last_id = last.id;
+        let last_id = last.get_id();
         result.push(last);
         last_id
     };
 
     while !map.is_empty() {
         let item = map.remove(&Some(last_id)).unwrap();
-        last_id = item.id;
+        last_id = item.get_id();
         result.push(item);
     }
 
