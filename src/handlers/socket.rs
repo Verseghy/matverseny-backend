@@ -71,8 +71,8 @@ pub enum Event {
     },
     DisbandTeam,
     UpdateTime {
-        start_time: Option<i64>,
-        end_time: Option<i64>,
+        start_time: Option<DateTime<Utc>>,
+        end_time: Option<DateTime<Utc>>,
     },
     SolutionSet {
         problem: Uuid,
@@ -256,8 +256,8 @@ async fn send_times<S: StateTrait>(state: &S, socket: &mut WebSocket) -> Result<
     socket
         .send(Message::Text(
             serde_json::to_string(&Event::UpdateTime {
-                start_time: Some(start_time.time.timestamp()),
-                end_time: Some(end_time.time.timestamp()),
+                start_time: Some(start_time.time),
+                end_time: Some(end_time.time),
             })
             .unwrap(),
         ))

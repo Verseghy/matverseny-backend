@@ -23,7 +23,7 @@ pub async fn set_time_patch<S: StateTrait>(
 ) -> Result<StatusCode> {
     let txn = state.db().begin().await?;
 
-    if let Some(start_time) = req.start_time {
+    let start_time = if let Some(start_time) = req.start_time {
         let Some(time) = DateTime::from_timestamp(start_time, 0) else {
             error!("start_time seconds out of range!");
             return Err(error::TIME_SECONDS_OUT_OF_RANGE);
@@ -35,9 +35,13 @@ pub async fn set_time_patch<S: StateTrait>(
         };
 
         times::Entity::update(model).exec(&txn).await?;
-    }
 
-    if let Some(end_time) = req.end_time {
+        Some(time)
+    } else {
+        None
+    };
+
+    let end_time = if let Some(end_time) = req.end_time {
         let Some(time) = DateTime::from_timestamp(end_time, 0) else {
             error!("end_time seconds out of range!");
             return Err(error::TIME_SECONDS_OUT_OF_RANGE);
@@ -49,15 +53,19 @@ pub async fn set_time_patch<S: StateTrait>(
         };
 
         times::Entity::update(model).exec(&txn).await?;
-    }
+
+        Some(time)
+    } else {
+        None
+    };
 
     state
         .nats()
         .publish(
             topics::times(),
             serde_json::to_vec(&Event::UpdateTime {
-                start_time: req.start_time,
-                end_time: req.end_time,
+                start_time,
+                end_time,
             })
             .unwrap()
             .into(),
