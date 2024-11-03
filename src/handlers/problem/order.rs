@@ -2,7 +2,7 @@ use crate::{
     error::{self, DatabaseError, Result},
     extractors::Json,
     handlers::socket::Event,
-    utils::{execute_str, topics},
+    utils::{execute_str, sort_linked, topics},
     StateTrait,
 };
 use axum::{extract::State, http::StatusCode};
@@ -275,7 +275,7 @@ pub async fn change<S: StateTrait>(
 }
 
 pub async fn get<S: StateTrait>(State(state): State<S>) -> Result<Json<Vec<Uuid>>> {
-    let mut res = problems_order::Entity::find().all(state.db()).await?;
+    let res = problems_order::Entity::find().all(state.db()).await?;
 
     debug!("res: {res:?}");
 
@@ -283,26 +283,10 @@ pub async fn get<S: StateTrait>(State(state): State<S>) -> Result<Json<Vec<Uuid>
         return Ok(Json(Vec::new()));
     }
 
-    let Some(last_pos) = res.iter().position(|item| item.next.is_none()) else {
-        panic!("corrupted problem chain");
-    };
+    let sorted = sort_linked(res);
+    let ids = sorted.into_iter().map(|item| item.id).collect();
 
-    let length = res.len();
-    res.swap(last_pos, length - 1);
-
-    let mut last_id = res[length - 1].id;
-
-    for i in (0..(length - 1)).rev() {
-        for j in 0..i {
-            if res[j].next == Some(last_id) {
-                last_id = res[j].id;
-                res.swap(i, j);
-                break;
-            }
-        }
-    }
-
-    Ok(Json(res.into_iter().map(|item| item.id).collect()))
+    Ok(Json(ids))
 }
 
 pub(super) async fn delete_problem<T>(txn: &T, id: Uuid) -> Result<()>
