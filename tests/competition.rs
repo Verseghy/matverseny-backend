@@ -160,8 +160,8 @@ mod time {
             json!({
                 "event": "UPDATE_TIME",
                 "data": {
-                    "start_time": 1234,
-                    "end_time": 4321,
+                    "start_time": "1970-01-01T00:20:34Z",
+                    "end_time": "1970-01-01T01:12:01Z",
                 }
             })
         );
