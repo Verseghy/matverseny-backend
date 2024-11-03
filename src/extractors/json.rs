@@ -18,6 +18,7 @@ where
     type Rejection = Error<'static>;
 
     async fn from_request(req: Request, state: &S) -> Result<Self, Self::Rejection> {
+        #[allow(clippy::disallowed_types)]
         match axum::Json::<T>::from_request(req, state).await {
             Ok(value) => Ok(Self(value.0)),
             Err(rejection) => match rejection {
