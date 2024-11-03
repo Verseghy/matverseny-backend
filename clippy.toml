@@ -1,0 +1,3 @@
+disallowed-types = [
+    { path = "axum::extract::Json", reason = "Use crate::extractors::Json or crate::extractors::ValidatedJson" },
+]
