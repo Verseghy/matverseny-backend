@@ -1,8 +1,7 @@
 use crate::{
     error::{self, Result},
-    extractors::UserID,
+    extractors::{Json, UserID},
     handlers::socket::Event,
-    json::Json,
     utils::topics,
     StateTrait,
 };

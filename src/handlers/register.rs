@@ -1,7 +1,7 @@
 use crate::{
     error::{self, DatabaseError},
-    extractors::UserID,
-    Json, Result, StateTrait,
+    extractors::{Json, UserID},
+    Result, StateTrait,
 };
 use axum::{extract::State, http::StatusCode};
 use entity::users::{self, constraints::*, Class};

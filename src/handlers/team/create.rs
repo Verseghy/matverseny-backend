@@ -1,8 +1,8 @@
 use crate::{
     error::{self, DatabaseError, Result},
-    extractors::UserID,
+    extractors::{UserID, ValidatedJson},
     utils::generate_join_code,
-    StateTrait, ValidatedJson,
+    StateTrait,
 };
 use axum::{extract::State, http::StatusCode};
 use entity::{

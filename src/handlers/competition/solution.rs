@@ -1,11 +1,13 @@
-use crate::extractors::UserID;
-use crate::handlers::socket::Event;
-use crate::utils::topics;
-use crate::{error, error::Result, json::Json, StateTrait};
+use crate::{
+    error::{self, Result},
+    extractors::{Json, UserID},
+    handlers::socket::Event,
+    utils::topics,
+    StateTrait,
+};
 use axum::{extract::State, http::StatusCode};
 use entity::{solutions_history, teams};
-use sea_orm::ActiveValue::Set;
-use sea_orm::{EntityTrait, QuerySelect, TransactionTrait};
+use sea_orm::{ActiveValue::Set, EntityTrait, QuerySelect, TransactionTrait};
 use serde::Deserialize;
 use uuid::Uuid;
 

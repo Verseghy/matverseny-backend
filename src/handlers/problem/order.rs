@@ -1,7 +1,7 @@
 use crate::{
     error::{self, DatabaseError, Result},
+    extractors::Json,
     handlers::socket::Event,
-    json::Json,
     utils::{execute_str, topics},
     StateTrait,
 };
