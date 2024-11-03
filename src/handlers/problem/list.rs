@@ -1,6 +1,6 @@
 use crate::{
     error::{self, Result},
-    json::Json,
+    extractors::Json,
     StateTrait,
 };
 use axum::extract::{Path, State};

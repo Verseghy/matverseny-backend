@@ -1,9 +1,9 @@
 use crate::{
     error::{self, Result},
-    extractors::UserID,
+    extractors::{UserID, ValidatedJson},
     handlers::socket::Event,
     utils::{set_option, topics},
-    StateTrait, ValidatedJson,
+    StateTrait,
 };
 use axum::{extract::State, http::StatusCode};
 use entity::teams;
