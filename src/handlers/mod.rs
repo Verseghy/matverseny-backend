@@ -7,10 +7,13 @@ mod team;
 
 use crate::{middlewares::PermissionsLayer, state::StateTrait};
 use axum::{
+    extract::State,
     handler::Handler,
+    http::StatusCode,
     routing::{get, post},
     Router,
 };
+use sea_orm::ConnectionTrait;
 
 pub fn routes<S: StateTrait>(state: S) -> Router<S> {
     Router::new()
@@ -26,6 +29,18 @@ pub fn routes<S: StateTrait>(state: S) -> Router<S> {
                     .layer(PermissionsLayer::new(state, &["mathcompetition.admin"])),
             ),
         )
-        .route("/liveness", get(|| async {}))
+        .route("/liveness", get(liveness::<S>))
         .route("/readiness", get(|| async {}))
+}
+
+async fn liveness<S: StateTrait>(State(state): State<S>) -> StatusCode {
+    if state.db().execute_unprepared("select 1").await.is_err() {
+        return StatusCode::INTERNAL_SERVER_ERROR;
+    }
+
+    if state.nats().connection_state() != async_nats::connection::State::Connected {
+        return StatusCode::INTERNAL_SERVER_ERROR;
+    }
+
+    StatusCode::OK
 }
