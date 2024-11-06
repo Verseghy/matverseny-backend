@@ -39,14 +39,14 @@ smallvec = "1.11.1"
 const_format.workspace = true
 pin-project-lite = "0.2.13"
 reqwest = { version = "0.12.5", default-features = false, features = ["json", "rustls-tls"] }
-libiam = { git = "https://github.com/Verseghy/iam", package = "libiam" }
+libiam.workspace = true
 chrono = { version = "0.4.31", features = ["serde"] }
 async-nats = "0.35.1"
 headers = "0.4.0"
 anyhow = "1.0.86"
 
 [dev-dependencies]
-dotenvy = "0.15.7"
+dotenvy.workspace = true
 http = "1.1.0"
 migration = { path = "../migration" }
 assert-json-diff = "2.0.2"

@@ -17,6 +17,8 @@ sea-orm = { version = "0.12.7", default-features = false, features = ["runtime-t
 serde = { version = "1.0.193", features = ["derive"] }
 tokio = { version = "1.33.0", features = ["rt-multi-thread", "parking_lot", "macros"] }
 uuid = { version = "1.5.0", features = ["v4", "fast-rng", "serde"] }
+libiam = { git = "https://github.com/Verseghy/iam", package = "libiam" }
+dotenvy = "0.15.7"
 
 [workspace.lints.rust]
 rust_2018_idioms = "warn"

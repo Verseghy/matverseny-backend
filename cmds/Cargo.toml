@@ -1,15 +1,17 @@
 [package]
 name = "cmds"
-version = "0.1.0"
-edition = "2021"
+version.workspace = true
+edition.workspace = true
+publish.workspace = true
+license-file.workspace = true
 
 [lints]
 workspace = true
 
 [dependencies]
-tokio = { version = "1.33.0", features = ["rt", "macros"] }
-libiam = { git = "https://github.com/Verseghy/iam", package = "libiam" }
-dotenvy = "0.15.7"
+tokio = { workspace = true, features = ["rt", "macros"] }
+libiam.workspace = true
+dotenvy.workspace = true
 kube = "0.92.1"
 k8s-openapi = { version = "0.22.0", features = ["earliest"] }
 
