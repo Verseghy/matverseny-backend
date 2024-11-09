@@ -1,7 +1,5 @@
-mod utils;
-
 use chrono::Utc;
-use utils::prelude::*;
+use test_utils::prelude::*;
 
 #[tokio::test]
 #[parallel]
@@ -27,8 +25,8 @@ async fn empty() {
     let app = get_cached_app().await;
     app.clean_database().await;
 
-    let admin_user = utils::iam::register_user().await;
-    utils::iam::make_admin(&admin_user).await;
+    let admin_user = iam::register_user().await;
+    iam::make_admin(&admin_user).await;
 
     let time = Utc::now().to_rfc3339();
 
@@ -57,8 +55,8 @@ async fn works() {
     let app = get_cached_app().await;
     app.clean_database().await;
 
-    let admin_user = utils::iam::register_user().await;
-    utils::iam::make_admin(&admin_user).await;
+    let admin_user = iam::register_user().await;
+    iam::make_admin(&admin_user).await;
 
     // Setup
     let res = app
@@ -124,8 +122,8 @@ async fn works_after_delete() {
     let app = get_cached_app().await;
     app.clean_database().await;
 
-    let admin_user = utils::iam::register_user().await;
-    utils::iam::make_admin(&admin_user).await;
+    let admin_user = iam::register_user().await;
+    iam::make_admin(&admin_user).await;
 
     // Setup
     let res = app
@@ -226,8 +224,8 @@ async fn works_with_wrong() {
     let app = get_cached_app().await;
     app.clean_database().await;
 
-    let admin_user = utils::iam::register_user().await;
-    utils::iam::make_admin(&admin_user).await;
+    let admin_user = iam::register_user().await;
+    iam::make_admin(&admin_user).await;
 
     // Setup
     let res = app

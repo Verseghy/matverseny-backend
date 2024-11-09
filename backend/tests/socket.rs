@@ -1,10 +1,9 @@
-mod utils;
+use test_utils::prelude::*;
 
 use std::time::Duration;
 
 use chrono::Utc;
 use tokio_tungstenite::tungstenite::Message;
-use utils::prelude::*;
 use uuid::Uuid;
 
 #[tokio::test]
@@ -49,7 +48,7 @@ async fn wrong_message_type() {
 #[parallel]
 async fn user_not_registered() {
     let app = get_cached_app().await;
-    let user = utils::iam::register_user().await;
+    let user = iam::register_user().await;
 
     let mut socket = app.socket("/ws").start().await;
 
@@ -95,7 +94,7 @@ async fn team_info() {
         .await
         .unwrap();
 
-    let message = utils::get_socket_message(socket.next().await);
+    let message = get_socket_message(socket.next().await);
 
     assert_json_include!(
         actual: message,
@@ -114,7 +113,7 @@ async fn team_info() {
     );
 
     assert!(message["data"].get("code").is_some());
-    let user = libiam::testing::users::get_user(utils::iam::get_db().await, &user.id).await;
+    let user = libiam::testing::users::get_user(iam::get_db().await, &user.id).await;
     assert_eq!(message["data"]["members"][0]["name"], user.name);
 
     socket.close(None).await.unwrap();
@@ -126,8 +125,8 @@ async fn dont_send_problems_before_start() {
     let app = get_cached_app().await;
     app.clean_database().await;
 
-    let admin = utils::iam::register_user().await;
-    utils::iam::make_admin(&admin).await;
+    let admin = iam::register_user().await;
+    iam::make_admin(&admin).await;
 
     let res = app
         .post("/problem")
@@ -186,7 +185,7 @@ async fn dont_send_problems_before_start() {
 
     assert_team_info!(socket, owner);
 
-    let message = utils::get_socket_message(socket.next().await);
+    let message = get_socket_message(socket.next().await);
 
     let after = Utc::now();
 

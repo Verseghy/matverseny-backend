@@ -1,4 +1,4 @@
-use super::{response::TestResponse, UserLike};
+use crate::{response::TestResponse, UserLike};
 use reqwest::header::{HeaderName, HeaderValue};
 use serde::Serialize;
 use tokio::net::TcpStream;
@@ -9,13 +9,12 @@ pub struct SocketRequestBuilder {
     builder: http::request::Builder,
 }
 
-#[allow(unused)]
 impl SocketRequestBuilder {
-    pub(super) fn new(builder: http::request::Builder) -> Self {
+    pub(crate) fn new(builder: http::request::Builder) -> Self {
         SocketRequestBuilder { builder }
     }
 
-    pub async fn start(mut self) -> WebSocketStream<MaybeTlsStream<TcpStream>> {
+    pub async fn start(self) -> WebSocketStream<MaybeTlsStream<TcpStream>> {
         let request = self.builder.body(()).expect("failed to create request");
         let (stream, _reponse) = tokio_tungstenite::connect_async(request)
             .await
@@ -33,9 +32,8 @@ pub struct RequestBuilder {
     builder: reqwest::RequestBuilder,
 }
 
-#[allow(unused)]
 impl RequestBuilder {
-    pub(super) fn new(builder: reqwest::RequestBuilder) -> Self {
+    pub(crate) fn new(builder: reqwest::RequestBuilder) -> Self {
         RequestBuilder { builder }
     }
 
@@ -56,7 +54,6 @@ impl RequestBuilder {
         self
     }
 
-    #[allow(dead_code)]
     pub fn header<K, V>(mut self, key: K, value: V) -> RequestBuilder
     where
         HeaderName: TryFrom<K>,

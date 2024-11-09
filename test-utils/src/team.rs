@@ -1,7 +1,5 @@
-use super::prelude::*;
-use super::{super::utils, User};
+use crate::{assert_team_info, prelude::*, User};
 
-#[allow(unused)]
 pub struct Team {
     owner: User,
     app: App,
@@ -9,11 +7,10 @@ pub struct Team {
 }
 
 impl Team {
-    pub(super) fn new(owner: User, app: App, number: u64) -> Self {
+    pub(crate) fn new(owner: User, app: App, number: u64) -> Self {
         Team { owner, app, number }
     }
 
-    #[allow(unused)]
     pub async fn get_code(&self) -> String {
         let mut socket = self.app.socket("/ws").start().await;
         let message = assert_team_info!(socket, self.owner);
@@ -23,12 +20,11 @@ impl Team {
             .expect("no code")
             .to_owned();
 
-        socket.close(None).await;
+        let _ = socket.close(None).await;
 
         code
     }
 
-    #[allow(unused)]
     pub async fn lock(&self) {
         let res = self
             .app
@@ -43,7 +39,6 @@ impl Team {
         assert_eq!(res.status(), StatusCode::NO_CONTENT);
     }
 
-    #[allow(unused)]
     pub fn get_name(&self) -> String {
         format!("Team-{}", self.number)
     }

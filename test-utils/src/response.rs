@@ -6,9 +6,8 @@ pub struct TestResponse {
     response: reqwest::Response,
 }
 
-#[allow(unused)]
 impl TestResponse {
-    pub(super) fn new(response: reqwest::Response) -> Self {
+    pub(crate) fn new(response: reqwest::Response) -> Self {
         TestResponse { response }
     }
 
