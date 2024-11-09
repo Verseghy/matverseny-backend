@@ -1,9 +1,10 @@
 pub mod macro_support {
-    pub use assert_json_diff::assert_json_eq;
-    pub use futures::{SinkExt, StreamExt};
-    pub use tokio_tungstenite::tungstenite::{protocol::frame::coding::CloseCode, Message};
-    pub use tracing::level_filters::LevelFilter;
-    pub use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt, EnvFilter, Layer};
+    pub use assert_json_diff;
+    pub use futures;
+    pub use serde_json;
+    pub use tokio_tungstenite;
+    pub use tracing;
+    pub use tracing_subscriber;
 }
 
 #[macro_export]
@@ -24,7 +25,7 @@ macro_rules! assert_ws_handshake {
 #[macro_export]
 macro_rules! assert_team_info {
     ($socket:expr, $user:expr) => {{
-        use $crate::macro_support::{StreamExt, SinkExt, Message};
+        use $crate::macro_support::{futures::{StreamExt, SinkExt}, tokio_tungstenite::tungstenite::{Message}};
 
         $socket
             .send(Message::Text(json!({"token": $user.access_token().to_owned()}).to_string()))
@@ -51,16 +52,19 @@ macro_rules! assert_event_type {
 macro_rules! enable_logging {
     ($level:ident) => {{
         use $crate::macro_support::{
-            EnvFilter, Layer, LevelFilter, SubscriberExt, SubscriberInitExt,
+            tracing::level_filters::LevelFilter,
+            tracing_subscriber::{
+                self, layer::SubscriberExt, util::SubscriberInitExt, EnvFilter, Layer,
+            },
         };
 
         let env_filter = EnvFilter::builder()
             .with_default_directive(LevelFilter::$level.into())
             .from_env_lossy();
 
-        ::tracing_subscriber::registry()
+        tracing_subscriber::registry()
             .with(
-                ::tracing_subscriber::fmt::layer()
+                tracing_subscriber::fmt::layer()
                     .with_test_writer()
                     .with_line_number(true)
                     .with_filter(env_filter),
@@ -72,15 +76,19 @@ macro_rules! enable_logging {
 #[macro_export]
 macro_rules! assert_close_frame {
     ($expr:expr, $code:ident, {$($json:tt)+} $(,)?) => {{
-        use $crate::macro_support::{CloseCode, Message, assert_json_eq};
+        use $crate::macro_support::{
+            tokio_tungstenite::tungstenite::{protocol::frame::coding::CloseCode, Message},
+            assert_json_diff::assert_json_eq,
+            serde_json,
+        };
 
         if let Some(Ok(Message::Close(Some(frame)))) = $expr {
             assert_eq!(frame.code, CloseCode::$code);
 
             let reason = frame.reason.into_owned();
-            let reason: ::serde_json::Value = ::serde_json::from_str(&reason).expect("invalid json");
+            let reason: serde_json::Value = serde_json::from_str(&reason).expect("invalid json");
 
-            assert_json_eq!(reason, ::serde_json::json!({$($json)+}));
+            assert_json_eq!(reason, serde_json::json!({$($json)+}));
         } else {
             panic!("no or empty close frame");
         }
@@ -91,7 +99,10 @@ macro_rules! assert_close_frame {
 #[macro_export]
 macro_rules! assert_close_frame_error {
     ($msg:expr, $error:expr) => {{
-        use $crate::macro_support::{CloseCode, Message};
+        use $crate::macro_support::{
+            serde_json,
+            tokio_tungstenite::tungstenite::{protocol::frame::coding::CloseCode, Message},
+        };
 
         let Some(Ok(Message::Close(Some(frame)))) = $msg else {
             panic!("no or empty close frame");
@@ -99,8 +110,7 @@ macro_rules! assert_close_frame_error {
 
         assert_eq!(frame.code, CloseCode::Error);
 
-        let reason: ::serde_json::Value =
-            ::serde_json::from_str(&*frame.reason).expect("invalid json");
+        let reason: serde_json::Value = serde_json::from_str(&*frame.reason).expect("invalid json");
 
         assert_eq!(reason["code"], $error.code());
     }};
