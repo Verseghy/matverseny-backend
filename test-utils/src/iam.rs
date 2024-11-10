@@ -1,9 +1,11 @@
-use super::UserLike;
+use crate::UserLike;
 use libiam::{testing::actions::assign_action_to_user, Iam};
-use once_cell::sync::{Lazy, OnceCell};
 use std::{
     env,
-    sync::atomic::{AtomicU64, Ordering},
+    sync::{
+        atomic::{AtomicU64, Ordering},
+        LazyLock, OnceLock,
+    },
 };
 use uuid::Uuid;
 
@@ -23,7 +25,7 @@ impl UserLike for User {
     }
 }
 
-static TEST_ID: Lazy<String> = Lazy::new(|| {
+static TEST_ID: LazyLock<String> = LazyLock::new(|| {
     let id = Uuid::new_v4();
     id.as_hyphenated()
         .encode_lower(&mut Uuid::encode_buffer())
@@ -33,8 +35,8 @@ static TEST_ID: Lazy<String> = Lazy::new(|| {
 static USER_COUNT: AtomicU64 = AtomicU64::new(0);
 static USER_PASSWORD: &str = "test";
 
-pub(super) fn get_iam() -> &'static Iam {
-    static INIT: OnceCell<Iam> = OnceCell::new();
+pub(crate) fn get_iam() -> &'static Iam {
+    static INIT: OnceLock<Iam> = OnceLock::new();
     INIT.get_or_init(|| Iam::new(&env::var("IAM_URL").expect("IAM_URL not set")))
 }
 
@@ -64,7 +66,6 @@ pub async fn register_user() -> User {
     User { email, user }
 }
 
-#[allow(unused)]
 pub async fn make_admin(user: &impl UserLike) {
     let db = get_db().await;
     tracing::trace!("making user '{}' admin", user.id());

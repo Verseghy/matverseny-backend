@@ -11,6 +11,7 @@ use db::Database;
 use dotenvy::dotenv;
 use http::StatusCode;
 use libiam::testing::actions::{assign_action_to_app, ensure_action};
+pub use macros::macro_support;
 use matverseny_backend::State;
 use request::*;
 use reqwest::Client;
@@ -106,12 +107,10 @@ impl App {
         app
     }
 
-    #[allow(unused)]
     pub async fn clean_database(&self) {
         self.inner.db.clean().await;
     }
 
-    #[allow(unused)]
     pub async fn register_user(&self) -> User {
         let user = iam::register_user().await;
 
@@ -131,7 +130,6 @@ impl App {
         User::new(user.id(), user.email, token, self.clone())
     }
 
-    #[allow(unused)]
     pub async fn create_team(&self, owner: &User) -> Team {
         static TEAM_COUNT: AtomicU64 = AtomicU64::new(0);
 
@@ -151,32 +149,26 @@ impl App {
         Team::new(owner.clone(), self.clone(), number)
     }
 
-    #[allow(dead_code)]
     pub fn get(&self, url: &str) -> RequestBuilder {
         RequestBuilder::new(Client::new().get(format!("http://{}{}", self.inner.addr, url)))
     }
 
-    #[allow(dead_code)]
     pub fn post(&self, url: &str) -> RequestBuilder {
         RequestBuilder::new(Client::new().post(format!("http://{}{}", self.inner.addr, url)))
     }
 
-    #[allow(dead_code)]
     pub fn patch(&self, url: &str) -> RequestBuilder {
         RequestBuilder::new(Client::new().patch(format!("http://{}{}", self.inner.addr, url)))
     }
 
-    #[allow(dead_code)]
     pub fn delete(&self, url: &str) -> RequestBuilder {
         RequestBuilder::new(Client::new().delete(format!("http://{}{}", self.inner.addr, url)))
     }
 
-    #[allow(dead_code)]
     pub fn put(&self, url: &str) -> RequestBuilder {
         RequestBuilder::new(Client::new().put(format!("http://{}{}", self.inner.addr, url)))
     }
 
-    #[allow(unused)]
     pub fn socket(&self, url: &str) -> SocketRequestBuilder {
         let uri = format!("ws://{}{}", self.inner.addr, url);
 
@@ -196,7 +188,6 @@ impl App {
     }
 }
 
-#[allow(unused)]
 #[track_caller]
 pub fn get_socket_message(
     message: Option<Result<Message, tokio_tungstenite::tungstenite::Error>>,
@@ -209,13 +200,11 @@ pub fn get_socket_message(
     }
 }
 
-#[allow(unused)]
 pub async fn get_cached_app() -> &'static App {
     static APP: OnceCell<App> = OnceCell::const_new();
     APP.get_or_init(App::new).await
 }
 
-#[allow(unused)]
 pub fn uuid() -> String {
     Uuid::new_v4()
         .as_simple()

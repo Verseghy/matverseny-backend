@@ -1,6 +1,5 @@
-use super::prelude::*;
+use crate::prelude::*;
 
-#[allow(unused)]
 #[derive(Clone)]
 pub struct User {
     pub id: String,
@@ -10,7 +9,7 @@ pub struct User {
 }
 
 impl User {
-    pub(super) fn new(id: String, email: String, access_token: String, app: App) -> Self {
+    pub(crate) fn new(id: String, email: String, access_token: String, app: App) -> Self {
         User {
             id,
             email,
@@ -19,7 +18,6 @@ impl User {
         }
     }
 
-    #[allow(unused)]
     pub async fn join(&self, code: &str) {
         let res = self
             .app

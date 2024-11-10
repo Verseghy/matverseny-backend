@@ -1,7 +1,4 @@
-mod utils;
-
-use http::header::AUTHORIZATION;
-use utils::prelude::*;
+use test_utils::prelude::*;
 
 #[tokio::test]
 async fn no_claims() {
@@ -18,7 +15,7 @@ async fn not_bearer_token() {
 
     let res = app
         .post("/register")
-        .header(AUTHORIZATION, "asd")
+        .header(header::AUTHORIZATION, "asd")
         .json(&json!({}))
         .send()
         .await;
@@ -32,7 +29,7 @@ async fn invalid_claims() {
 
     let res = app
         .post("/register")
-        .header(AUTHORIZATION, "Bearer test.test.test")
+        .header(header::AUTHORIZATION, "Bearer test.test.test")
         .json(&json!({}))
         .send()
         .await;
@@ -49,7 +46,7 @@ async fn wrong_jwt_signature() {
 #[tokio::test]
 async fn success() {
     let app = get_cached_app().await;
-    let user = utils::iam::register_user().await;
+    let user = iam::register_user().await;
 
     let res = app
         .post("/register")
@@ -67,7 +64,7 @@ async fn success() {
 #[tokio::test]
 async fn already_registered() {
     let app = get_cached_app().await;
-    let user = utils::iam::register_user().await;
+    let user = iam::register_user().await;
 
     let res = app
         .post("/register")

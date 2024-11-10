@@ -1,6 +1,4 @@
-mod utils;
-
-use utils::prelude::*;
+use test_utils::prelude::*;
 
 mod create {
     use super::*;
@@ -105,7 +103,7 @@ mod create {
     #[parallel]
     async fn not_registered() {
         let app = get_cached_app().await;
-        let user = utils::iam::register_user().await;
+        let user = iam::register_user().await;
 
         let res = app
             .post("/team/create")
@@ -147,10 +145,9 @@ mod join {
 
         assert_eq!(res.status(), StatusCode::OK);
 
-        let message = utils::get_socket_message(socket.next().await);
+        let message = get_socket_message(socket.next().await);
 
-        let user_info =
-            libiam::testing::users::get_user(utils::iam::get_db().await, &user.id).await;
+        let user_info = libiam::testing::users::get_user(iam::get_db().await, &user.id).await;
 
         assert_json_eq!(
             message,
@@ -249,7 +246,7 @@ mod leave {
         let res = app.post("/team/leave").user(&member).send().await;
         assert_eq!(res.status(), StatusCode::OK);
 
-        let message = utils::get_socket_message(socket.next().await);
+        let message = get_socket_message(socket.next().await);
 
         assert_json_eq!(
             message,
@@ -537,7 +534,7 @@ mod update {
 
         assert_eq!(res.status(), StatusCode::NO_CONTENT);
 
-        let message = utils::get_socket_message(socket.next().await);
+        let message = get_socket_message(socket.next().await);
 
         assert_json_eq!(
             message,
@@ -578,7 +575,7 @@ mod update {
 
         assert_eq!(res.status(), StatusCode::NO_CONTENT);
 
-        let message = utils::get_socket_message(socket.next().await);
+        let message = get_socket_message(socket.next().await);
 
         assert_json_eq!(
             message,
@@ -620,7 +617,7 @@ mod update {
         assert_eq!(res.status(), StatusCode::NO_CONTENT);
 
         let message = socket.next().await;
-        let message = utils::get_socket_message(message);
+        let message = get_socket_message(message);
 
         assert_json_eq!(
             message,
@@ -654,7 +651,7 @@ mod update {
 
         assert_eq!(res.status(), StatusCode::NO_CONTENT);
 
-        let message = utils::get_socket_message(socket.next().await);
+        let message = get_socket_message(socket.next().await);
 
         assert_json_eq!(
             message,
@@ -956,7 +953,7 @@ mod kick {
         assert_eq!(res.status(), StatusCode::NO_CONTENT);
 
         assert_json_eq!(
-            utils::get_socket_message(socket1.next().await),
+            get_socket_message(socket1.next().await),
             json!({
                 "event": "LEAVE_TEAM",
                 "data": {
@@ -1017,7 +1014,7 @@ mod kick {
         assert_eq!(res.status(), StatusCode::NO_CONTENT);
 
         assert_json_eq!(
-            utils::get_socket_message(socket1.next().await),
+            get_socket_message(socket1.next().await),
             json!({
                 "event": "LEAVE_TEAM",
                 "data": {
@@ -1083,7 +1080,7 @@ mod kick {
         assert_eq!(res.status(), StatusCode::NO_CONTENT);
 
         assert_json_eq!(
-            utils::get_socket_message(socket1.next().await),
+            get_socket_message(socket1.next().await),
             json!({
                 "event": "LEAVE_TEAM",
                 "data": {
@@ -1093,7 +1090,7 @@ mod kick {
         );
 
         assert_json_eq!(
-            utils::get_socket_message(socket2.next().await),
+            get_socket_message(socket2.next().await),
             json!({
                 "event": "LEAVE_TEAM",
                 "data": {
@@ -1164,7 +1161,7 @@ mod code {
 
         assert_eq!(res.status(), StatusCode::NO_CONTENT);
 
-        let message = utils::get_socket_message(socket.next().await);
+        let message = get_socket_message(socket.next().await);
 
         assert_eq!(message["event"].as_str().unwrap(), "UPDATE_TEAM");
         assert!(!message["data"]["code"].as_str().unwrap().is_empty());
@@ -1203,8 +1200,8 @@ mod get {
         let owner = app.register_user().await;
         let _team = app.create_team(&owner).await;
 
-        let admin = utils::iam::register_user().await;
-        utils::iam::make_admin(&admin).await;
+        let admin = iam::register_user().await;
+        iam::make_admin(&admin).await;
 
         let res = app.get("/team").user(&admin).send().await;
 

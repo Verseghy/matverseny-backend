@@ -16,20 +16,18 @@ serde.workspace = true
 tokio = { workspace = true, features = ["macros", "signal", "sync"] }
 tower = "0.4.13"
 tower-http = { version = "0.5.2", features = ["cors", "compression-full", "decompression-full", "catch-panic", "sensitive-headers", "request-id", "util", "normalize-path"] }
-tracing = "0.1.40"
-tracing-subscriber = { version = "0.3.17", features = ["env-filter"] }
+tracing.workspace = true
+tracing-subscriber.workspace = true
 entity.workspace = true
 sea-orm.workspace = true
-serde_json = "1.0.108"
+serde_json.workspace = true
 validator = { version = "0.18.1", features = ["derive"] }
-pin-project = "1.1.3"
 jsonwebtoken = "9.1.0"
-once_cell = { version = "1.18.0", features = ["parking_lot"] }
 rand = "0.8.5"
-futures = "0.3.29"
+futures.workspace = true
 rand_chacha = "0.3.1"
 serde_with = "3.4.0"
-tokio-tungstenite = "0.23.1"
+tokio-tungstenite.workspace = true
 sqlx = { version = "0.7.2", default-features = false, features = ["postgres"] }
 uuid.workspace = true
 bytes = "1.5.0"
@@ -38,7 +36,7 @@ macros.workspace = true
 smallvec = "1.11.1"
 const_format.workspace = true
 pin-project-lite = "0.2.13"
-reqwest = { version = "0.12.5", default-features = false, features = ["json", "rustls-tls"] }
+reqwest.workspace = true
 libiam.workspace = true
 chrono = { version = "0.4.31", features = ["serde"] }
 async-nats = "0.35.1"
@@ -46,8 +44,4 @@ headers = "0.4.0"
 anyhow = "1.0.86"
 
 [dev-dependencies]
-dotenvy.workspace = true
-http = "1.1.0"
-migration = { path = "../migration" }
-assert-json-diff = "2.0.2"
-serial_test = "2.0.0"
+test-utils.workspace = true

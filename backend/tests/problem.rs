@@ -1,6 +1,4 @@
-mod utils;
-
-use utils::prelude::*;
+use test_utils::prelude::*;
 
 mod create {
     use super::*;
@@ -9,8 +7,8 @@ mod create {
     #[parallel]
     async fn success() {
         let app = get_cached_app().await;
-        let user = utils::iam::register_user().await;
-        utils::iam::make_admin(&user).await;
+        let user = iam::register_user().await;
+        iam::make_admin(&user).await;
 
         let res = app
             .post("/problem")
@@ -42,8 +40,8 @@ mod create {
     #[parallel]
     async fn optional_image() {
         let app = get_cached_app().await;
-        let user = utils::iam::register_user().await;
-        utils::iam::make_admin(&user).await;
+        let user = iam::register_user().await;
+        iam::make_admin(&user).await;
 
         let res = app
             .post("/problem")
@@ -62,7 +60,7 @@ mod create {
     #[parallel]
     async fn not_admin() {
         let app = get_cached_app().await;
-        let user = utils::iam::register_user().await;
+        let user = iam::register_user().await;
 
         let res = app
             .post("/problem")
@@ -87,8 +85,8 @@ mod get {
         let app = get_cached_app().await;
         app.clean_database().await;
 
-        let user = utils::iam::register_user().await;
-        utils::iam::make_admin(&user).await;
+        let user = iam::register_user().await;
+        iam::make_admin(&user).await;
 
         let res = app
             .get(&format!("/problem/{}", uuid()))
@@ -105,8 +103,8 @@ mod get {
         let app = get_cached_app().await;
         app.clean_database().await;
 
-        let user = utils::iam::register_user().await;
-        utils::iam::make_admin(&user).await;
+        let user = iam::register_user().await;
+        iam::make_admin(&user).await;
 
         let res = app
             .post("/problem")
@@ -159,8 +157,8 @@ mod get {
     #[parallel]
     async fn not_uuid() {
         let app = get_cached_app().await;
-        let user = utils::iam::register_user().await;
-        utils::iam::make_admin(&user).await;
+        let user = iam::register_user().await;
+        iam::make_admin(&user).await;
 
         let res = app.get("/problem/test").user(&user).send().await;
 
@@ -171,7 +169,7 @@ mod get {
     #[parallel]
     async fn not_admin() {
         let app = get_cached_app().await;
-        let user = utils::iam::register_user().await;
+        let user = iam::register_user().await;
 
         let res = app
             .get(&format!("/problem/{}", uuid()))
@@ -192,8 +190,8 @@ mod list {
         let app = get_cached_app().await;
         app.clean_database().await;
 
-        let user = utils::iam::register_user().await;
-        utils::iam::make_admin(&user).await;
+        let user = iam::register_user().await;
+        iam::make_admin(&user).await;
 
         let res = app.get("/problem").user(&user).send().await;
 
@@ -284,7 +282,7 @@ mod list {
     #[parallel]
     async fn not_admin() {
         let app = get_cached_app().await;
-        let user = utils::iam::register_user().await;
+        let user = iam::register_user().await;
 
         let res = app.get("/problem").user(&user).send().await;
 
@@ -300,8 +298,8 @@ mod delete {
     async fn not_found() {
         let app = get_cached_app().await;
 
-        let user = utils::iam::register_user().await;
-        utils::iam::make_admin(&user).await;
+        let user = iam::register_user().await;
+        iam::make_admin(&user).await;
 
         let res = app
             .delete(&format!("/problem/{}", uuid()))
@@ -317,7 +315,7 @@ mod delete {
     async fn success() {
         let app = get_cached_app().await;
         let user = app.register_user().await;
-        utils::iam::make_admin(&user).await;
+        iam::make_admin(&user).await;
         let _team = app.create_team(&user).await;
 
         let res = app
@@ -357,7 +355,7 @@ mod delete {
             res.json::<Value>().await,
         );
 
-        let message = utils::get_socket_message(socket.next().await);
+        let message = get_socket_message(socket.next().await);
 
         assert_json_eq!(
             message,
@@ -374,7 +372,7 @@ mod delete {
     #[parallel]
     async fn not_admin() {
         let app = get_cached_app().await;
-        let user = utils::iam::register_user().await;
+        let user = iam::register_user().await;
 
         let res = app.delete("/problem").user(&user).send().await;
 
@@ -393,8 +391,8 @@ mod update {
         async fn not_found() {
             let app = get_cached_app().await;
 
-            let user = utils::iam::register_user().await;
-            utils::iam::make_admin(&user).await;
+            let user = iam::register_user().await;
+            iam::make_admin(&user).await;
 
             let id = uuid();
 
@@ -418,8 +416,8 @@ mod update {
         async fn delete_image() {
             let app = get_cached_app().await;
 
-            let user = utils::iam::register_user().await;
-            utils::iam::make_admin(&user).await;
+            let user = iam::register_user().await;
+            iam::make_admin(&user).await;
 
             let res = app
                 .post("/problem")
@@ -484,8 +482,8 @@ mod update {
         async fn success() {
             let app = get_cached_app().await;
 
-            let user = utils::iam::register_user().await;
-            utils::iam::make_admin(&user).await;
+            let user = iam::register_user().await;
+            iam::make_admin(&user).await;
 
             let res = app
                 .post("/problem")
@@ -550,7 +548,7 @@ mod update {
         #[parallel]
         async fn not_admin() {
             let app = get_cached_app().await;
-            let user = utils::iam::register_user().await;
+            let user = iam::register_user().await;
 
             let res = app
                 .put(&format!("/problem/{}", uuid()))
@@ -567,8 +565,8 @@ mod update {
     async fn not_found() {
         let app = get_cached_app().await;
 
-        let user = utils::iam::register_user().await;
-        utils::iam::make_admin(&user).await;
+        let user = iam::register_user().await;
+        iam::make_admin(&user).await;
 
         let id = uuid();
 
@@ -592,8 +590,8 @@ mod update {
     async fn delete_image() {
         let app = get_cached_app().await;
 
-        let user = utils::iam::register_user().await;
-        utils::iam::make_admin(&user).await;
+        let user = iam::register_user().await;
+        iam::make_admin(&user).await;
 
         let res = app
             .post("/problem")
@@ -658,8 +656,8 @@ mod update {
     async fn everything_is_optional() {
         let app = get_cached_app().await;
 
-        let user = utils::iam::register_user().await;
-        utils::iam::make_admin(&user).await;
+        let user = iam::register_user().await;
+        iam::make_admin(&user).await;
 
         let res = app
             .post("/problem")
@@ -704,8 +702,8 @@ mod update {
     async fn success() {
         let app = get_cached_app().await;
 
-        let user = utils::iam::register_user().await;
-        utils::iam::make_admin(&user).await;
+        let user = iam::register_user().await;
+        iam::make_admin(&user).await;
 
         let res = app
             .post("/problem")
@@ -770,7 +768,7 @@ mod update {
     #[parallel]
     async fn not_admin() {
         let app = get_cached_app().await;
-        let user = utils::iam::register_user().await;
+        let user = iam::register_user().await;
 
         let res = app
             .patch(&format!("/problem/{}", uuid()))
@@ -850,8 +848,8 @@ mod order {
     async fn insert_not_found() {
         let app = get_cached_app().await;
 
-        let user = utils::iam::register_user().await;
-        utils::iam::make_admin(&user).await;
+        let user = iam::register_user().await;
+        iam::make_admin(&user).await;
 
         let res = app
             .post("/problem/order")
@@ -871,8 +869,8 @@ mod order {
     async fn insert_before_not_found_before() {
         let app = get_cached_app().await;
 
-        let user = utils::iam::register_user().await;
-        utils::iam::make_admin(&user).await;
+        let user = iam::register_user().await;
+        iam::make_admin(&user).await;
 
         let res = app
             .post("/problem/order")
@@ -893,8 +891,8 @@ mod order {
     async fn insert_before_not_found_id() {
         let app = get_cached_app().await;
 
-        let user = utils::iam::register_user().await;
-        utils::iam::make_admin(&user).await;
+        let user = iam::register_user().await;
+        iam::make_admin(&user).await;
 
         let id = create_test_problem(app, &user).await;
 
@@ -918,8 +916,8 @@ mod order {
         let app = get_cached_app().await;
         app.clean_database().await;
 
-        let user = utils::iam::register_user().await;
-        utils::iam::make_admin(&user).await;
+        let user = iam::register_user().await;
+        iam::make_admin(&user).await;
 
         let id = create_test_problem(app, &user).await;
         let id2 = create_test_problem(app, &user).await;
@@ -968,8 +966,8 @@ mod order {
         let app = get_cached_app().await;
         app.clean_database().await;
 
-        let user = utils::iam::register_user().await;
-        utils::iam::make_admin(&user).await;
+        let user = iam::register_user().await;
+        iam::make_admin(&user).await;
 
         let id = create_test_problem(app, &user).await;
 
@@ -1003,8 +1001,8 @@ mod order {
     async fn delete_not_found() {
         let app = get_cached_app().await;
 
-        let user = utils::iam::register_user().await;
-        utils::iam::make_admin(&user).await;
+        let user = iam::register_user().await;
+        iam::make_admin(&user).await;
 
         let res = app
             .post("/problem/order")
@@ -1024,8 +1022,8 @@ mod order {
     async fn swap_not_found() {
         let app = get_cached_app().await;
 
-        let user = utils::iam::register_user().await;
-        utils::iam::make_admin(&user).await;
+        let user = iam::register_user().await;
+        iam::make_admin(&user).await;
 
         let res = app
             .post("/problem/order")
@@ -1064,8 +1062,8 @@ mod order {
         let app = get_cached_app().await;
         app.clean_database().await;
 
-        let user = utils::iam::register_user().await;
-        utils::iam::make_admin(&user).await;
+        let user = iam::register_user().await;
+        iam::make_admin(&user).await;
 
         let order = get_order_list(app, &user).await;
         assert!(order.is_empty());
@@ -1111,8 +1109,8 @@ mod order {
         let app = get_cached_app().await;
         app.clean_database().await;
 
-        let user = utils::iam::register_user().await;
-        utils::iam::make_admin(&user).await;
+        let user = iam::register_user().await;
+        iam::make_admin(&user).await;
 
         let order = get_order_list(app, &user).await;
         assert!(order.is_empty());
@@ -1158,8 +1156,8 @@ mod order {
         let app = get_cached_app().await;
         app.clean_database().await;
 
-        let user = utils::iam::register_user().await;
-        utils::iam::make_admin(&user).await;
+        let user = iam::register_user().await;
+        iam::make_admin(&user).await;
 
         let order = get_order_list(app, &user).await;
         assert!(order.is_empty());
@@ -1218,8 +1216,8 @@ mod order {
         let app = get_cached_app().await;
         app.clean_database().await;
 
-        let user = utils::iam::register_user().await;
-        utils::iam::make_admin(&user).await;
+        let user = iam::register_user().await;
+        iam::make_admin(&user).await;
 
         let [id, id2] = create_test_problem2(app, &user).await;
 
@@ -1245,8 +1243,8 @@ mod order {
         let app = get_cached_app().await;
         app.clean_database().await;
 
-        let user = utils::iam::register_user().await;
-        utils::iam::make_admin(&user).await;
+        let user = iam::register_user().await;
+        iam::make_admin(&user).await;
 
         let [id, id2, id3] = create_test_problem2(app, &user).await;
 
@@ -1272,8 +1270,8 @@ mod order {
         let app = get_cached_app().await;
         app.clean_database().await;
 
-        let user = utils::iam::register_user().await;
-        utils::iam::make_admin(&user).await;
+        let user = iam::register_user().await;
+        iam::make_admin(&user).await;
 
         let [id, id2] = create_test_problem2(app, &user).await;
 
@@ -1299,8 +1297,8 @@ mod order {
         let app = get_cached_app().await;
         app.clean_database().await;
 
-        let user = utils::iam::register_user().await;
-        utils::iam::make_admin(&user).await;
+        let user = iam::register_user().await;
+        iam::make_admin(&user).await;
 
         let [id1, id2, id3] = create_test_problem2(app, &user).await;
 
@@ -1327,8 +1325,8 @@ mod order {
         let app = get_cached_app().await;
         app.clean_database().await;
 
-        let user = utils::iam::register_user().await;
-        utils::iam::make_admin(&user).await;
+        let user = iam::register_user().await;
+        iam::make_admin(&user).await;
 
         let [id1, id2, id3] = create_test_problem2(app, &user).await;
 
@@ -1355,8 +1353,8 @@ mod order {
         let app = get_cached_app().await;
         app.clean_database().await;
 
-        let user = utils::iam::register_user().await;
-        utils::iam::make_admin(&user).await;
+        let user = iam::register_user().await;
+        iam::make_admin(&user).await;
 
         let [id1, id2, id3] = create_test_problem2(app, &user).await;
 
@@ -1383,8 +1381,8 @@ mod order {
         let app = get_cached_app().await;
         app.clean_database().await;
 
-        let user = utils::iam::register_user().await;
-        utils::iam::make_admin(&user).await;
+        let user = iam::register_user().await;
+        iam::make_admin(&user).await;
 
         let [id1, id2, id3] = create_test_problem2(app, &user).await;
 
@@ -1411,8 +1409,8 @@ mod order {
         let app = get_cached_app().await;
         app.clean_database().await;
 
-        let user = utils::iam::register_user().await;
-        utils::iam::make_admin(&user).await;
+        let user = iam::register_user().await;
+        iam::make_admin(&user).await;
 
         let [id1, id2, id3, id4] = create_test_problem2(app, &user).await;
 
@@ -1447,8 +1445,8 @@ mod order {
         let app = get_cached_app().await;
         app.clean_database().await;
 
-        let user = utils::iam::register_user().await;
-        utils::iam::make_admin(&user).await;
+        let user = iam::register_user().await;
+        iam::make_admin(&user).await;
 
         let [id1, id2, id3, id4] = create_test_problem2(app, &user).await;
 
@@ -1483,8 +1481,8 @@ mod order {
         let app = get_cached_app().await;
         app.clean_database().await;
 
-        let user = utils::iam::register_user().await;
-        utils::iam::make_admin(&user).await;
+        let user = iam::register_user().await;
+        iam::make_admin(&user).await;
 
         let [id1, id2, id3] = create_test_problem2(app, &user).await;
 
@@ -1514,8 +1512,8 @@ mod order {
         let app = get_cached_app().await;
         app.clean_database().await;
 
-        let user = utils::iam::register_user().await;
-        utils::iam::make_admin(&user).await;
+        let user = iam::register_user().await;
+        iam::make_admin(&user).await;
 
         let [id1, id2, id3] = create_test_problem2(app, &user).await;
 
@@ -1543,7 +1541,7 @@ mod order {
     #[parallel]
     async fn not_admin() {
         let app = get_cached_app().await;
-        let user = utils::iam::register_user().await;
+        let user = iam::register_user().await;
 
         let res = app.delete("/problem").user(&user).send().await;
 

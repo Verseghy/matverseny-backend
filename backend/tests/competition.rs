@@ -1,6 +1,4 @@
-mod utils;
-
-use utils::prelude::*;
+use test_utils::prelude::*;
 
 mod time {
     use super::*;
@@ -9,7 +7,7 @@ mod time {
     #[parallel]
     async fn put_not_admin() {
         let app = get_cached_app().await;
-        let user = utils::iam::register_user().await;
+        let user = iam::register_user().await;
 
         let res = app.put("/competition/time").user(&user).send().await;
 
@@ -20,7 +18,7 @@ mod time {
     #[parallel]
     async fn patch_not_admin() {
         let app = get_cached_app().await;
-        let user = utils::iam::register_user().await;
+        let user = iam::register_user().await;
 
         let res = app.patch("/competition/time").user(&user).send().await;
 
@@ -32,8 +30,8 @@ mod time {
     async fn success_start_time() {
         let app = get_cached_app().await;
 
-        let user = utils::iam::register_user().await;
-        utils::iam::make_admin(&user).await;
+        let user = iam::register_user().await;
+        iam::make_admin(&user).await;
 
         let res = app
             .patch("/competition/time")
@@ -65,8 +63,8 @@ mod time {
     async fn success_end_time() {
         let app = get_cached_app().await;
 
-        let user = utils::iam::register_user().await;
-        utils::iam::make_admin(&user).await;
+        let user = iam::register_user().await;
+        iam::make_admin(&user).await;
 
         let res = app
             .patch("/competition/time")
@@ -98,8 +96,8 @@ mod time {
     async fn success_both_time() {
         let app = get_cached_app().await;
 
-        let user = utils::iam::register_user().await;
-        utils::iam::make_admin(&user).await;
+        let user = iam::register_user().await;
+        iam::make_admin(&user).await;
 
         let res = app
             .patch("/competition/time")
@@ -133,8 +131,8 @@ mod time {
     async fn success_socket_events() {
         let app = get_cached_app().await;
 
-        let admin = utils::iam::register_user().await;
-        utils::iam::make_admin(&admin).await;
+        let admin = iam::register_user().await;
+        iam::make_admin(&admin).await;
 
         let owner = app.register_user().await;
         let _ = app.create_team(&owner).await;
@@ -153,7 +151,7 @@ mod time {
 
         assert_eq!(res.status(), StatusCode::NO_CONTENT);
 
-        let message = utils::get_socket_message(socket.next().await);
+        let message = get_socket_message(socket.next().await);
 
         assert_json_eq!(
             message,
