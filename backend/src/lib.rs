@@ -9,11 +9,9 @@ mod state;
 mod utils;
 
 use crate::{middlewares::middlewares, utils::SignalHandler};
-use axum::{extract::Request, ServiceExt};
 use error::{Error, Result};
 pub use state::*;
 use tokio::net::TcpListener;
-use tower_http::normalize_path::NormalizePath;
 pub use utils::panic;
 
 pub async fn run<S: StateTrait>(listener: TcpListener, state: S) -> anyhow::Result<()> {
@@ -22,13 +20,12 @@ pub async fn run<S: StateTrait>(listener: TcpListener, state: S) -> anyhow::Resu
         listener.local_addr().unwrap().port()
     );
 
-    let app = handlers::routes::<S>(state.clone());
-    let app = middlewares(state, app);
-    let app = NormalizePath::trim_trailing_slash(app);
+    let routes = handlers::routes::<S>(state.clone());
+    let app = middlewares(state, routes);
 
-    Ok(
-        axum::serve(listener, ServiceExt::<Request>::into_make_service(app))
-            .with_graceful_shutdown(SignalHandler::new())
-            .await?,
-    )
+    axum::serve(listener, app.into_make_service())
+        .with_graceful_shutdown(SignalHandler::new())
+        .await?;
+
+    Ok(())
 }

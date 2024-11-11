@@ -18,6 +18,7 @@ pub fn middlewares<S: StateTrait>(state: S, router: Router<S>) -> Router {
         .allow_headers(Any);
 
     let middlewares = ServiceBuilder::new()
+        .trim_trailing_slash()
         .catch_panic()
         .sensitive_headers(iter::once(AUTHORIZATION))
         .propagate_x_request_id()
