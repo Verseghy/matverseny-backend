@@ -17,7 +17,7 @@ services:
 
   iam:
     pull_policy: always
-    image: ghcr.io/verseghy/iam:v2
+    image: ghcr.io/verseghy/iam:v3
     environment:
       DATABASE_URL: postgres://iam:secret@iam-database:5432/iam
     ports:
@@ -42,7 +42,7 @@ services:
 
   iam-migration:
     pull_policy: always
-    image: ghcr.io/verseghy/iam-migration:v2
+    image: ghcr.io/verseghy/iam-migration:v3
     environment:
       DATABASE_URL: postgres://iam:secret@iam-database:5432/iam
     command: ["./iam-migration", "--verbose"]
