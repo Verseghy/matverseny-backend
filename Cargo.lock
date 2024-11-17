@@ -1364,7 +1364,7 @@ dependencies = [
 [[package]]
 name = "iam-common"
 version = "0.1.0"
-source = "git+https://github.com/Verseghy/iam?branch=smrtrfszm/use-postgres#7e53d792b7856af0e380c7daaefc3266a3803c79"
+source = "git+https://github.com/Verseghy/iam#f3e15e614dff6354934e15e2b8f2fe6652fa4a06"
 dependencies = [
  "anyhow",
  "axum",
@@ -1390,7 +1390,7 @@ dependencies = [
 [[package]]
 name = "iam-entity"
 version = "0.1.0"
-source = "git+https://github.com/Verseghy/iam?branch=smrtrfszm/use-postgres#7e53d792b7856af0e380c7daaefc3266a3803c79"
+source = "git+https://github.com/Verseghy/iam#f3e15e614dff6354934e15e2b8f2fe6652fa4a06"
 dependencies = [
  "chrono",
  "sea-orm 1.0.1",
@@ -1399,7 +1399,7 @@ dependencies = [
 [[package]]
 name = "iam-macros"
 version = "0.1.0"
-source = "git+https://github.com/Verseghy/iam?branch=smrtrfszm/use-postgres#7e53d792b7856af0e380c7daaefc3266a3803c79"
+source = "git+https://github.com/Verseghy/iam#f3e15e614dff6354934e15e2b8f2fe6652fa4a06"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -1681,7 +1681,7 @@ checksum = "97b3888a4aecf77e811145cadf6eef5901f4782c53886191b2f693f24761847c"
 [[package]]
 name = "libiam"
 version = "0.1.0"
-source = "git+https://github.com/Verseghy/iam?branch=smrtrfszm/use-postgres#7e53d792b7856af0e380c7daaefc3266a3803c79"
+source = "git+https://github.com/Verseghy/iam#f3e15e614dff6354934e15e2b8f2fe6652fa4a06"
 dependencies = [
  "anyhow",
  "async-trait",
