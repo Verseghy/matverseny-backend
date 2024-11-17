@@ -11,5 +11,5 @@ workspace = true
 [dependencies]
 sea-orm = { workspace = true, features = ["macros"] }
 serde.workspace = true
-serde_repr = "0.1.17"
+serde_repr = "0.1.19"
 uuid.workspace = true
