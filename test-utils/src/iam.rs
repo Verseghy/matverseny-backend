@@ -45,7 +45,7 @@ pub async fn get_db() -> &'static libiam::testing::Database {
         tokio::sync::OnceCell::const_new();
 
     DB.get_or_init(|| async {
-        libiam::testing::Database::connect("mysql://iam:secret@127.0.0.1:3306/iam").await
+        libiam::testing::Database::connect("postgres://iam:secret@127.0.0.1:5433/iam").await
     })
     .await
 }

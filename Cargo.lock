@@ -833,6 +833,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "educe"
+version = "0.5.11"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e4bd92664bf78c4d3dba9b7cdafce6fa15b13ed3ed16175218196942e99168a8"
+dependencies = [
+ "enum-ordinalize",
+ "proc-macro2",
+ "quote",
+ "syn 2.0.72",
+]
+
+[[package]]
 name = "either"
 version = "1.13.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -845,10 +857,30 @@ dependencies = [
 name = "entity"
 version = "0.1.0"
 dependencies = [
- "sea-orm",
+ "sea-orm 0.12.15",
  "serde",
  "serde_repr",
  "uuid",
+]
+
+[[package]]
+name = "enum-ordinalize"
+version = "4.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "fea0dcfa4e54eeb516fe454635a95753ddd39acda650ce703031c6973e315dd5"
+dependencies = [
+ "enum-ordinalize-derive",
+]
+
+[[package]]
+name = "enum-ordinalize-derive"
+version = "4.3.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0d28318a75d4aead5c4db25382e8ef717932d0346600cacae6357eb5941bc5ff"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.72",
 ]
 
 [[package]]
@@ -1332,7 +1364,7 @@ dependencies = [
 [[package]]
 name = "iam-common"
 version = "0.1.0"
-source = "git+https://github.com/Verseghy/iam#46d8874f8c07f2b135d74b1e2b0aa0fea1fbed12"
+source = "git+https://github.com/Verseghy/iam?branch=smrtrfszm/use-postgres#7e53d792b7856af0e380c7daaefc3266a3803c79"
 dependencies = [
  "anyhow",
  "axum",
@@ -1348,7 +1380,7 @@ dependencies = [
  "mime",
  "rand",
  "rust-argon2",
- "sea-orm",
+ "sea-orm 1.0.1",
  "serde",
  "serde_json",
  "tracing",
@@ -1358,15 +1390,16 @@ dependencies = [
 [[package]]
 name = "iam-entity"
 version = "0.1.0"
-source = "git+https://github.com/Verseghy/iam#46d8874f8c07f2b135d74b1e2b0aa0fea1fbed12"
+source = "git+https://github.com/Verseghy/iam?branch=smrtrfszm/use-postgres#7e53d792b7856af0e380c7daaefc3266a3803c79"
 dependencies = [
- "sea-orm",
+ "chrono",
+ "sea-orm 1.0.1",
 ]
 
 [[package]]
 name = "iam-macros"
 version = "0.1.0"
-source = "git+https://github.com/Verseghy/iam#46d8874f8c07f2b135d74b1e2b0aa0fea1fbed12"
+source = "git+https://github.com/Verseghy/iam?branch=smrtrfszm/use-postgres#7e53d792b7856af0e380c7daaefc3266a3803c79"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -1648,7 +1681,7 @@ checksum = "97b3888a4aecf77e811145cadf6eef5901f4782c53886191b2f693f24761847c"
 [[package]]
 name = "libiam"
 version = "0.1.0"
-source = "git+https://github.com/Verseghy/iam#46d8874f8c07f2b135d74b1e2b0aa0fea1fbed12"
+source = "git+https://github.com/Verseghy/iam?branch=smrtrfszm/use-postgres#7e53d792b7856af0e380c7daaefc3266a3803c79"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -1657,7 +1690,7 @@ dependencies = [
  "iam-entity",
  "jsonwebtoken",
  "reqwest",
- "sea-orm",
+ "sea-orm 1.0.1",
  "serde",
  "serde_json",
  "thiserror",
@@ -1749,7 +1782,7 @@ dependencies = [
  "rand",
  "rand_chacha",
  "reqwest",
- "sea-orm",
+ "sea-orm 0.12.15",
  "serde",
  "serde_json",
  "serde_with",
@@ -2640,16 +2673,39 @@ dependencies = [
  "futures",
  "log",
  "ouroboros",
- "sea-orm-macros",
- "sea-query",
- "sea-query-binder",
+ "sea-orm-macros 0.12.15",
+ "sea-query 0.30.7",
+ "sea-query-binder 0.5.0",
  "serde",
  "sqlx",
- "strum",
+ "strum 0.25.0",
  "thiserror",
  "tracing",
  "url",
  "uuid",
+]
+
+[[package]]
+name = "sea-orm"
+version = "1.0.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ea1fee0cf8528dbe6eda29d5798afc522a63b75e44c5b15721e6e64af9c7cc4b"
+dependencies = [
+ "async-stream",
+ "async-trait",
+ "chrono",
+ "futures",
+ "log",
+ "ouroboros",
+ "sea-orm-macros 1.0.1",
+ "sea-query 0.31.1",
+ "sea-query-binder 0.6.0",
+ "serde",
+ "sqlx",
+ "strum 0.26.3",
+ "thiserror",
+ "tracing",
+ "url",
 ]
 
 [[package]]
@@ -2684,6 +2740,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "sea-orm-macros"
+version = "1.0.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8737b566799ed0444f278d13c300c4c6f1a91782f60ff5825a591852d5502030"
+dependencies = [
+ "heck 0.4.1",
+ "proc-macro2",
+ "quote",
+ "sea-bae",
+ "syn 2.0.72",
+ "unicode-ident",
+]
+
+[[package]]
 name = "sea-orm-migration"
 version = "0.12.15"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2693,7 +2763,7 @@ dependencies = [
  "clap",
  "dotenvy",
  "futures",
- "sea-orm",
+ "sea-orm 0.12.15",
  "sea-orm-cli",
  "sea-schema",
  "tracing",
@@ -2715,15 +2785,38 @@ dependencies = [
 ]
 
 [[package]]
+name = "sea-query"
+version = "0.31.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b4fd043b8117af233e221f73e3ea8dfbc8e8c3c928017c474296db45c649105c"
+dependencies = [
+ "chrono",
+ "educe",
+ "inherent",
+ "ordered-float 3.9.2",
+]
+
+[[package]]
 name = "sea-query-binder"
 version = "0.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "36bbb68df92e820e4d5aeb17b4acd5cc8b5d18b2c36a4dd6f4626aabfa7ab1b9"
 dependencies = [
  "chrono",
- "sea-query",
+ "sea-query 0.30.7",
  "sqlx",
  "uuid",
+]
+
+[[package]]
+name = "sea-query-binder"
+version = "0.6.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "754965d4aee6145bec25d0898e5c931e6c22859789ce62fd85a42a15ed5a8ce3"
+dependencies = [
+ "chrono",
+ "sea-query 0.31.1",
+ "sqlx",
 ]
 
 [[package]]
@@ -2746,7 +2839,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "30d148608012d25222442d1ebbfafd1228dbc5221baf4ec35596494e27a2394e"
 dependencies = [
  "futures",
- "sea-query",
+ "sea-query 0.30.7",
  "sea-schema-derive",
 ]
 
@@ -3316,6 +3409,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "290d54ea6f91c969195bdbcd7442c8c2a2ba87da8bf60a7ee86a235d4bc1e125"
 
 [[package]]
+name = "strum"
+version = "0.26.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8fec0f0aef304996cf250b31b5a10dee7980c85da9d759361292b8bca5a18f06"
+
+[[package]]
 name = "subtle"
 version = "2.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3383,7 +3482,7 @@ dependencies = [
  "matverseny-backend",
  "migration",
  "reqwest",
- "sea-orm",
+ "sea-orm 0.12.15",
  "serde",
  "serde_json",
  "serial_test",
