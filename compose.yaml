@@ -17,9 +17,9 @@ services:
 
   iam:
     pull_policy: always
-    image: ghcr.io/verseghy/iam
+    image: ghcr.io/verseghy/iam:v3
     environment:
-      DATABASE_URL: mysql://iam:secret@iam-database:3306/iam
+      DATABASE_URL: postgres://iam:secret@iam-database:5432/iam
     ports:
       - 3001:3001
     depends_on:
@@ -27,26 +27,25 @@ services:
         condition: service_completed_successfully
 
   iam-database:
-    image: docker.io/mysql:8.0
+    image: docker.io/postgres:16
     environment:
-      MYSQL_DATABASE: iam
-      MYSQL_USER: iam
-      MYSQL_PASSWORD: secret
-      MYSQL_ALLOW_EMPTY_PASSWORD: yes
-      TZ: Europe/Budapest
+      POSTGRES_USER: iam
+      POSTGRES_PASSWORD: secret
+      POSTGRES_DB: iam
     ports:
-      - 3306:3306
-    healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1"]
-      interval: 1s
-      timeout: 1s
-      retries: 100
+      - 5433:5432
+    # healthcheck:
+    #   test: ["CMD", "pg_isready", "-U", "iam"]
+    #   interval: 10s
+    #   timeout: 45s
+    #   retries: 10
 
   iam-migration:
     pull_policy: always
-    image: ghcr.io/verseghy/iam-migration
+    image: ghcr.io/verseghy/iam-migration:v3
     environment:
-      DATABASE_URL: mysql://iam:secret@iam-database:3306/iam
-    depends_on:
-      iam-database:
-        condition: service_healthy
+      DATABASE_URL: postgres://iam:secret@iam-database:5432/iam
+    command: ["./iam-migration", "--verbose"]
+    # depends_on:
+    #   iam-database:
+    #     condition: service_healthy
