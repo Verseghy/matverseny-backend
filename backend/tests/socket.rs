@@ -11,7 +11,7 @@ use uuid::Uuid;
 async fn timeout() {
     let app = get_cached_app().await;
 
-    let mut socket = app.socket("/ws").start().await;
+    let mut socket = app.socket("/v1/ws").start().await;
 
     assert_close_frame_error!(socket.next().await, error::WEBSOCKET_AUTH_TIMEOUT);
 }
@@ -21,7 +21,7 @@ async fn timeout() {
 async fn wrong_token() {
     let app = get_cached_app().await;
 
-    let mut socket = app.socket("/ws").start().await;
+    let mut socket = app.socket("/v1/ws").start().await;
 
     socket
         .send(Message::Text("some random invalid token".to_owned()))
@@ -35,7 +35,7 @@ async fn wrong_token() {
 async fn wrong_message_type() {
     let app = get_cached_app().await;
 
-    let mut socket = app.socket("/ws").start().await;
+    let mut socket = app.socket("/v1/ws").start().await;
 
     socket
         .send(Message::Binary(Vec::from("asd".as_bytes())))
@@ -50,7 +50,7 @@ async fn user_not_registered() {
     let app = get_cached_app().await;
     let user = iam::register_user().await;
 
-    let mut socket = app.socket("/ws").start().await;
+    let mut socket = app.socket("/v1/ws").start().await;
 
     socket
         .send(Message::Text(
@@ -67,7 +67,7 @@ async fn no_team() {
     let app = get_cached_app().await;
     let user = app.register_user().await;
 
-    let mut socket = app.socket("/ws").start().await;
+    let mut socket = app.socket("/v1/ws").start().await;
 
     socket
         .send(Message::Text(
@@ -86,7 +86,7 @@ async fn team_info() {
 
     let team = app.create_team(&user).await;
 
-    let mut socket = app.socket("/ws").start().await;
+    let mut socket = app.socket("/v1/ws").start().await;
     socket
         .send(Message::Text(
             json!({"token": user.access_token().to_owned()}).to_string(),
@@ -129,7 +129,7 @@ async fn dont_send_problems_before_start() {
     iam::make_admin(&admin).await;
 
     let res = app
-        .post("/problem")
+        .post("/v1/problem")
         .user(&admin)
         .json(&json!({
             "body": "some body",
@@ -144,7 +144,7 @@ async fn dont_send_problems_before_start() {
     let id = Uuid::parse_str(res.json::<Value>().await["id"].as_str().unwrap()).unwrap();
 
     let res = app
-        .post("/problem/order")
+        .post("/v1/problem/order")
         .user(&admin)
         .json(&json!({
             "type": "INSERT",
@@ -159,7 +159,7 @@ async fn dont_send_problems_before_start() {
     let start = start - Duration::from_nanos(start.timestamp_subsec_nanos() as u64);
 
     let res = app
-        .patch("/competition/time")
+        .patch("/v1/competition/time")
         .user(&admin)
         .json(&json!({
             "start_time": start.timestamp(),
@@ -174,7 +174,7 @@ async fn dont_send_problems_before_start() {
     let team = app.create_team(&owner).await;
     team.lock().await;
 
-    let mut socket = app.socket("/ws").start().await;
+    let mut socket = app.socket("/v1/ws").start().await;
 
     socket
         .send(Message::Text(

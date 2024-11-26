@@ -9,7 +9,7 @@ mod time {
         let app = get_cached_app().await;
         let user = iam::register_user().await;
 
-        let res = app.put("/competition/time").user(&user).send().await;
+        let res = app.put("/v1/competition/time").user(&user).send().await;
 
         assert_error!(res, error::NOT_ENOUGH_PERMISSIONS);
     }
@@ -20,7 +20,7 @@ mod time {
         let app = get_cached_app().await;
         let user = iam::register_user().await;
 
-        let res = app.patch("/competition/time").user(&user).send().await;
+        let res = app.patch("/v1/competition/time").user(&user).send().await;
 
         assert_error!(res, error::NOT_ENOUGH_PERMISSIONS);
     }
@@ -34,7 +34,7 @@ mod time {
         iam::make_admin(&user).await;
 
         let res = app
-            .patch("/competition/time")
+            .patch("/v1/competition/time")
             .user(&user)
             .json(&json!({
                 "start_time": 123,
@@ -44,7 +44,7 @@ mod time {
 
         assert_eq!(res.status(), StatusCode::NO_CONTENT);
 
-        let res = app.get("/competition/time").user(&user).send().await;
+        let res = app.get("/v1/competition/time").user(&user).send().await;
 
         assert_eq!(res.status(), StatusCode::OK);
 
@@ -67,7 +67,7 @@ mod time {
         iam::make_admin(&user).await;
 
         let res = app
-            .patch("/competition/time")
+            .patch("/v1/competition/time")
             .user(&user)
             .json(&json!({
                 "end_time": 123,
@@ -77,7 +77,7 @@ mod time {
 
         assert_eq!(res.status(), StatusCode::NO_CONTENT);
 
-        let res = app.get("/competition/time").user(&user).send().await;
+        let res = app.get("/v1/competition/time").user(&user).send().await;
 
         assert_eq!(res.status(), StatusCode::OK);
 
@@ -100,7 +100,7 @@ mod time {
         iam::make_admin(&user).await;
 
         let res = app
-            .patch("/competition/time")
+            .patch("/v1/competition/time")
             .user(&user)
             .json(&json!({
                 "start_time": 432,
@@ -111,7 +111,7 @@ mod time {
 
         assert_eq!(res.status(), StatusCode::NO_CONTENT);
 
-        let res = app.get("/competition/time").user(&user).send().await;
+        let res = app.get("/v1/competition/time").user(&user).send().await;
 
         assert_eq!(res.status(), StatusCode::OK);
 
@@ -136,11 +136,11 @@ mod time {
 
         let owner = app.register_user().await;
         let _ = app.create_team(&owner).await;
-        let mut socket = app.socket("/ws").start().await;
+        let mut socket = app.socket("/v1/ws").start().await;
         assert_team_info!(socket, owner);
 
         let res = app
-            .put("/competition/time")
+            .put("/v1/competition/time")
             .user(&admin)
             .json(&json!({
                 "start_time": 1234,

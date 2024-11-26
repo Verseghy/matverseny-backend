@@ -12,7 +12,7 @@ impl Team {
     }
 
     pub async fn get_code(&self) -> String {
-        let mut socket = self.app.socket("/ws").start().await;
+        let mut socket = self.app.socket("/v1/ws").start().await;
         let message = assert_team_info!(socket, self.owner);
 
         let code = message["data"]["code"]
@@ -28,7 +28,7 @@ impl Team {
     pub async fn lock(&self) {
         let res = self
             .app
-            .patch("/team")
+            .patch("/v1/team")
             .user(&self.owner)
             .json(&json!({
                 "locked": true,

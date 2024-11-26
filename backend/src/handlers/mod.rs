@@ -17,17 +17,21 @@ use sea_orm::ConnectionTrait;
 
 pub fn routes<S: StateTrait>(state: S) -> Router<S> {
     Router::new()
-        .route("/register", post(register::register::<S>))
-        .nest("/team", team::routes::<S>(state.clone()))
-        .nest("/problem", problem::routes::<S>(state.clone()))
-        .nest("/competition", competition::routes::<S>(state.clone()))
-        .route("/ws", get(socket::ws_handler::<S>))
-        .route(
-            "/stats",
-            post(
-                stats::get_stats::<S>
-                    .layer(PermissionsLayer::new(state, &["mathcompetition.admin"])),
-            ),
+        .nest(
+            "/v1",
+            Router::new()
+                .route("/register", post(register::register::<S>))
+                .nest("/team", team::routes::<S>(state.clone()))
+                .nest("/problem", problem::routes::<S>(state.clone()))
+                .nest("/competition", competition::routes::<S>(state.clone()))
+                .route("/ws", get(socket::ws_handler::<S>))
+                .route(
+                    "/stats",
+                    post(
+                        stats::get_stats::<S>
+                            .layer(PermissionsLayer::new(state, &["mathcompetition.admin"])),
+                    ),
+                ),
         )
         .route("/liveness", get(liveness::<S>))
         .route("/readiness", get(|| async {}))

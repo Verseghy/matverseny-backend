@@ -8,7 +8,7 @@ async fn not_admin() {
     let user = app.register_user().await;
 
     let res = app
-        .post("/stats")
+        .post("/v1/stats")
         .user(&user)
         .json(&json!({
             "timestamp": 12312312,
@@ -31,7 +31,7 @@ async fn empty() {
     let time = Utc::now().to_rfc3339();
 
     let res = app
-        .post("/stats")
+        .post("/v1/stats")
         .user(&admin_user)
         .json(&json!({
             "timestamp": time,
@@ -60,7 +60,7 @@ async fn works() {
 
     // Setup
     let res = app
-        .post("/problem")
+        .post("/v1/problem")
         .user(&admin_user)
         .json(&json!({
             "body": "some body",
@@ -81,7 +81,7 @@ async fn works() {
     team.lock().await;
 
     let res = app
-        .post("/competition/solution")
+        .post("/v1/competition/solution")
         .user(&owner)
         .json(&json!({
             "problem": id,
@@ -95,7 +95,7 @@ async fn works() {
     let time = Utc::now().to_rfc3339();
 
     let res = app
-        .post("/stats")
+        .post("/v1/stats")
         .user(&admin_user)
         .json(&json!({
             "timestamp": time,
@@ -127,7 +127,7 @@ async fn works_after_delete() {
 
     // Setup
     let res = app
-        .post("/problem")
+        .post("/v1/problem")
         .user(&admin_user)
         .json(&json!({
             "body": "some body",
@@ -148,7 +148,7 @@ async fn works_after_delete() {
     team.lock().await;
 
     let res = app
-        .post("/competition/solution")
+        .post("/v1/competition/solution")
         .user(&owner)
         .json(&json!({
             "problem": id,
@@ -162,7 +162,7 @@ async fn works_after_delete() {
     let time = Utc::now().to_rfc3339();
 
     let res = app
-        .post("/competition/solution")
+        .post("/v1/competition/solution")
         .user(&owner)
         .json(&json!({
             "problem": id,
@@ -176,7 +176,7 @@ async fn works_after_delete() {
     let time2 = Utc::now().to_rfc3339();
 
     let res = app
-        .post("/stats")
+        .post("/v1/stats")
         .user(&admin_user)
         .json(&json!({
             "timestamp": time,
@@ -197,7 +197,7 @@ async fn works_after_delete() {
     );
 
     let res = app
-        .post("/stats")
+        .post("/v1/stats")
         .user(&admin_user)
         .json(&json!({
             "timestamp": time2,
@@ -229,7 +229,7 @@ async fn works_with_wrong() {
 
     // Setup
     let res = app
-        .post("/problem")
+        .post("/v1/problem")
         .user(&admin_user)
         .json(&json!({
             "body": "some body",
@@ -250,7 +250,7 @@ async fn works_with_wrong() {
     team.lock().await;
 
     let res = app
-        .post("/competition/solution")
+        .post("/v1/competition/solution")
         .user(&owner)
         .json(&json!({
             "problem": id,
@@ -264,7 +264,7 @@ async fn works_with_wrong() {
     let time = Utc::now().to_rfc3339();
 
     let res = app
-        .post("/stats")
+        .post("/v1/stats")
         .user(&admin_user)
         .json(&json!({
             "timestamp": time,
