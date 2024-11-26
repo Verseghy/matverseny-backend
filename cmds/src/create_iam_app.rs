@@ -7,7 +7,7 @@ async fn main() {
     dotenv().ok();
 
     let name = args().nth(1).expect("no name given");
-    let database = Database::connect("mysql://iam:secret@localhost:3306/iam").await;
+    let database = Database::connect("postgres://iam:secret@localhost:3306/iam").await;
 
     let (id, secret) = create_app(&database, &name).await;
 
