@@ -11,7 +11,7 @@ mod create {
         iam::make_admin(&user).await;
 
         let res = app
-            .post("/problem")
+            .post("/v1/problem")
             .user(&user)
             .json(&json!({
                 "body": "some body",
@@ -44,7 +44,7 @@ mod create {
         iam::make_admin(&user).await;
 
         let res = app
-            .post("/problem")
+            .post("/v1/problem")
             .user(&user)
             .json(&json!({
                 "body": "some body",
@@ -63,7 +63,7 @@ mod create {
         let user = iam::register_user().await;
 
         let res = app
-            .post("/problem")
+            .post("/v1/problem")
             .user(&user)
             .json(&json!({
                 "body": "some body",
@@ -89,7 +89,7 @@ mod get {
         iam::make_admin(&user).await;
 
         let res = app
-            .get(&format!("/problem/{}", uuid()))
+            .get(&format!("/v1/problem/{}", uuid()))
             .user(&user)
             .send()
             .await;
@@ -107,7 +107,7 @@ mod get {
         iam::make_admin(&user).await;
 
         let res = app
-            .post("/problem")
+            .post("/v1/problem")
             .user(&user)
             .json(&json!({
                 "body": "Test body.",
@@ -128,7 +128,7 @@ mod get {
         let id = body["id"].as_str().unwrap();
 
         let res = app
-            .get(&format!("/problem/{}", id))
+            .get(&format!("/v1/problem/{}", id))
             .user(&user)
             .send()
             .await;
@@ -160,7 +160,7 @@ mod get {
         let user = iam::register_user().await;
         iam::make_admin(&user).await;
 
-        let res = app.get("/problem/test").user(&user).send().await;
+        let res = app.get("/v1/problem/test").user(&user).send().await;
 
         assert_error!(res, error::PROBLEM_NOT_FOUND);
     }
@@ -172,7 +172,7 @@ mod get {
         let user = iam::register_user().await;
 
         let res = app
-            .get(&format!("/problem/{}", uuid()))
+            .get(&format!("/v1/problem/{}", uuid()))
             .user(&user)
             .send()
             .await;
@@ -193,14 +193,14 @@ mod list {
         let user = iam::register_user().await;
         iam::make_admin(&user).await;
 
-        let res = app.get("/problem").user(&user).send().await;
+        let res = app.get("/v1/problem").user(&user).send().await;
 
         assert_eq!(res.status(), StatusCode::OK);
         let body: Value = res.json().await;
         assert_json_eq!(body, json!([]));
 
         let res = app
-            .post("/problem")
+            .post("/v1/problem")
             .user(&user)
             .json(&json!({
                 "body": "Test body 1.",
@@ -220,7 +220,7 @@ mod list {
         let body: Value = res.json().await;
         let id1 = body["id"].as_str().unwrap();
 
-        let res = app.get("/problem").user(&user).send().await;
+        let res = app.get("/v1/problem").user(&user).send().await;
 
         assert_eq!(res.status(), StatusCode::OK);
         let body: Value = res.json().await;
@@ -235,7 +235,7 @@ mod list {
         );
 
         let res = app
-            .post("/problem")
+            .post("/v1/problem")
             .user(&user)
             .json(&json!({
                 "body": "Test body 2.",
@@ -255,7 +255,7 @@ mod list {
         let body: Value = res.json().await;
         let id2 = body["id"].as_str().unwrap();
 
-        let res = app.get("/problem").user(&user).send().await;
+        let res = app.get("/v1/problem").user(&user).send().await;
 
         assert_eq!(res.status(), StatusCode::OK);
         let body: Value = res.json().await;
@@ -284,7 +284,7 @@ mod list {
         let app = get_cached_app().await;
         let user = iam::register_user().await;
 
-        let res = app.get("/problem").user(&user).send().await;
+        let res = app.get("/v1/problem").user(&user).send().await;
 
         assert_error!(res, error::NOT_ENOUGH_PERMISSIONS);
     }
@@ -302,7 +302,7 @@ mod delete {
         iam::make_admin(&user).await;
 
         let res = app
-            .delete(&format!("/problem/{}", uuid()))
+            .delete(&format!("/v1/problem/{}", uuid()))
             .user(&user)
             .send()
             .await;
@@ -319,7 +319,7 @@ mod delete {
         let _team = app.create_team(&user).await;
 
         let res = app
-            .post("/problem")
+            .post("/v1/problem")
             .user(&user)
             .json(&json!({
                 "body": "Test body 1.",
@@ -336,14 +336,14 @@ mod delete {
             res.json::<Value>().await,
         );
 
-        let mut socket = app.socket("/ws").start().await;
+        let mut socket = app.socket("/v1/ws").start().await;
         assert_team_info!(socket, user);
 
         let body: Value = res.json().await;
         let id = body["id"].as_str().unwrap();
 
         let res = app
-            .delete(&format!("/problem/{}", id))
+            .delete(&format!("/v1/problem/{}", id))
             .user(&user)
             .send()
             .await;
@@ -374,7 +374,7 @@ mod delete {
         let app = get_cached_app().await;
         let user = iam::register_user().await;
 
-        let res = app.delete("/problem").user(&user).send().await;
+        let res = app.delete("/v1/problem").user(&user).send().await;
 
         assert_error!(res, error::NOT_ENOUGH_PERMISSIONS);
     }
@@ -397,7 +397,7 @@ mod update {
             let id = uuid();
 
             let res = app
-                .put(&format!("/problem/{}", id))
+                .put(&format!("/v1/problem/{}", id))
                 .user(&user)
                 .json(&json!({
                     "id": id,
@@ -420,7 +420,7 @@ mod update {
             iam::make_admin(&user).await;
 
             let res = app
-                .post("/problem")
+                .post("/v1/problem")
                 .user(&user)
                 .json(&json!({
                     "body": "Test body 1.",
@@ -441,7 +441,7 @@ mod update {
             let id = body["id"].as_str().unwrap();
 
             let res = app
-                .put(&format!("/problem/{}", id))
+                .put(&format!("/v1/problem/{}", id))
                 .user(&user)
                 .json(&json!({
                     "id": id,
@@ -460,7 +460,7 @@ mod update {
             );
 
             let res = app
-                .get(&format!("/problem/{}", id))
+                .get(&format!("/v1/problem/{}", id))
                 .user(&user)
                 .send()
                 .await;
@@ -486,7 +486,7 @@ mod update {
             iam::make_admin(&user).await;
 
             let res = app
-                .post("/problem")
+                .post("/v1/problem")
                 .user(&user)
                 .json(&json!({
                     "body": "Test body 1.",
@@ -507,7 +507,7 @@ mod update {
             let id = body["id"].as_str().unwrap();
 
             let res = app
-                .put(&format!("/problem/{}", id))
+                .put(&format!("/v1/problem/{}", id))
                 .user(&user)
                 .json(&json!({
                     "id": id,
@@ -526,7 +526,7 @@ mod update {
             );
 
             let res = app
-                .get(&format!("/problem/{}", id))
+                .get(&format!("/v1/problem/{}", id))
                 .user(&user)
                 .send()
                 .await;
@@ -551,7 +551,7 @@ mod update {
             let user = iam::register_user().await;
 
             let res = app
-                .put(&format!("/problem/{}", uuid()))
+                .put(&format!("/v1/problem/{}", uuid()))
                 .user(&user)
                 .send()
                 .await;
@@ -571,7 +571,7 @@ mod update {
         let id = uuid();
 
         let res = app
-            .patch(&format!("/problem/{}", id))
+            .patch(&format!("/v1/problem/{}", id))
             .user(&user)
             .json(&json!({
                 "id": id,
@@ -594,7 +594,7 @@ mod update {
         iam::make_admin(&user).await;
 
         let res = app
-            .post("/problem")
+            .post("/v1/problem")
             .user(&user)
             .json(&json!({
                 "body": "Test body 1.",
@@ -615,7 +615,7 @@ mod update {
         let id = body["id"].as_str().unwrap();
 
         let res = app
-            .patch(&format!("/problem/{}", id))
+            .patch(&format!("/v1/problem/{}", id))
             .user(&user)
             .json(&json!({
                 "id": id,
@@ -634,7 +634,7 @@ mod update {
         );
 
         let res = app
-            .get(&format!("/problem/{}", id))
+            .get(&format!("/v1/problem/{}", id))
             .user(&user)
             .send()
             .await;
@@ -660,7 +660,7 @@ mod update {
         iam::make_admin(&user).await;
 
         let res = app
-            .post("/problem")
+            .post("/v1/problem")
             .user(&user)
             .json(&json!({
                 "body": "Test body 1.",
@@ -681,7 +681,7 @@ mod update {
         let id = body["id"].as_str().unwrap();
 
         let res = app
-            .patch(&format!("/problem/{}", id))
+            .patch(&format!("/v1/problem/{}", id))
             .user(&user)
             .json(&json!({
                 "id": id,
@@ -706,7 +706,7 @@ mod update {
         iam::make_admin(&user).await;
 
         let res = app
-            .post("/problem")
+            .post("/v1/problem")
             .user(&user)
             .json(&json!({
                 "body": "Test body 1.",
@@ -727,7 +727,7 @@ mod update {
         let id = body["id"].as_str().unwrap();
 
         let res = app
-            .patch(&format!("/problem/{}", id))
+            .patch(&format!("/v1/problem/{}", id))
             .user(&user)
             .json(&json!({
                 "id": id,
@@ -746,7 +746,7 @@ mod update {
         );
 
         let res = app
-            .get(&format!("/problem/{}", id))
+            .get(&format!("/v1/problem/{}", id))
             .user(&user)
             .send()
             .await;
@@ -771,7 +771,7 @@ mod update {
         let user = iam::register_user().await;
 
         let res = app
-            .patch(&format!("/problem/{}", uuid()))
+            .patch(&format!("/v1/problem/{}", uuid()))
             .user(&user)
             .send()
             .await;
@@ -790,7 +790,7 @@ mod order {
 
         for id_slot in ids.iter_mut() {
             let res = app
-                .post("/problem")
+                .post("/v1/problem")
                 .user(user)
                 .json(&json!({
                     "body": "",
@@ -804,7 +804,7 @@ mod order {
             let id = Uuid::parse_str(res.json::<Value>().await["id"].as_str().unwrap()).unwrap();
 
             let res = app
-                .post("/problem/order")
+                .post("/v1/problem/order")
                 .user(user)
                 .json(&json!({
                     "type": "INSERT",
@@ -829,7 +829,7 @@ mod order {
 
     async fn create_test_problem(app: &App, user: &impl UserLike) -> Uuid {
         let res = app
-            .post("/problem")
+            .post("/v1/problem")
             .user(user)
             .json(&json!({
                 "body": "",
@@ -852,7 +852,7 @@ mod order {
         iam::make_admin(&user).await;
 
         let res = app
-            .post("/problem/order")
+            .post("/v1/problem/order")
             .user(&user)
             .json(&json!({
                 "type": "INSERT",
@@ -873,7 +873,7 @@ mod order {
         iam::make_admin(&user).await;
 
         let res = app
-            .post("/problem/order")
+            .post("/v1/problem/order")
             .user(&user)
             .json(&json!({
                 "type": "INSERT",
@@ -897,7 +897,7 @@ mod order {
         let id = create_test_problem(app, &user).await;
 
         let res = app
-            .post("/problem/order")
+            .post("/v1/problem/order")
             .user(&user)
             .json(&json!({
                 "type": "INSERT",
@@ -923,7 +923,7 @@ mod order {
         let id2 = create_test_problem(app, &user).await;
 
         let res = app
-            .post("/problem/order")
+            .post("/v1/problem/order")
             .user(&user)
             .json(&json!({
                 "type": "INSERT",
@@ -935,7 +935,7 @@ mod order {
         assert_eq!(res.status(), StatusCode::NO_CONTENT);
 
         let res = app
-            .post("/problem/order")
+            .post("/v1/problem/order")
             .user(&user)
             .json(&json!({
                 "type": "INSERT",
@@ -947,7 +947,7 @@ mod order {
         assert_eq!(res.status(), StatusCode::NO_CONTENT);
 
         let res = app
-            .post("/problem/order")
+            .post("/v1/problem/order")
             .user(&user)
             .json(&json!({
                 "type": "INSERT",
@@ -972,7 +972,7 @@ mod order {
         let id = create_test_problem(app, &user).await;
 
         let res = app
-            .post("/problem/order")
+            .post("/v1/problem/order")
             .user(&user)
             .json(&json!({
                 "type": "INSERT",
@@ -984,7 +984,7 @@ mod order {
         assert_eq!(res.status(), StatusCode::NO_CONTENT);
 
         let res = app
-            .post("/problem/order")
+            .post("/v1/problem/order")
             .user(&user)
             .json(&json!({
                 "type": "INSERT",
@@ -1005,7 +1005,7 @@ mod order {
         iam::make_admin(&user).await;
 
         let res = app
-            .post("/problem/order")
+            .post("/v1/problem/order")
             .user(&user)
             .json(&json!({
                 "type": "DELETE",
@@ -1026,7 +1026,7 @@ mod order {
         iam::make_admin(&user).await;
 
         let res = app
-            .post("/problem/order")
+            .post("/v1/problem/order")
             .user(&user)
             .json(&json!({
                 "type": "SWAP",
@@ -1040,7 +1040,7 @@ mod order {
     }
 
     async fn get_order_list(app: &App, user: &impl UserLike) -> Vec<String> {
-        let res = app.get("/problem/order").user(user).send().await;
+        let res = app.get("/v1/problem/order").user(user).send().await;
 
         assert_eq!(res.status(), StatusCode::OK);
 
@@ -1071,7 +1071,7 @@ mod order {
         let id = create_test_problem(app, &user).await;
 
         let res = app
-            .post("/problem/order")
+            .post("/v1/problem/order")
             .user(&user)
             .json(&json!({
                 "type": "INSERT",
@@ -1088,7 +1088,7 @@ mod order {
         let id2 = create_test_problem(app, &user).await;
 
         let res = app
-            .post("/problem/order")
+            .post("/v1/problem/order")
             .user(&user)
             .json(&json!({
                 "type": "INSERT",
@@ -1119,7 +1119,7 @@ mod order {
         let id2 = create_test_problem(app, &user).await;
 
         let res = app
-            .post("/problem/order")
+            .post("/v1/problem/order")
             .user(&user)
             .json(&json!({
                 "type": "INSERT",
@@ -1134,7 +1134,7 @@ mod order {
         assert_eq!(order, [id.to_string()]);
 
         let res = app
-            .post("/problem/order")
+            .post("/v1/problem/order")
             .user(&user)
             .json(&json!({
                 "type": "INSERT",
@@ -1167,7 +1167,7 @@ mod order {
         let id3 = create_test_problem(app, &user).await;
 
         let res = app
-            .post("/problem/order")
+            .post("/v1/problem/order")
             .user(&user)
             .json(&json!({
                 "type": "INSERT",
@@ -1179,7 +1179,7 @@ mod order {
         assert_eq!(res.status(), StatusCode::NO_CONTENT);
 
         let res = app
-            .post("/problem/order")
+            .post("/v1/problem/order")
             .user(&user)
             .json(&json!({
                 "type": "INSERT",
@@ -1194,7 +1194,7 @@ mod order {
         assert_eq!(order, [id.to_string(), id3.to_string()]);
 
         let res = app
-            .post("/problem/order")
+            .post("/v1/problem/order")
             .user(&user)
             .json(&json!({
                 "type": "INSERT",
@@ -1222,7 +1222,7 @@ mod order {
         let [id, id2] = create_test_problem2(app, &user).await;
 
         let res = app
-            .post("/problem/order")
+            .post("/v1/problem/order")
             .user(&user)
             .json(&json!({
                 "type": "DELETE",
@@ -1249,7 +1249,7 @@ mod order {
         let [id, id2, id3] = create_test_problem2(app, &user).await;
 
         let res = app
-            .post("/problem/order")
+            .post("/v1/problem/order")
             .user(&user)
             .json(&json!({
                 "type": "DELETE",
@@ -1276,7 +1276,7 @@ mod order {
         let [id, id2] = create_test_problem2(app, &user).await;
 
         let res = app
-            .post("/problem/order")
+            .post("/v1/problem/order")
             .user(&user)
             .json(&json!({
                 "type": "DELETE",
@@ -1303,7 +1303,7 @@ mod order {
         let [id1, id2, id3] = create_test_problem2(app, &user).await;
 
         let res = app
-            .post("/problem/order")
+            .post("/v1/problem/order")
             .user(&user)
             .json(&json!({
                 "type": "SWAP",
@@ -1331,7 +1331,7 @@ mod order {
         let [id1, id2, id3] = create_test_problem2(app, &user).await;
 
         let res = app
-            .post("/problem/order")
+            .post("/v1/problem/order")
             .user(&user)
             .json(&json!({
                 "type": "SWAP",
@@ -1359,7 +1359,7 @@ mod order {
         let [id1, id2, id3] = create_test_problem2(app, &user).await;
 
         let res = app
-            .post("/problem/order")
+            .post("/v1/problem/order")
             .user(&user)
             .json(&json!({
                 "type": "SWAP",
@@ -1387,7 +1387,7 @@ mod order {
         let [id1, id2, id3] = create_test_problem2(app, &user).await;
 
         let res = app
-            .post("/problem/order")
+            .post("/v1/problem/order")
             .user(&user)
             .json(&json!({
                 "type": "SWAP",
@@ -1415,7 +1415,7 @@ mod order {
         let [id1, id2, id3, id4] = create_test_problem2(app, &user).await;
 
         let res = app
-            .post("/problem/order")
+            .post("/v1/problem/order")
             .user(&user)
             .json(&json!({
                 "type": "SWAP",
@@ -1451,7 +1451,7 @@ mod order {
         let [id1, id2, id3, id4] = create_test_problem2(app, &user).await;
 
         let res = app
-            .post("/problem/order")
+            .post("/v1/problem/order")
             .user(&user)
             .json(&json!({
                 "type": "SWAP",
@@ -1490,7 +1490,7 @@ mod order {
         tracing::debug!("original order: {order:?}");
 
         let res = app
-            .post("/problem/order")
+            .post("/v1/problem/order")
             .user(&user)
             .json(&json!({
                 "type": "SWAP",
@@ -1521,7 +1521,7 @@ mod order {
         tracing::debug!("original order: {order:?}");
 
         let res = app
-            .post("/problem/order")
+            .post("/v1/problem/order")
             .user(&user)
             .json(&json!({
                 "type": "SWAP",
@@ -1543,7 +1543,7 @@ mod order {
         let app = get_cached_app().await;
         let user = iam::register_user().await;
 
-        let res = app.delete("/problem").user(&user).send().await;
+        let res = app.delete("/v1/problem").user(&user).send().await;
 
         assert_error!(res, error::NOT_ENOUGH_PERMISSIONS);
     }

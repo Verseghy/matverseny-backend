@@ -10,7 +10,7 @@ mod create {
         let user = app.register_user().await;
 
         let res = app
-            .post("/team/create")
+            .post("/v1/team/create")
             .user(&user)
             .json(&json!({
                 "name": uuid(),
@@ -28,7 +28,7 @@ mod create {
         let user = app.register_user().await;
 
         let res = app
-            .post("/team/create/")
+            .post("/v1/team/create/")
             .user(&user)
             .json(&json!({
                 "name": uuid(),
@@ -46,7 +46,7 @@ mod create {
         let user = app.register_user().await;
 
         let res = app
-            .post("/team/create")
+            .post("/v1/team/create")
             .user(&user)
             .json(&json!({
                 "name": "Test Team",
@@ -59,7 +59,7 @@ mod create {
         let user2 = app.register_user().await;
 
         let res = app
-            .post("/team/create")
+            .post("/v1/team/create")
             .user(&user2)
             .json(&json!({
                 "name": "Test Team",
@@ -77,7 +77,7 @@ mod create {
         let user = app.register_user().await;
 
         let res = app
-            .post("/team/create")
+            .post("/v1/team/create")
             .user(&user)
             .json(&json!({
                 "name": uuid(),
@@ -88,7 +88,7 @@ mod create {
         assert_eq!(res.status(), StatusCode::CREATED);
 
         let res = app
-            .post("/team/create")
+            .post("/v1/team/create")
             .user(&user)
             .json(&json!({
                 "name": uuid(),
@@ -106,7 +106,7 @@ mod create {
         let user = iam::register_user().await;
 
         let res = app
-            .post("/team/create")
+            .post("/v1/team/create")
             .user(&user)
             .json(&json!({
                 "name": "Test Team",
@@ -128,14 +128,14 @@ mod join {
         let owner = app.register_user().await;
         let team = app.create_team(&owner).await;
 
-        let mut socket = app.socket("/ws").start().await;
+        let mut socket = app.socket("/v1/ws").start().await;
         assert_team_info!(socket, owner);
 
         let join_code = team.get_code().await;
         let user = app.register_user().await;
 
         let res = app
-            .post("/team/join")
+            .post("/v1/team/join")
             .user(&user)
             .json(&json!({
                 "code": join_code,
@@ -170,7 +170,7 @@ mod join {
         let user = app.register_user().await;
 
         let res = app
-            .post("/team/join")
+            .post("/v1/team/join")
             .user(&user)
             .json(&json!({
                 "code": "AAAAAA",
@@ -192,7 +192,7 @@ mod join {
         let team2 = app.create_team(&user2).await;
 
         let res = app
-            .post("/team/join")
+            .post("/v1/team/join")
             .user(&user1)
             .json(&json!({
                 "code": team2.get_code().await,
@@ -215,7 +215,7 @@ mod join {
         let user = app.register_user().await;
 
         let res = app
-            .post("/team/join")
+            .post("/v1/team/join")
             .user(&user)
             .json(&json!({
                 "code": team.get_code().await,
@@ -240,10 +240,10 @@ mod leave {
         let member = app.register_user().await;
         member.join(&team.get_code().await).await;
 
-        let mut socket = app.socket("/ws").start().await;
+        let mut socket = app.socket("/v1/ws").start().await;
         assert_team_info!(socket, owner);
 
-        let res = app.post("/team/leave").user(&member).send().await;
+        let res = app.post("/v1/team/leave").user(&member).send().await;
         assert_eq!(res.status(), StatusCode::OK);
 
         let message = get_socket_message(socket.next().await);
@@ -270,7 +270,7 @@ mod leave {
 
         let user = app.register_user().await;
 
-        let res = app.post("/team/leave").user(&user).send().await;
+        let res = app.post("/v1/team/leave").user(&user).send().await;
 
         assert_error!(res, error::USER_NOT_IN_TEAM);
     }
@@ -287,7 +287,7 @@ mod leave {
 
         team.lock().await;
 
-        let res = app.post("/team/leave").user(&member).send().await;
+        let res = app.post("/v1/team/leave").user(&member).send().await;
         assert_error!(res, error::LOCKED_TEAM);
     }
 
@@ -298,7 +298,7 @@ mod leave {
         let owner = app.register_user().await;
         let _team = app.create_team(&owner).await;
 
-        let res = app.post("/team/leave").user(&owner).send().await;
+        let res = app.post("/v1/team/leave").user(&owner).send().await;
 
         assert_error!(res, error::OWNER_CANNOT_LEAVE);
     }
@@ -314,7 +314,12 @@ mod update {
         let user = app.register_user().await;
         let _team = app.create_team(&user).await;
 
-        let res = app.patch("/team").user(&user).json(&json!({})).send().await;
+        let res = app
+            .patch("/v1/team")
+            .user(&user)
+            .json(&json!({}))
+            .send()
+            .await;
 
         assert_eq!(res.status(), StatusCode::NO_CONTENT);
     }
@@ -330,7 +335,7 @@ mod update {
         member.join(&team.get_code().await).await;
 
         let res = app
-            .patch("/team")
+            .patch("/v1/team")
             .user(&member)
             .json(&json!({
                 "owner": member.id.strip_prefix("UserID-").unwrap(),
@@ -341,7 +346,7 @@ mod update {
         assert_error!(res, error::USER_NOT_OWNER);
 
         let res = app
-            .patch("/team")
+            .patch("/v1/team")
             .user(&member)
             .json(&json!({
                 "coowner": member.id,
@@ -360,7 +365,7 @@ mod update {
         let _team = app.create_team(&owner).await;
 
         let res = app
-            .patch("/team")
+            .patch("/v1/team")
             .user(&owner)
             .json(&json!({
                 "co_owner": uuid::Uuid::nil(),
@@ -371,7 +376,7 @@ mod update {
         assert_error!(res, error::NO_SUCH_MEMBER);
 
         let res = app
-            .patch("/team")
+            .patch("/v1/team")
             .user(&owner)
             .json(&json!({
                 "owner": uuid::Uuid::nil(),
@@ -392,7 +397,7 @@ mod update {
         let user = app.register_user().await;
 
         let res = app
-            .patch("/team")
+            .patch("/v1/team")
             .user(&owner)
             .json(&json!({
                 "co_owner": user.id.strip_prefix("UserID-").unwrap(),
@@ -403,7 +408,7 @@ mod update {
         assert_error!(res, error::NO_SUCH_MEMBER);
 
         let res = app
-            .patch("/team")
+            .patch("/v1/team")
             .user(&owner)
             .json(&json!({
                 "owner": user.id.strip_prefix("UserID-").unwrap(),
@@ -421,7 +426,7 @@ mod update {
         let user = app.register_user().await;
 
         let res = app
-            .patch("/team")
+            .patch("/v1/team")
             .user(&user)
             .json(&json!({
                 "name": "some cool team name",
@@ -440,7 +445,7 @@ mod update {
         let _team = app.create_team(&user).await;
 
         let res = app
-            .patch("/team")
+            .patch("/v1/team")
             .user(&user)
             .json(&json!({
                 "name": "best team name ever",
@@ -460,7 +465,7 @@ mod update {
         let _team = app.create_team(&user).await;
 
         let res = app
-            .patch("/team")
+            .patch("/v1/team")
             .user(&user)
             .json(&json!({
                 "locked": true,
@@ -471,7 +476,7 @@ mod update {
         assert_eq!(res.status(), StatusCode::NO_CONTENT);
 
         let res = app
-            .patch("/team")
+            .patch("/v1/team")
             .user(&user)
             .json(&json!({
                 "name": "the worst team name ever",
@@ -490,7 +495,7 @@ mod update {
         let _team = app.create_team(&user).await;
 
         let res = app
-            .patch("/team")
+            .patch("/v1/team")
             .user(&user)
             .json(&json!({
                 "locked": true,
@@ -501,7 +506,7 @@ mod update {
         assert_eq!(res.status(), StatusCode::NO_CONTENT);
 
         let res = app
-            .patch("/team")
+            .patch("/v1/team")
             .user(&user)
             .json(&json!({
                 "name": "the worst team name ever",
@@ -520,11 +525,11 @@ mod update {
         let user = app.register_user().await;
         let _team = app.create_team(&user).await;
 
-        let mut socket = app.socket("/ws").start().await;
+        let mut socket = app.socket("/v1/ws").start().await;
         assert_team_info!(socket, user);
 
         let res = app
-            .patch("/team")
+            .patch("/v1/team")
             .user(&user)
             .json(&json!({
                 "name": "new name",
@@ -559,13 +564,13 @@ mod update {
         let member = app.register_user().await;
         member.join(&team.get_code().await).await;
 
-        let mut socket = app.socket("/ws").start().await;
+        let mut socket = app.socket("/v1/ws").start().await;
         assert_team_info!(socket, owner);
 
         let member_uuid = member.id.strip_prefix("UserID-").unwrap();
 
         let res = app
-            .patch("/team")
+            .patch("/v1/team")
             .user(&owner)
             .json(&json!({
                 "owner": member_uuid,
@@ -600,13 +605,13 @@ mod update {
         let member = app.register_user().await;
         member.join(&team.get_code().await).await;
 
-        let mut socket = app.socket("/ws").start().await;
+        let mut socket = app.socket("/v1/ws").start().await;
         assert_team_info!(socket, owner);
 
         let member_id = member.id.strip_prefix("UserID-").unwrap();
 
         let res = app
-            .patch("/team")
+            .patch("/v1/team")
             .user(&owner)
             .json(&json!({
                 "co_owner": member_id,
@@ -639,11 +644,11 @@ mod update {
         let owner = app.register_user().await;
         let _team = app.create_team(&owner).await;
 
-        let mut socket = app.socket("/ws").start().await;
+        let mut socket = app.socket("/v1/ws").start().await;
         assert_team_info!(socket, owner);
 
         let res = app
-            .patch("/team")
+            .patch("/v1/team")
             .user(&owner)
             .json(&json!({ "co_owner": null }))
             .send()
@@ -676,7 +681,7 @@ mod disband {
         let app = get_cached_app().await;
         let user = app.register_user().await;
 
-        let res = app.post("/team/disband").user(&user).send().await;
+        let res = app.post("/v1/team/disband").user(&user).send().await;
 
         assert_error!(res, error::USER_NOT_IN_TEAM);
     }
@@ -691,7 +696,7 @@ mod disband {
         let member = app.register_user().await;
         member.join(&team.get_code().await).await;
 
-        let res = app.post("/team/disband").user(&member).send().await;
+        let res = app.post("/v1/team/disband").user(&member).send().await;
 
         assert_error!(res, error::USER_NOT_OWNER);
     }
@@ -705,7 +710,7 @@ mod disband {
 
         team.lock().await;
 
-        let res = app.post("/team/disband").user(&owner).send().await;
+        let res = app.post("/v1/team/disband").user(&owner).send().await;
 
         assert_error!(res, error::LOCKED_TEAM);
     }
@@ -723,17 +728,17 @@ mod disband {
         let member2 = app.register_user().await;
         member2.join(&team.get_code().await).await;
 
-        let mut socket1 = app.socket("/ws").start().await;
+        let mut socket1 = app.socket("/v1/ws").start().await;
         assert_team_info!(socket1, owner);
-        let mut socket2 = app.socket("/ws").start().await;
+        let mut socket2 = app.socket("/v1/ws").start().await;
         assert_team_info!(socket2, member1);
-        let mut socket3 = app.socket("/ws").start().await;
+        let mut socket3 = app.socket("/v1/ws").start().await;
         assert_team_info!(socket3, member2);
 
-        let res = app.post("/team/disband").user(&owner).send().await;
+        let res = app.post("/v1/team/disband").user(&owner).send().await;
         assert_eq!(res.status(), StatusCode::NO_CONTENT);
 
-        let res = app.post("/team/leave").user(&owner).send().await;
+        let res = app.post("/v1/team/leave").user(&owner).send().await;
         assert_error!(res, error::USER_NOT_IN_TEAM);
         let message = socket1.next().await;
         assert_close_frame!(
@@ -744,7 +749,7 @@ mod disband {
             },
         );
 
-        let res = app.post("/team/leave").user(&member1).send().await;
+        let res = app.post("/v1/team/leave").user(&member1).send().await;
         assert_error!(res, error::USER_NOT_IN_TEAM);
         let message = socket2.next().await;
         assert_close_frame!(
@@ -755,7 +760,7 @@ mod disband {
             },
         );
 
-        let res = app.post("/team/leave").user(&member2).send().await;
+        let res = app.post("/v1/team/leave").user(&member2).send().await;
         assert_error!(res, error::USER_NOT_IN_TEAM);
         let message = socket3.next().await;
         assert_close_frame!(
@@ -785,7 +790,7 @@ mod kick {
         member2.join(&team.get_code().await).await;
 
         let res = app
-            .post("/team/kick")
+            .post("/v1/team/kick")
             .user(&member1)
             .json(&json!({
                 "user": member2.id.strip_prefix("UserID-").unwrap(),
@@ -809,7 +814,7 @@ mod kick {
         team.lock().await;
 
         let res = app
-            .post("/team/kick")
+            .post("/v1/team/kick")
             .user(&owner)
             .json(&json!({
                 "user": member.id.strip_prefix("UserID-").unwrap(),
@@ -831,7 +836,7 @@ mod kick {
         member.join(&team.get_code().await).await;
 
         let res = app
-            .patch("/team")
+            .patch("/v1/team")
             .user(&owner)
             .json(&json!({
                 "co_owner": member.id.strip_prefix("UserID-").unwrap(),
@@ -842,7 +847,7 @@ mod kick {
         assert_eq!(res.status(), StatusCode::NO_CONTENT);
 
         let res = app
-            .post("/team/kick")
+            .post("/v1/team/kick")
             .user(&member)
             .json(&json!({
                 "user": owner.id.strip_prefix("UserID-").unwrap(),
@@ -864,7 +869,7 @@ mod kick {
         member.join(&team.get_code().await).await;
 
         let res = app
-            .patch("/team")
+            .patch("/v1/team")
             .user(&owner)
             .json(&json!({
                 "co_owner": member.id.strip_prefix("UserID-").unwrap(),
@@ -875,7 +880,7 @@ mod kick {
         assert_eq!(res.status(), StatusCode::NO_CONTENT);
 
         let res = app
-            .post("/team/kick")
+            .post("/v1/team/kick")
             .user(&member)
             .json(&json!({
                 "user": member.id.strip_prefix("UserID-").unwrap(),
@@ -896,7 +901,7 @@ mod kick {
         let member = app.register_user().await;
 
         let res = app
-            .post("/team/kick")
+            .post("/v1/team/kick")
             .user(&owner)
             .json(&json!({
                 "user": member.id.strip_prefix("UserID-").unwrap(),
@@ -915,7 +920,7 @@ mod kick {
         let _team = app.create_team(&owner).await;
 
         let res = app
-            .post("/team/kick")
+            .post("/v1/team/kick")
             .user(&owner)
             .json(&json!({
                 "user": uuid::Uuid::nil(),
@@ -936,13 +941,13 @@ mod kick {
         let member = app.register_user().await;
         member.join(&team.get_code().await).await;
 
-        let mut socket1 = app.socket("/ws").start().await;
+        let mut socket1 = app.socket("/v1/ws").start().await;
         assert_team_info!(socket1, owner);
-        let mut socket2 = app.socket("/ws").start().await;
+        let mut socket2 = app.socket("/v1/ws").start().await;
         assert_team_info!(socket2, member);
 
         let res = app
-            .post("/team/kick")
+            .post("/v1/team/kick")
             .user(&owner)
             .json(&json!({
                 "user": member.id.strip_prefix("UserID-").unwrap(),
@@ -987,7 +992,7 @@ mod kick {
         member.join(&team.get_code().await).await;
 
         let res = app
-            .patch("/team")
+            .patch("/v1/team")
             .user(&owner)
             .json(&json!({
                 "co_owner": member.id.strip_prefix("UserID-").unwrap(),
@@ -997,13 +1002,13 @@ mod kick {
 
         assert_eq!(res.status(), StatusCode::NO_CONTENT);
 
-        let mut socket1 = app.socket("/ws").start().await;
+        let mut socket1 = app.socket("/v1/ws").start().await;
         assert_team_info!(socket1, owner);
-        let mut socket2 = app.socket("/ws").start().await;
+        let mut socket2 = app.socket("/v1/ws").start().await;
         assert_team_info!(socket2, member);
 
         let res = app
-            .post("/team/kick")
+            .post("/v1/team/kick")
             .user(&owner)
             .json(&json!({
                 "user": member.id.strip_prefix("UserID-").unwrap(),
@@ -1051,7 +1056,7 @@ mod kick {
         member.join(&team.get_code().await).await;
 
         let res = app
-            .patch("/team")
+            .patch("/v1/team")
             .user(&owner)
             .json(&json!({
                 "co_owner": coowner.id.strip_prefix("UserID-").unwrap(),
@@ -1061,15 +1066,15 @@ mod kick {
 
         assert_eq!(res.status(), StatusCode::NO_CONTENT);
 
-        let mut socket1 = app.socket("/ws").start().await;
+        let mut socket1 = app.socket("/v1/ws").start().await;
         assert_team_info!(socket1, owner);
-        let mut socket2 = app.socket("/ws").start().await;
+        let mut socket2 = app.socket("/v1/ws").start().await;
         assert_team_info!(socket2, coowner);
-        let mut socket3 = app.socket("/ws").start().await;
+        let mut socket3 = app.socket("/v1/ws").start().await;
         assert_team_info!(socket3, member);
 
         let res = app
-            .post("/team/kick")
+            .post("/v1/team/kick")
             .user(&coowner)
             .json(&json!({
                 "user": member.id.strip_prefix("UserID-").unwrap(),
@@ -1128,7 +1133,7 @@ mod code {
         let member = app.register_user().await;
         member.join(&team.get_code().await).await;
 
-        let res = app.post("/team/code").user(&member).send().await;
+        let res = app.post("/v1/team/code").user(&member).send().await;
 
         assert_error!(res, error::USER_NOT_COOWNER);
     }
@@ -1142,7 +1147,7 @@ mod code {
 
         team.lock().await;
 
-        let res = app.post("/team/code").user(&owner).send().await;
+        let res = app.post("/v1/team/code").user(&owner).send().await;
 
         assert_error!(res, error::LOCKED_TEAM);
     }
@@ -1154,10 +1159,10 @@ mod code {
         let owner = app.register_user().await;
         let _team = app.create_team(&owner).await;
 
-        let mut socket = app.socket("/ws").start().await;
+        let mut socket = app.socket("/v1/ws").start().await;
         assert_team_info!(socket, owner);
 
-        let res = app.post("/team/code").user(&owner).send().await;
+        let res = app.post("/v1/team/code").user(&owner).send().await;
 
         assert_eq!(res.status(), StatusCode::NO_CONTENT);
 
@@ -1186,7 +1191,7 @@ mod get {
         let app = get_cached_app().await;
         let user = app.register_user().await;
 
-        let res = app.get("/team").user(&user).send().await;
+        let res = app.get("/v1/team").user(&user).send().await;
 
         assert_error!(res, error::NOT_ENOUGH_PERMISSIONS);
     }
@@ -1203,7 +1208,7 @@ mod get {
         let admin = iam::register_user().await;
         iam::make_admin(&admin).await;
 
-        let res = app.get("/team").user(&admin).send().await;
+        let res = app.get("/v1/team").user(&admin).send().await;
 
         assert!(res.status().is_success());
 

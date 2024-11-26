@@ -21,7 +21,7 @@ impl User {
     pub async fn join(&self, code: &str) {
         let res = self
             .app
-            .post("/team/join")
+            .post("/v1/team/join")
             .user(self)
             .json(&json!({
                 "code": code,

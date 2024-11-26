@@ -115,7 +115,7 @@ impl App {
         let user = iam::register_user().await;
 
         let res = self
-            .post("/register")
+            .post("/v1/register")
             .user(&user)
             .json(&json!({
                 "school": "Test School",
@@ -136,7 +136,7 @@ impl App {
         let number = TEAM_COUNT.fetch_add(1, Ordering::Relaxed);
 
         let res = self
-            .post("/team/create")
+            .post("/v1/team/create")
             .user(owner)
             .json(&json!({
                 "name": format!("Team-{}", number)

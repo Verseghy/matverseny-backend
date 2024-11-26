@@ -4,7 +4,7 @@ use test_utils::prelude::*;
 async fn no_claims() {
     let app = get_cached_app().await;
 
-    let res = app.post("/register").json(&json!({})).send().await;
+    let res = app.post("/v1/register").json(&json!({})).send().await;
 
     assert_error!(res, error::COULD_NOT_GET_CLAIMS);
 }
@@ -14,7 +14,7 @@ async fn not_bearer_token() {
     let app = get_cached_app().await;
 
     let res = app
-        .post("/register")
+        .post("/v1/register")
         .header(header::AUTHORIZATION, "asd")
         .json(&json!({}))
         .send()
@@ -28,7 +28,7 @@ async fn invalid_claims() {
     let app = get_cached_app().await;
 
     let res = app
-        .post("/register")
+        .post("/v1/register")
         .header(header::AUTHORIZATION, "Bearer test.test.test")
         .json(&json!({}))
         .send()
@@ -49,7 +49,7 @@ async fn success() {
     let user = iam::register_user().await;
 
     let res = app
-        .post("/register")
+        .post("/v1/register")
         .user(&user)
         .json(&json!({
             "school": "Test School",
@@ -67,7 +67,7 @@ async fn already_registered() {
     let user = iam::register_user().await;
 
     let res = app
-        .post("/register")
+        .post("/v1/register")
         .user(&user)
         .json(&json!({
             "school": "Test School",
@@ -79,7 +79,7 @@ async fn already_registered() {
     assert_eq!(res.status(), StatusCode::CREATED);
 
     let res = app
-        .post("/register")
+        .post("/v1/register")
         .user(&user)
         .json(&json!({
             "school": "Test School",
