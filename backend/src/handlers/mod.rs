@@ -33,8 +33,8 @@ pub fn routes<S: StateTrait>(state: S) -> Router<S> {
                     ),
                 ),
         )
-        .route("/liveness", get(liveness::<S>))
-        .route("/readiness", get(|| async {}))
+        .route("/livez", get(liveness::<S>))
+        .route("/readyz", get(|| async {}))
 }
 
 async fn liveness<S: StateTrait>(State(state): State<S>) -> StatusCode {
