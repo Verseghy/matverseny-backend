@@ -65,3 +65,6 @@ type_complexity = "allow"
 [profile.release]
 strip = true
 lto = true
+
+[patch.crates-io]
+sea-orm = { git = "https://github.com/TwoDCube/sea-orm.git", branch = "zoltanszepesi/fix-schema-quotes" }
