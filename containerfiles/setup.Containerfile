@@ -1,7 +1,9 @@
 FROM registry.access.redhat.com/ubi9/ubi as chef
 
+ARG RUST_VERSION
+
 RUN curl --proto '=https' --tlsv1.3 -sSf https://sh.rustup.rs > rustup-init.sh && \
-    sh rustup-init.sh --default-toolchain "1.79" --profile minimal -y && \
+    sh rustup-init.sh --default-toolchain "$RUST_VERSION" --profile minimal -y && \
     source "$HOME/.bashrc" && \
     dnf install clang -y
 
