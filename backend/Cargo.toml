@@ -23,8 +23,8 @@ sea-orm.workspace = true
 serde_json.workspace = true
 validator = { version = "0.19.0", features = ["derive"] }
 jsonwebtoken = "9.3.0"
-rand = "0.8.5"
 futures.workspace = true
+rand.workspace = true
 rand_chacha = "0.3.1"
 serde_with = "3.11.0"
 tokio-tungstenite.workspace = true
