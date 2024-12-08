@@ -21,6 +21,7 @@ uuid = { version = "1.11.0", features = ["v4", "fast-rng", "serde"] }
 libiam = { git = "https://github.com/Verseghy/iam", package = "libiam" }
 dotenvy = "0.15.7"
 matverseny-backend = { path = "./backend" }
+rand = "0.8.5"
 test-utils = { path = "./test-utils" }
 tracing = "0.1.40"
 tracing-subscriber = { version = "0.3.18", features = ["env-filter"] }
