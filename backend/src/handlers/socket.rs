@@ -22,7 +22,7 @@ use futures::{Stream, StreamExt};
 use sea_orm::{ColumnTrait, Condition, EntityTrait, QueryFilter, QueryOrder, QuerySelect};
 use serde::{Deserialize, Serialize};
 use std::{borrow::Cow, error::Error as _, mem::MaybeUninit, pin::pin, time::Duration};
-use tokio::time::{self, sleep, timeout};
+use tokio::time::{self, sleep};
 use tokio_tungstenite::tungstenite::error::Error as TungsteniteError;
 use tracing::Instrument;
 use uuid::Uuid;
@@ -193,7 +193,7 @@ async fn socket_handler<S: StateTrait>(state: S, socket: &mut WebSocket) -> Resu
                         break Err(error::WEBSOCKET_ERROR)
                     }
                 }
-                Ok(Some(event)) = timeout(Duration::from_secs(5), consumer.next()), if has_sent_initial_problems => {
+                Some(event) = consumer.next() => {
                     let event_text = serde_json::to_string(&event).unwrap();
 
                     if matches!(event, Event::DisbandTeam)
