@@ -2788,8 +2788,7 @@ dependencies = [
 [[package]]
 name = "sea-orm"
 version = "1.1.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d5680a8b686985116607ef5f5af2b1f9e1cc2c228330e93101816a0baa279afa"
+source = "git+https://github.com/TwoDCube/sea-orm.git?branch=zoltanszepesi/fix-schema-quotes#7d0b7696ff76001ea489dd74cb62dd8f4d01e8f5"
 dependencies = [
  "async-stream",
  "async-trait",
@@ -2829,8 +2828,7 @@ dependencies = [
 [[package]]
 name = "sea-orm-macros"
 version = "1.1.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3a239e3bb1b566ad4ec2654d0d193d6ceddfd733487edc9c21a64d214c773910"
+source = "git+https://github.com/TwoDCube/sea-orm.git?branch=zoltanszepesi/fix-schema-quotes#7d0b7696ff76001ea489dd74cb62dd8f4d01e8f5"
 dependencies = [
  "heck 0.4.1",
  "proc-macro2",

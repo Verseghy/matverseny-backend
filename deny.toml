@@ -40,4 +40,7 @@ workspace-dependencies.duplicates = "deny"
 [sources]
 unknown-registry = "deny"
 unknown-git = "deny"
-allow-git = ["https://github.com/Verseghy/iam"]
+allow-git = [
+    "https://github.com/Verseghy/iam",
+    "https://github.com/TwoDCube/sea-orm",
+]
