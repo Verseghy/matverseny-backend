@@ -3,16 +3,23 @@ use kube::{
     api::{ObjectMeta, PostParams},
     Api, Client,
 };
-use libiam::testing::{actions::assign_action_to_app, apps::create_app, Database};
+use libiam::{
+    testing::{
+        actions::{assign_action_to_app, assign_action_to_user, ensure_action},
+        apps::create_app,
+        Database,
+    },
+    Iam, User,
+};
+use rand::{
+    distributions::{Alphanumeric, DistString},
+    rngs::OsRng,
+};
 use std::{collections::BTreeMap, env};
 
 const NAME: &str = "matverseny-app";
 
-#[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let database_url = env::var("DATABASE_URL").expect("DATABASE_URL is not set");
-
-    let client = Client::try_default().await?;
+async fn iam_secret(client: Client, database: Database) -> Result<(), Box<dyn std::error::Error>> {
     let secrets: Api<Secret> = Api::default_namespaced(client);
 
     let secret = secrets.get_opt(NAME).await?;
@@ -21,8 +28,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         println!("Secret already exists. Exiting...");
         return Ok(());
     }
-
-    let database = Database::connect(&database_url).await;
 
     let (id, app_secret) = create_app(&database, "matverseny").await;
 
@@ -46,6 +51,69 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             },
         )
         .await?;
+
+    Ok(())
+}
+
+async fn admin_user(client: Client, database: Database) -> Result<(), Box<dyn std::error::Error>> {
+    let secrets: Api<Secret> = Api::default_namespaced(client);
+
+    let secret = secrets.get_opt("matverseny-admin-user").await?;
+
+    if secret.is_some() {
+        println!("Secret already exists. Exiting...");
+        return Ok(());
+    }
+
+    let iam_url = env::var("IAM_URL").expect("IAM_URL is not set");
+
+    let iam = Iam::new(&iam_url);
+    let admin_password = Alphanumeric.sample_string(&mut OsRng, 64);
+    let user = User::register(&iam, "admin", "matverseny@admin.admin", &admin_password).await?;
+
+    ensure_action(&database, "mathcompetition.admin", true).await;
+    ensure_action(&database, "mathcompetition.problems", true).await;
+    assign_action_to_user(&database, "iam.user.list", &user.id().to_string()).await;
+    assign_action_to_user(&database, "iam.user.get", &user.id().to_string()).await;
+    assign_action_to_user(&database, "mathcompetition.admin", &user.id().to_string()).await;
+    assign_action_to_user(
+        &database,
+        "mathcompetition.problems",
+        &user.id().to_string(),
+    )
+    .await;
+
+    secrets
+        .create(
+            &PostParams::default(),
+            &Secret {
+                metadata: ObjectMeta {
+                    name: Some("matverseny-admin-user".to_owned()),
+                    ..Default::default()
+                },
+                string_data: Some({
+                    let mut map = BTreeMap::new();
+                    map.insert("email".to_owned(), "matverseny@admin.admin".to_owned());
+                    map.insert("password".to_owned(), admin_password);
+                    map
+                }),
+                ..Default::default()
+            },
+        )
+        .await?;
+
+    Ok(())
+}
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let database_url = env::var("DATABASE_URL").expect("DATABASE_URL is not set");
+    let database = Database::connect(&database_url).await;
+
+    let client = Client::try_default().await?;
+
+    iam_secret(client.clone(), database.clone()).await?;
+    admin_user(client, database).await?;
 
     Ok(())
 }
