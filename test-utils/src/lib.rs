@@ -15,18 +15,18 @@ pub use macros::macro_support;
 use matverseny_backend::State;
 use request::*;
 use reqwest::Client;
-use serde_json::{json, Value};
+use serde_json::{Value, json};
 use std::{
     net::{Ipv4Addr, SocketAddr},
     sync::{
-        atomic::{AtomicU64, Ordering},
         Arc,
+        atomic::{AtomicU64, Ordering},
     },
 };
 use team::Team;
 use tokio::{
     net::TcpListener,
-    sync::{oneshot, OnceCell},
+    sync::{OnceCell, oneshot},
 };
 use tokio_tungstenite::tungstenite::Message;
 use user::*;

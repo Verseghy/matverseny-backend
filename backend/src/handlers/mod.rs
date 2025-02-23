@@ -7,11 +7,11 @@ mod team;
 
 use crate::{middlewares::PermissionsLayer, state::StateTrait};
 use axum::{
+    Router,
     extract::State,
     handler::Handler,
     http::StatusCode,
     routing::{get, post},
-    Router,
 };
 use sea_orm::ConnectionTrait;
 

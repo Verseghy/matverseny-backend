@@ -1,9 +1,9 @@
 use crate::{
+    StateTrait,
     error::{self, Result},
     extractors::Json,
     handlers::socket::Event,
     utils::{set_option, topics},
-    StateTrait,
 };
 use axum::{extract::State, http::StatusCode};
 use entity::problems;

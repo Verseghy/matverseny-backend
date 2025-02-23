@@ -1,32 +1,33 @@
 [workspace]
 members = ["backend", "entity", "migration", "macros", "cmds", "test-utils"]
 default-members = ["backend", "migration", "cmds"]
-resolver = "2"
+resolver = "3"
 
 [workspace.package]
 version = "0.1.0"
-edition = "2021"
+edition = "2024"
+rust-version = "1.85"
 publish = false
 license-file = "LICENSE"
 
 [workspace.dependencies]
-const_format = "0.2.33"
+const_format = "0.2.34"
 entity = { path = "./entity" }
 macros = { path = "./macros" }
-sea-orm = { version = "1.1.1", default-features = false, features = ["runtime-tokio-rustls", "sqlx-postgres", "with-uuid", "with-chrono"] }
-serde = { version = "1.0.215", features = ["derive"] }
-serde_json = "1.0.133"
-tokio = { version = "1.41.1", features = ["rt-multi-thread", "parking_lot", "macros"] }
-uuid = { version = "1.11.0", features = ["v4", "fast-rng", "serde"] }
+sea-orm = { version = "1.1.5", default-features = false, features = ["runtime-tokio-rustls", "sqlx-postgres", "with-uuid", "with-chrono"] }
+serde = { version = "1.0.218", features = ["derive"] }
+serde_json = "1.0.139"
+tokio = { version = "1.43.0", features = ["rt-multi-thread", "parking_lot", "macros"] }
+uuid = { version = "1.14.0", features = ["v4", "fast-rng", "serde"] }
 libiam = { git = "https://github.com/Verseghy/iam", package = "libiam" }
 dotenvy = "0.15.7"
 matverseny-backend = { path = "./backend" }
-rand = "0.8.5"
+rand = "0.9.0"
 test-utils = { path = "./test-utils" }
-tracing = "0.1.40"
-tracing-subscriber = { version = "0.3.18", features = ["env-filter"] }
-tokio-tungstenite = "0.24.0"
-reqwest = { version = "0.12.9", default-features = false, features = ["json", "rustls-tls"] }
+tracing = "0.1.41"
+tracing-subscriber = { version = "0.3.19", features = ["env-filter"] }
+tokio-tungstenite = "0.26.2"
+reqwest = { version = "0.12.12", default-features = false, features = ["json", "rustls-tls"] }
 futures = "0.3.31"
 
 [workspace.lints.rust]
@@ -66,6 +67,3 @@ type_complexity = "allow"
 [profile.release]
 strip = true
 lto = true
-
-[patch.crates-io]
-sea-orm = { git = "https://github.com/TwoDCube/sea-orm.git", branch = "zoltanszepesi/fix-schema-quotes" }

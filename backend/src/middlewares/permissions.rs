@@ -5,16 +5,16 @@ use std::{
 };
 
 use axum::{
-    http::{header::AUTHORIZATION, Request},
+    http::{Request, header::AUTHORIZATION},
     response::{IntoResponse, Response},
 };
-use futures::{future::BoxFuture, Future};
+use futures::{Future, future::BoxFuture};
 use libiam::jwt::Claims;
 use serde::Deserialize;
 use serde_json::json;
 use tower::{Layer, Service};
 
-use crate::{error, StateTrait};
+use crate::{StateTrait, error};
 
 type PermissionList = &'static [&'static str];
 

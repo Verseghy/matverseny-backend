@@ -1,9 +1,9 @@
 use crate::{
+    StateTrait,
     error::{self, DatabaseError, Result},
     extractors::UserID,
     handlers::socket::Event,
     utils::{self, topics},
-    StateTrait,
 };
 use axum::{extract::State, http::StatusCode};
 use entity::teams::{self, constrains::*};

@@ -1,10 +1,10 @@
 use crate::UserLike;
-use libiam::{testing::actions::assign_action_to_user, Iam};
+use libiam::{Iam, testing::actions::assign_action_to_user};
 use std::{
     env,
     sync::{
-        atomic::{AtomicU64, Ordering},
         LazyLock, OnceLock,
+        atomic::{AtomicU64, Ordering},
     },
 };
 use uuid::Uuid;

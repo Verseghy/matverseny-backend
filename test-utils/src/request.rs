@@ -1,4 +1,4 @@
-use crate::{response::TestResponse, UserLike};
+use crate::{UserLike, response::TestResponse};
 use reqwest::header::{HeaderName, HeaderValue};
 use serde::Serialize;
 use tokio::net::TcpStream;

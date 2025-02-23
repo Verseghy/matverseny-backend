@@ -28,7 +28,7 @@ macro_rules! assert_team_info {
         use $crate::macro_support::{futures::{StreamExt, SinkExt}, tokio_tungstenite::tungstenite::{Message}};
 
         $socket
-            .send(Message::Text(json!({"token": $user.access_token().to_owned()}).to_string()))
+            .send(Message::Text(json!({"token": $user.access_token().to_owned()}).to_string().into()))
             .await
             .unwrap();
         let info = $crate::get_socket_message((&mut $socket).next().await);
@@ -54,7 +54,7 @@ macro_rules! enable_logging {
         use $crate::macro_support::{
             tracing::level_filters::LevelFilter,
             tracing_subscriber::{
-                self, layer::SubscriberExt, util::SubscriberInitExt, EnvFilter, Layer,
+                self, EnvFilter, Layer, layer::SubscriberExt, util::SubscriberInitExt,
             },
         };
 
@@ -85,7 +85,7 @@ macro_rules! assert_close_frame {
         if let Some(Ok(Message::Close(Some(frame)))) = $expr {
             assert_eq!(frame.code, CloseCode::$code);
 
-            let reason = frame.reason.into_owned();
+            let reason = frame.reason.to_owned();
             let reason: serde_json::Value = serde_json::from_str(&reason).expect("invalid json");
 
             assert_json_eq!(reason, serde_json::json!({$($json)+}));
@@ -101,7 +101,7 @@ macro_rules! assert_close_frame_error {
     ($msg:expr, $error:expr) => {{
         use $crate::macro_support::{
             serde_json,
-            tokio_tungstenite::tungstenite::{protocol::frame::coding::CloseCode, Message},
+            tokio_tungstenite::tungstenite::{Message, protocol::frame::coding::CloseCode},
         };
 
         let Some(Ok(Message::Close(Some(frame)))) = $msg else {

@@ -1,8 +1,8 @@
 use crate::{
+    StateTrait,
     error::{self, Result},
     handlers::socket::Event,
     utils::topics,
-    StateTrait,
 };
 use axum::{
     extract::{Path, State},

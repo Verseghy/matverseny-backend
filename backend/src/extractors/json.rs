@@ -1,15 +1,13 @@
-use crate::{error, Error};
+use crate::{Error, error};
 use axum::{
-    async_trait,
-    extract::{rejection::JsonRejection, FromRequest, Request},
+    extract::{FromRequest, Request, rejection::JsonRejection},
     response::{IntoResponse, Response},
 };
-use serde::{de::DeserializeOwned, Serialize};
+use serde::{Serialize, de::DeserializeOwned};
 use validator::Validate;
 
 pub struct Json<T>(pub T);
 
-#[async_trait]
 impl<T, S> FromRequest<S> for Json<T>
 where
     T: DeserializeOwned,
@@ -43,7 +41,6 @@ where
 
 pub struct ValidatedJson<T>(pub T);
 
-#[async_trait]
 impl<T, S> FromRequest<S> for ValidatedJson<T>
 where
     T: DeserializeOwned + Validate,

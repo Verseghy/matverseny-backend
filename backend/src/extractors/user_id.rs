@@ -1,5 +1,5 @@
 use crate::error::{self, Error};
-use axum::{async_trait, extract::FromRequestParts, http::request::Parts};
+use axum::{extract::FromRequestParts, http::request::Parts};
 use libiam::jwt::Claims;
 use std::ops::Deref;
 use uuid::Uuid;
@@ -20,7 +20,6 @@ impl UserID {
     }
 }
 
-#[async_trait]
 impl<S> FromRequestParts<S> for UserID
 where
     S: Send + Sync,

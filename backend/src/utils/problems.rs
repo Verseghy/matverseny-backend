@@ -13,7 +13,7 @@ use std::{
     task::{Context, Poll},
 };
 use tokio::{
-    sync::{broadcast, mpsc, RwLock},
+    sync::{RwLock, broadcast, mpsc},
     task,
 };
 use uuid::Uuid;

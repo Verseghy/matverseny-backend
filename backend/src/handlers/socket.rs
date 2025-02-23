@@ -1,17 +1,15 @@
 use crate::{
-    error,
+    Result, StateTrait, error,
     extractors::UserID,
-    utils::{topics, ProblemStream},
-    Result, StateTrait,
+    utils::{ProblemStream, topics},
 };
 use axum::{
     extract::{
-        ws::{close_code, CloseFrame, Message, WebSocket, WebSocketUpgrade},
         State,
+        ws::{CloseFrame, Message, WebSocket, WebSocketUpgrade, close_code},
     },
     response::IntoResponse,
 };
-use bytes::Buf;
 use chrono::{DateTime, Utc};
 use entity::times;
 use entity::{
@@ -21,7 +19,7 @@ use entity::{
 use futures::{Stream, StreamExt};
 use sea_orm::{ColumnTrait, Condition, EntityTrait, QueryFilter, QueryOrder, QuerySelect};
 use serde::{Deserialize, Serialize};
-use std::{borrow::Cow, error::Error as _, mem::MaybeUninit, pin::pin, time::Duration};
+use std::{error::Error as _, mem::MaybeUninit, pin::pin, time::Duration};
 use tokio::time::{self, sleep};
 use tokio_tungstenite::tungstenite::error::Error as TungsteniteError;
 use tracing::Instrument;
@@ -104,16 +102,11 @@ pub async fn ws_handler<S: StateTrait>(
 ) -> impl IntoResponse {
     ws.on_upgrade(|mut socket: WebSocket| async move {
         if let Err(err) = socket_handler(state, &mut socket).await {
-            let error_bytes = err.to_bytes();
-            let error_text = std::str::from_utf8(error_bytes.chunk()).unwrap();
-
             // it's okay to ignore the error here
             let _ = socket
                 .send(Message::Close(Some(CloseFrame {
                     code: close_code::ERROR,
-                    // TODO: we copy here because the `reason` field neeeds static life time, but
-                    // actually it is okay to drop the value after the future finishes
-                    reason: Cow::Owned(error_text.to_owned()),
+                    reason: err.to_bytes().try_into().unwrap(),
                 })))
                 .await;
 
@@ -141,7 +134,8 @@ async fn socket_handler<S: StateTrait>(state: S, socket: &mut WebSocket) -> Resu
                     locked: team.locked,
                     members,
                 })
-                .unwrap(),
+                .unwrap()
+                .into(),
             ))
             .await
             .map_err(|err| {
@@ -170,7 +164,7 @@ async fn socket_handler<S: StateTrait>(state: S, socket: &mut WebSocket) -> Resu
 
                     while let Some(event) = initial_problems.next().await {
                         let payload = serde_json::to_string(&event).unwrap();
-                        if let Err(err) = socket.send(Message::Text(payload)).await {
+                        if let Err(err) = socket.send(Message::Text(payload.into())).await {
                             let tungstenite_error = err.source().unwrap().downcast_ref::<TungsteniteError>().unwrap();
                             error!("websocket error: {:?}", tungstenite_error);
                             return Err(error::WEBSOCKET_ERROR)
@@ -187,7 +181,7 @@ async fn socket_handler<S: StateTrait>(state: S, socket: &mut WebSocket) -> Resu
                     };
 
                     let payload = serde_json::to_string(&problems_event).unwrap();
-                    if let Err(err) = socket.send(Message::Text(payload)).await {
+                    if let Err(err) = socket.send(Message::Text(payload.into())).await {
                         let tungstenite_error = err.source().unwrap().downcast_ref::<TungsteniteError>().unwrap();
                         error!("websocket error: {:?}", tungstenite_error);
                         break Err(error::WEBSOCKET_ERROR)
@@ -201,7 +195,7 @@ async fn socket_handler<S: StateTrait>(state: S, socket: &mut WebSocket) -> Resu
                     {
                         let _ = socket.send(Message::Close(Some(CloseFrame {
                             code: close_code::NORMAL,
-                            reason: Cow::Owned(event_text),
+                            reason: event_text.into(),
                         }))).await;
 
                         socket.next().await;
@@ -209,7 +203,7 @@ async fn socket_handler<S: StateTrait>(state: S, socket: &mut WebSocket) -> Resu
                         return Ok(())
                     }
 
-                    if let Err(err) = socket.send(Message::Text(event_text)).await {
+                    if let Err(err) = socket.send(Message::Text(event_text.into())).await {
                         let tungstenite_error = err.source().unwrap().downcast_ref::<TungsteniteError>().unwrap();
                         error!("websocket error: {:?}", tungstenite_error);
                         break Err(error::WEBSOCKET_ERROR)
@@ -259,7 +253,8 @@ async fn send_times<S: StateTrait>(state: &S, socket: &mut WebSocket) -> Result<
                 start_time: Some(start_time.time),
                 end_time: Some(end_time.time),
             })
-            .unwrap(),
+            .unwrap()
+            .into(),
         ))
         .await
         .map_err(|err| {
@@ -289,7 +284,7 @@ async fn send_answers<S: StateTrait>(
             solution: answer.solution,
         })
         .unwrap();
-        if let Err(err) = socket.send(Message::Text(payload)).await {
+        if let Err(err) = socket.send(Message::Text(payload.into())).await {
             let tungstenite_error = err
                 .source()
                 .unwrap()

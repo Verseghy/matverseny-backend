@@ -6,8 +6,8 @@ mod m20230107_191407_create_problems_order_table;
 mod m20230304_232047_create_times_table;
 mod m20230312_051936_create_solutions_history;
 
-use sea_orm_migration::prelude::*;
 pub use sea_orm_migration::MigratorTrait;
+use sea_orm_migration::prelude::*;
 
 pub struct Migrator;
 
