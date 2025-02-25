@@ -7,7 +7,7 @@ use std::{
 };
 use tokio::net::TcpListener;
 use tracing::{error, level_filters::LevelFilter};
-use tracing_subscriber::{fmt, layer::SubscriberExt, util::SubscriberInitExt, EnvFilter, Layer};
+use tracing_subscriber::{EnvFilter, Layer, fmt, layer::SubscriberExt, util::SubscriberInitExt};
 
 pub async fn login() -> anyhow::Result<App> {
     let iam_url = env::var("IAM_URL").inspect_err(|_| error!("IAM_URL is not set"))?;

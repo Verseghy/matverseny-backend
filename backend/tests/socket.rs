@@ -1,8 +1,7 @@
-use test_utils::prelude::*;
-
-use std::time::Duration;
-
+use bytes::Bytes;
 use chrono::Utc;
+use std::time::Duration;
+use test_utils::prelude::*;
 use tokio_tungstenite::tungstenite::Message;
 use uuid::Uuid;
 
@@ -24,7 +23,7 @@ async fn wrong_token() {
     let mut socket = app.socket("/v1/ws").start().await;
 
     socket
-        .send(Message::Text("some random invalid token".to_owned()))
+        .send(Message::Text("some random invalid token".to_owned().into()))
         .await
         .unwrap();
     assert_close_frame_error!(socket.next().await, error::JWT_INVALID_TOKEN);
@@ -38,7 +37,7 @@ async fn wrong_message_type() {
     let mut socket = app.socket("/v1/ws").start().await;
 
     socket
-        .send(Message::Binary(Vec::from("asd".as_bytes())))
+        .send(Message::Binary(Bytes::from("asd".as_bytes())))
         .await
         .unwrap();
     assert_close_frame_error!(socket.next().await, error::WEBSOCKET_WRONG_MESSAGE_TYPE);
@@ -54,7 +53,9 @@ async fn user_not_registered() {
 
     socket
         .send(Message::Text(
-            json!({"token": user.access_token().to_owned()}).to_string(),
+            json!({"token": user.access_token().to_owned()})
+                .to_string()
+                .into(),
         ))
         .await
         .unwrap();
@@ -71,7 +72,9 @@ async fn no_team() {
 
     socket
         .send(Message::Text(
-            json!({"token": user.access_token().to_owned()}).to_string(),
+            json!({"token": user.access_token().to_owned()})
+                .to_string()
+                .into(),
         ))
         .await
         .unwrap();
@@ -89,7 +92,9 @@ async fn team_info() {
     let mut socket = app.socket("/v1/ws").start().await;
     socket
         .send(Message::Text(
-            json!({"token": user.access_token().to_owned()}).to_string(),
+            json!({"token": user.access_token().to_owned()})
+                .to_string()
+                .into(),
         ))
         .await
         .unwrap();
@@ -178,7 +183,9 @@ async fn dont_send_problems_before_start() {
 
     socket
         .send(Message::Text(
-            json!({"token": owner.access_token().to_owned()}).to_string(),
+            json!({"token": owner.access_token().to_owned()})
+                .to_string()
+                .into(),
         ))
         .await
         .unwrap();

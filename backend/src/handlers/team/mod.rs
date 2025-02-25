@@ -9,8 +9,8 @@ mod update;
 
 use crate::{middlewares::PermissionsLayer, state::StateTrait};
 use axum::{
-    routing::{get, patch, post},
     Router,
+    routing::{get, patch, post},
 };
 
 /// Routes for team management

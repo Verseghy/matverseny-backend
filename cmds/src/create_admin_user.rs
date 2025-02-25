@@ -1,8 +1,8 @@
 use dotenvy::dotenv;
 use libiam::testing::actions::ensure_action;
 use libiam::{
-    testing::{actions::assign_action_to_user, Database},
     Iam, User,
+    testing::{Database, actions::assign_action_to_user},
 };
 use std::env::{self, args};
 

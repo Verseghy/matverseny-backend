@@ -1,20 +1,17 @@
 use k8s_openapi::api::core::v1::Secret;
 use kube::{
-    api::{ObjectMeta, PostParams},
     Api, Client,
+    api::{ObjectMeta, PostParams},
 };
 use libiam::{
+    Iam, User,
     testing::{
+        Database,
         actions::{assign_action_to_app, assign_action_to_user, ensure_action},
         apps::create_app,
-        Database,
     },
-    Iam, User,
 };
-use rand::{
-    distributions::{Alphanumeric, DistString},
-    rngs::OsRng,
-};
+use rand::distr::{Alphanumeric, SampleString};
 use std::{collections::BTreeMap, env};
 
 const NAME: &str = "matverseny-app";
@@ -68,7 +65,7 @@ async fn admin_user(client: Client, database: Database) -> Result<(), Box<dyn st
     let iam_url = env::var("IAM_URL").expect("IAM_URL is not set");
 
     let iam = Iam::new(&iam_url);
-    let admin_password = Alphanumeric.sample_string(&mut OsRng, 64);
+    let admin_password = Alphanumeric.sample_string(&mut rand::rng(), 64);
     let user = User::register(&iam, "admin", "matverseny@admin.admin", &admin_password).await?;
 
     ensure_action(&database, "mathcompetition.admin", true).await;

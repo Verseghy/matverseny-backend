@@ -1,4 +1,4 @@
-use uuid::{fmt::Simple, Uuid};
+use uuid::{Uuid, fmt::Simple};
 
 #[inline(always)]
 pub fn team_info(team_id: &Uuid) -> String {

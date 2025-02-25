@@ -3,13 +3,14 @@ name = "test-utils"
 version.workspace = true
 edition.workspace = true
 publish.workspace = true
+rust-version.workspace = true
 license-file.workspace = true
 
 [dependencies]
 assert-json-diff = "2.0.2"
 dotenvy.workspace = true
 futures.workspace = true
-http = "1.1.0"
+http = "1.2.0"
 libiam.workspace = true
 matverseny-backend.workspace = true
 migration = { version = "0.1.0", path = "../migration" }

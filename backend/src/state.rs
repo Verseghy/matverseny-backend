@@ -1,8 +1,8 @@
 use crate::utils::Problems;
-use libiam::{jwt::Jwt, App};
+use libiam::{App, jwt::Jwt};
 use rand::{
-    rngs::{adapter::ReseedingRng, OsRng},
-    Rng, SeedableRng,
+    Rng,
+    rngs::{OsRng, ReseedingRng},
 };
 use rand_chacha::ChaCha20Core;
 use sea_orm::{ConnectOptions, ConnectionTrait, Database, DbConn, TransactionTrait};
@@ -80,10 +80,7 @@ impl State {
 }
 
 thread_local! {
-    static CHACHA_THREAD_RNG: ReseedingRng<ChaCha20Core, OsRng> = {
-        let rng = ChaCha20Core::from_entropy();
-        ReseedingRng::new(rng, 1024*64, OsRng)
-    }
+    static CHACHA_THREAD_RNG: ReseedingRng<ChaCha20Core, OsRng> = ReseedingRng::<ChaCha20Core, _>::new(1024*64, OsRng).unwrap();
 }
 
 impl StateTrait for Arc<State> {

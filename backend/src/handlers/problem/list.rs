@@ -1,7 +1,7 @@
 use crate::{
+    StateTrait,
     error::{self, Result},
     extractors::Json,
-    StateTrait,
 };
 use axum::extract::{Path, State};
 use entity::problems;

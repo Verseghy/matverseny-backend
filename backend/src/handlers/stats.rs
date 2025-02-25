@@ -1,4 +1,4 @@
-use crate::{error::Result, extractors::Json, StateTrait};
+use crate::{StateTrait, error::Result, extractors::Json};
 use axum::extract::State;
 use chrono::{DateTime, Utc};
 use sea_orm::{ConnectionTrait, FromQueryResult, Statement};

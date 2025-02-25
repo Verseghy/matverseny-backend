@@ -1,8 +1,8 @@
 use crate::{
+    StateTrait,
     error::{self, DatabaseError, Result},
     extractors::{UserID, ValidatedJson},
     utils::generate_join_code,
-    StateTrait,
 };
 use axum::{extract::State, http::StatusCode};
 use entity::{
@@ -55,7 +55,7 @@ pub async fn create_team<S: StateTrait>(
 
         let result = match teams::Entity::insert(team_model).exec(&txn).await {
             Err(err) if err.unique_violation(UC_TEAMS_NAME) => {
-                return Err(error::DUPLICATE_TEAM_NAME)
+                return Err(error::DUPLICATE_TEAM_NAME);
             }
             Err(err) if err.unique_violation(UC_TEAMS_JOIN_CODE) => continue,
             r => r?,
@@ -71,7 +71,7 @@ pub async fn create_team<S: StateTrait>(
             .await
         {
             Err(err) if err.unique_violation(UC_TEAM_MEMBERS_USER_ID) => {
-                return Err(error::ALREADY_IN_TEAM)
+                return Err(error::ALREADY_IN_TEAM);
             }
             r => r?,
         };

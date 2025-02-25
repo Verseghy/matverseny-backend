@@ -1,4 +1,4 @@
-use crate::{error::Result, extractors::Json, StateTrait};
+use crate::{StateTrait, error::Result, extractors::Json};
 use axum::extract::State;
 use entity::{teams, users};
 use sea_orm::{EntityTrait, FromQueryResult, TransactionTrait};

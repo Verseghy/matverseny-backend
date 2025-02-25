@@ -1,9 +1,9 @@
 use crate::{
+    StateTrait,
     error::{self, DatabaseError, Result},
     extractors::Json,
     handlers::socket::Event,
     utils::{execute_str, sort_linked, topics},
-    StateTrait,
 };
 use axum::{extract::State, http::StatusCode};
 use const_format::formatcp;
@@ -12,13 +12,13 @@ use entity::{
     problems_order::{self, constraints::*},
 };
 use sea_orm::{
-    sea_query::{CaseStatement, Query},
     ActiveValue::NotSet,
     ColumnTrait, Condition, ConnectionTrait, EntityTrait, QueryFilter, QuerySelect, Set,
     StatementBuilder, TransactionTrait,
+    sea_query::{CaseStatement, Query},
 };
 use serde::{Deserialize, Serialize};
-use smallvec::{smallvec, SmallVec};
+use smallvec::{SmallVec, smallvec};
 use uuid::Uuid;
 
 #[derive(Debug, Deserialize, Serialize)]

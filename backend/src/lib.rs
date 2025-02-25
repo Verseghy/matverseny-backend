@@ -9,7 +9,7 @@ mod state;
 mod utils;
 
 use crate::{middlewares::middlewares, utils::SignalHandler};
-use axum::{extract::Request, ServiceExt};
+use axum::{ServiceExt, extract::Request};
 use error::{Error, Result};
 pub use state::*;
 use tokio::net::TcpListener;

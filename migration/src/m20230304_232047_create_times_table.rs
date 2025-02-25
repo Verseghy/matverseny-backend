@@ -3,7 +3,7 @@ use std::time::UNIX_EPOCH;
 use entity::times::{self, constrains::*};
 use sea_orm_migration::{
     prelude::*,
-    sea_orm::{prelude::DateTimeUtc, EntityTrait, Set},
+    sea_orm::{EntityTrait, Set, prelude::DateTimeUtc},
 };
 
 #[derive(DeriveMigrationName)]

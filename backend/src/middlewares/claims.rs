@@ -4,7 +4,7 @@ use axum::{
     middleware::Next,
     response::Response,
 };
-use headers::{authorization::Bearer, Authorization, HeaderMapExt};
+use headers::{Authorization, HeaderMapExt, authorization::Bearer};
 use tracing::Instrument;
 
 pub async fn get_claims<S: StateTrait>(

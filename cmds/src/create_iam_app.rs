@@ -1,5 +1,5 @@
 use dotenvy::dotenv;
-use libiam::testing::{actions::assign_action_to_app, apps::create_app, Database};
+use libiam::testing::{Database, actions::assign_action_to_app, apps::create_app};
 use std::env::args;
 
 #[tokio::main(flavor = "current_thread")]

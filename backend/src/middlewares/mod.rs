@@ -2,13 +2,13 @@ mod claims;
 mod permissions;
 
 use crate::StateTrait;
-use axum::{http::header::AUTHORIZATION, middleware, Router};
+use axum::{Router, http::header::AUTHORIZATION, middleware};
 pub use permissions::*;
 use std::iter;
 use tower::ServiceBuilder;
 use tower_http::{
-    cors::{Any, CorsLayer},
     ServiceBuilderExt,
+    cors::{Any, CorsLayer},
 };
 
 pub fn middlewares<S: StateTrait>(state: S, router: Router<S>) -> Router {

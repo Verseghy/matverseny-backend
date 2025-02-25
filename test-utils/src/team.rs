@@ -1,4 +1,4 @@
-use crate::{assert_team_info, prelude::*, User};
+use crate::{User, assert_team_info, prelude::*};
 
 pub struct Team {
     owner: User,

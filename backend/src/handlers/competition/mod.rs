@@ -1,11 +1,11 @@
 mod solution;
 mod time;
 
-use crate::{middlewares::PermissionsLayer, StateTrait};
+use crate::{StateTrait, middlewares::PermissionsLayer};
 use axum::{
+    Router,
     handler::Handler,
     routing::{get, patch, post, put},
-    Router,
 };
 
 /// Routes for competition

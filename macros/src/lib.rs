@@ -1,5 +1,5 @@
 use proc_macro::TokenStream;
-use syn::{parse_macro_input, Error, LitStr};
+use syn::{Error, LitStr, parse_macro_input};
 
 #[proc_macro]
 pub fn error_code_to_ident(tokens: TokenStream) -> TokenStream {

@@ -1,5 +1,5 @@
 use sea_orm::{DbErr, RuntimeErr};
-use sqlx::{postgres::PgDatabaseError, Error as SqlxError};
+use sqlx::{Error as SqlxError, postgres::PgDatabaseError};
 use std::borrow::Cow;
 
 pub trait DatabaseError {

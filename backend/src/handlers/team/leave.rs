@@ -1,5 +1,5 @@
 use crate::{
-    error, extractors::UserID, handlers::socket::Event, utils::topics, Result, StateTrait,
+    Result, StateTrait, error, extractors::UserID, handlers::socket::Event, utils::topics,
 };
 use axum::{extract::State, http::StatusCode};
 use entity::{team_members, teams, users};

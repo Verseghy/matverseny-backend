@@ -1,10 +1,10 @@
 use crate::{
+    Result, StateTrait,
     error::{self, DatabaseError},
     extractors::{Json, UserID},
-    Result, StateTrait,
 };
 use axum::{extract::State, http::StatusCode};
-use entity::users::{self, constraints::*, Class};
+use entity::users::{self, Class, constraints::*};
 use sea_orm::{EntityTrait, Set};
 use serde::Deserialize;
 

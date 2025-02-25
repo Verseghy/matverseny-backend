@@ -4,26 +4,26 @@ mod list;
 mod order;
 mod update;
 
-use crate::{middlewares::PermissionsLayer, StateTrait};
+use crate::{StateTrait, middlewares::PermissionsLayer};
 use axum::{
-    routing::{delete, get, patch, post, put},
     Router,
+    routing::{delete, get, patch, post, put},
 };
 
 /// Routes for problem management
 ///
 /// GET    /problem
-/// GET    /problem/:id
+/// GET    /problem/{id}
 /// POST   /problem
-/// PUT    /problem/:id
-/// PATCH  /problem/:id
-/// DELETE /problem/:id
+/// PUT    /problem/{id}
+/// PATCH  /problem/{id}
+/// DELETE /problem/{id}
 ///
 /// POST   /problem/order
 pub fn routes<S: StateTrait>(state: S) -> Router<S> {
     Router::new()
         .route(
-            "/:id",
+            "/{id}",
             get(list::get_problem::<S>).layer(PermissionsLayer::new(
                 state.clone(),
                 &["mathcompetition.problems"],
@@ -44,21 +44,21 @@ pub fn routes<S: StateTrait>(state: S) -> Router<S> {
             )),
         )
         .route(
-            "/:id",
+            "/{id}",
             put(update::put::<S>).layer(PermissionsLayer::new(
                 state.clone(),
                 &["mathcompetition.problems"],
             )),
         )
         .route(
-            "/:id",
+            "/{id}",
             patch(update::update_problem::<S>).layer(PermissionsLayer::new(
                 state.clone(),
                 &["mathcompetition.problems"],
             )),
         )
         .route(
-            "/:id",
+            "/{id}",
             delete(delete::delete_problem::<S>).layer(PermissionsLayer::new(
                 state.clone(),
                 &["mathcompetition.problems"],
