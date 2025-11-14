@@ -214,7 +214,6 @@ async fn socket_handler<S: StateTrait>(state: S, socket: &mut WebSocket) -> Resu
                         Some(Ok(Message::Close(_))) | None => break Ok(()),
                         Some(Ok(_)) => {
                             warn!("got message on websocket");
-                            continue
                         }
                         Some(Err(err)) => {
                             error!("websocket error: {:?}", err);
