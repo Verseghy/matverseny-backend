@@ -58,7 +58,7 @@ impl App {
             rt.block_on(async {
                 tracing::trace!("starting app thread");
 
-                let iam = iam::get_iam();
+                let iam = iam::get_iam().await;
                 let iam_db = iam::get_db().await;
                 let (_, secret) = libiam::testing::apps::create_app(iam_db, &uuid()).await;
                 let iam_app = libiam::App::login(iam, &secret).await.unwrap();

@@ -11,7 +11,9 @@ async fn main() {
     dotenv().ok();
 
     let email = args().nth(1).expect("no email given");
-    let iam = Iam::new(&env::var("IAM_URL").expect("IAM_URL is not set"));
+    let iam = Iam::new(&env::var("IAM_URL").expect("IAM_URL is not set"))
+        .await
+        .unwrap();
     let database = Database::connect("postgres://iam:secret@localhost:3306/iam").await;
 
     let id = 'id: {

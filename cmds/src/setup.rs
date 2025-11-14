@@ -64,7 +64,7 @@ async fn admin_user(client: Client, database: Database) -> Result<(), Box<dyn st
 
     let iam_url = env::var("IAM_URL").expect("IAM_URL is not set");
 
-    let iam = Iam::new(&iam_url);
+    let iam = Iam::new(&iam_url).await?;
     let admin_password = Alphanumeric.sample_string(&mut rand::rng(), 64);
     let user = User::register(&iam, "admin", "matverseny@admin.admin", &admin_password).await?;
 

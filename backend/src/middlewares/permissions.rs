@@ -1,6 +1,7 @@
 use std::{
     convert::Infallible,
     env,
+    sync::Arc,
     task::{Context, Poll},
 };
 
@@ -74,7 +75,7 @@ where
     }
 
     fn call(&mut self, req: Request<B>) -> Self::Future {
-        let Some(claims) = req.extensions().get::<Claims>() else {
+        let Some(claims) = req.extensions().get::<Arc<Claims>>() else {
             return Box::pin(async { Ok(error::NOT_ENOUGH_PERMISSIONS.into_response()) });
         };
 

@@ -17,9 +17,13 @@ services:
 
   iam:
     pull_policy: always
-    image: ghcr.io/verseghy/iam:v3
+    image: ghcr.io/verseghy/iam:v9
     environment:
       DATABASE_URL: postgres://iam:secret@iam-database:5432/iam
+      IAM_SIGNING_KEY_FILE: /var/secrets/iam-signing-key
+    volumes:
+      # This probably should be done with secrets, but podman-compose doesn't seem to support it
+      - ./iam-signing.der:/var/secrets/iam-signing-key
     ports:
       - 3001:3001
     depends_on:
@@ -42,7 +46,7 @@ services:
 
   iam-migration:
     pull_policy: always
-    image: ghcr.io/verseghy/iam-migration:v3
+    image: ghcr.io/verseghy/iam-migration:v9
     environment:
       DATABASE_URL: postgres://iam:secret@iam-database:5432/iam
     command: ["./iam-migration", "--verbose"]
