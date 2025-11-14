@@ -14,7 +14,7 @@ pub async fn login() -> anyhow::Result<App> {
     let app_secret =
         env::var("IAM_APP_SECRET").inspect_err(|_| error!("IAM_APP_SECRET is not set"))?;
 
-    let iam = Iam::new(&iam_url);
+    let iam = Iam::new(&iam_url).await?;
 
     App::login(&iam, &app_secret)
         .await

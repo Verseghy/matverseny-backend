@@ -41,7 +41,7 @@ impl State {
         let problems = Problems::new(&conn, nats.clone()).await;
 
         let iam_base = env::var("IAM_URL").unwrap();
-        let iam = libiam::Iam::new(&iam_base);
+        let iam = libiam::Iam::new(&iam_base).await.unwrap();
 
         Arc::new(Self {
             database: conn,

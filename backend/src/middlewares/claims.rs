@@ -5,6 +5,7 @@ use axum::{
     response::Response,
 };
 use headers::{Authorization, HeaderMapExt, authorization::Bearer};
+use std::sync::Arc;
 use tracing::Instrument;
 
 pub async fn get_claims<S: StateTrait>(
@@ -22,7 +23,7 @@ pub async fn get_claims<S: StateTrait>(
 
     let span = info_span!("claims", user_id = claims.sub.to_string());
 
-    request.extensions_mut().insert(claims);
+    request.extensions_mut().insert(Arc::new(claims));
 
     next.run(request).instrument(span).await
 }

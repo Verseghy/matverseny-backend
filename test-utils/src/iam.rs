@@ -3,10 +3,11 @@ use libiam::{Iam, testing::actions::assign_action_to_user};
 use std::{
     env,
     sync::{
-        LazyLock, OnceLock,
+        LazyLock,
         atomic::{AtomicU64, Ordering},
     },
 };
+use tokio::sync::OnceCell;
 use uuid::Uuid;
 
 #[derive(Debug)]
@@ -35,9 +36,14 @@ static TEST_ID: LazyLock<String> = LazyLock::new(|| {
 static USER_COUNT: AtomicU64 = AtomicU64::new(0);
 static USER_PASSWORD: &str = "test";
 
-pub(crate) fn get_iam() -> &'static Iam {
-    static INIT: OnceLock<Iam> = OnceLock::new();
-    INIT.get_or_init(|| Iam::new(&env::var("IAM_URL").expect("IAM_URL not set")))
+pub(crate) async fn get_iam() -> &'static Iam {
+    static INIT: OnceCell<Iam> = OnceCell::const_new();
+
+    INIT.get_or_init(|| async {
+        let url = env::var("IAM_URL").expect("IAM_URL not set");
+        Iam::new(&url).await.unwrap()
+    })
+    .await
 }
 
 pub async fn get_db() -> &'static libiam::testing::Database {
@@ -57,7 +63,7 @@ pub async fn register_user() -> User {
         USER_COUNT.fetch_add(1, Ordering::Relaxed)
     );
 
-    let iam = get_iam();
+    let iam = get_iam().await;
 
     let user = libiam::User::register(iam, "Test User", &email, USER_PASSWORD)
         .await

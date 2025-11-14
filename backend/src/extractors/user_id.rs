@@ -1,7 +1,7 @@
 use crate::error::{self, Error};
 use axum::{extract::FromRequestParts, http::request::Parts};
 use libiam::jwt::Claims;
-use std::ops::Deref;
+use std::{ops::Deref, sync::Arc};
 use uuid::Uuid;
 
 pub struct UserID(Uuid);
@@ -27,7 +27,7 @@ where
     type Rejection = Error<'static>;
 
     async fn from_request_parts(parts: &mut Parts, _state: &S) -> Result<Self, Self::Rejection> {
-        let Some(claims) = parts.extensions.remove::<Claims>() else {
+        let Some(claims) = parts.extensions.remove::<Arc<Claims>>() else {
             return Err(error::COULD_NOT_GET_CLAIMS);
         };
 
