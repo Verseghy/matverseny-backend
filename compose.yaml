@@ -1,6 +1,6 @@
 services:
   db:
-    image: docker.io/postgres:16
+    image: docker.io/postgres:18
     environment:
       POSTGRES_USER: matverseny
       POSTGRES_PASSWORD: secret
@@ -31,7 +31,7 @@ services:
         condition: service_completed_successfully
 
   iam-database:
-    image: docker.io/postgres:16
+    image: docker.io/postgres:18
     environment:
       POSTGRES_USER: iam
       POSTGRES_PASSWORD: secret
