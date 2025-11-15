@@ -1,6 +1,7 @@
 FROM registry.access.redhat.com/ubi9/ubi as chef
 
 ARG RUST_VERSION
+ARG CARGO_CHEF_VERSION
 
 RUN curl --proto '=https' --tlsv1.3 -sSf https://sh.rustup.rs > rustup-init.sh && \
     sh rustup-init.sh --default-toolchain "$RUST_VERSION" --profile minimal -y && \
@@ -9,7 +10,7 @@ RUN curl --proto '=https' --tlsv1.3 -sSf https://sh.rustup.rs > rustup-init.sh &
 
 ENV PATH="$PATH:/root/.cargo/bin"
 
-RUN cargo install cargo-chef --locked --version "0.1.67" && \
+RUN cargo install cargo-chef --locked --version "$CARGO_CHEF_VERSION" && \
     rm -rf $CARGO_HOME/registry/
 
 

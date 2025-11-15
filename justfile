@@ -2,7 +2,8 @@
 
 image_base := "ghcr.io/verseghy"
 image_tag := "v7"
-image_rust_version := "1.83"
+image_rust_version := "1.91"
+image_cargo_chef_version := "0.1.73"
 
 _default:
   @just --list --unsorted
@@ -26,6 +27,7 @@ build-image NAME FILE:
     --file "{{FILE}}" \
     --tag {{image_base}}/{{NAME}}:{{image_tag}} \
     --build-arg RUST_VERSION="{{image_rust_version}}" \
+    --build-arg CARGO_CHEF_VERSION="{{image_cargo_chef_version}}" \
     .
 
 [group("build")]
