@@ -33,6 +33,9 @@ jobs:
           image: ${{ matrix.image }}
           tags: latest ${{ github.sha }} ${{ github.ref_name }}
           containerfiles: ${{ matrix.containerfile }}
+          build-args: |
+            RUST_VERSION=1.91
+            CARGO_CHEF_VERSION=0.1.73
           oci: true
 
       - name: Push image
@@ -41,7 +44,7 @@ jobs:
         with:
           image: ${{ steps.build-image.outputs.image }}
           tags: ${{ steps.build-image.outputs.tags }}
-          registry: docker://ghcr.io/verseghy
+          registry: ghcr.io/verseghy
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
