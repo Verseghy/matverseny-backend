@@ -15,6 +15,8 @@ use sea_orm::{
 };
 use serde::Deserialize;
 
+const MAX_TEAM_SIZE: u64 = 8;
+
 #[derive(Deserialize)]
 pub struct Request {
     code: String,
@@ -28,9 +30,7 @@ pub async fn join_team<S: StateTrait>(
     let txn = state.db().begin().await?;
 
     let team = teams::Entity::find_by_join_code(&request.code)
-        // NOTE: maybe not neccessary because locking the team (in the application and not in the database)
-        //       while this handler is running shouldn't make invalid state in the database
-        .lock_shared()
+        .lock_exclusive()
         .one(&txn)
         .await?;
 
@@ -44,7 +44,7 @@ pub async fn join_team<S: StateTrait>(
             .count(&txn)
             .await?;
 
-        if member_count >= 8 {
+        if member_count >= MAX_TEAM_SIZE {
             return Err(error::TEAM_FULL);
         }
 
