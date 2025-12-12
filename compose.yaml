@@ -23,7 +23,7 @@ services:
       IAM_SIGNING_KEY_FILE: /var/secrets/iam-signing-key
     volumes:
       # This probably should be done with secrets, but podman-compose doesn't seem to support it
-      - ./iam-signing.der:/var/secrets/iam-signing-key
+      - ./iam-signing.der:/var/secrets/iam-signing-key:z
     ports:
       - 3001:3001
     depends_on:
