@@ -10,7 +10,9 @@ use entity::{
     team_members::{self, constraints::*},
     teams, users,
 };
-use sea_orm::{EntityTrait, QuerySelect, Set, TransactionTrait};
+use sea_orm::{
+    ColumnTrait, EntityTrait, PaginatorTrait, QueryFilter, QuerySelect, Set, TransactionTrait,
+};
 use serde::Deserialize;
 
 #[derive(Deserialize)]
@@ -35,6 +37,15 @@ pub async fn join_team<S: StateTrait>(
     if let Some(team) = team {
         if team.locked {
             return Err(error::LOCKED_TEAM);
+        }
+
+        let member_count = team_members::Entity::find()
+            .filter(team_members::Column::TeamId.eq(team.id))
+            .count(&txn)
+            .await?;
+
+        if member_count >= 8 {
+            return Err(error::TEAM_FULL);
         }
 
         let user = users::Entity::find_by_id(*user_id)

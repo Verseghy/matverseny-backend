@@ -157,3 +157,8 @@ const_error! {
     #[status(INTERNAL_SERVER_ERROR)]
     const NATS_ERROR;
 }
+const_error! {
+    #[error("M033", "team is full")]
+    #[status(BAD_REQUEST)]
+    const TEAM_FULL;
+}
