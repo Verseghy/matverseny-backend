@@ -225,6 +225,36 @@ mod join {
 
         assert_error!(res, error::LOCKED_TEAM);
     }
+
+    #[tokio::test]
+    #[parallel]
+    async fn team_full() {
+        let app = get_cached_app().await;
+        let owner = app.register_user().await;
+        let team = app.create_team(&owner).await;
+
+        let join_code = team.get_code().await;
+
+        // Add 7 more members to reach the limit of 8
+        for _ in 0..7 {
+            let member = app.register_user().await;
+            member.join(&join_code).await;
+        }
+
+        // 9th user should be rejected
+        let user = app.register_user().await;
+
+        let res = app
+            .post("/v1/team/join")
+            .user(&user)
+            .json(&json!({
+                "code": join_code,
+            }))
+            .send()
+            .await;
+
+        assert_error!(res, error::TEAM_FULL);
+    }
 }
 
 mod leave {

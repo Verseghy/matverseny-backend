@@ -10,8 +10,12 @@ use entity::{
     team_members::{self, constraints::*},
     teams, users,
 };
-use sea_orm::{EntityTrait, QuerySelect, Set, TransactionTrait};
+use sea_orm::{
+    ColumnTrait, EntityTrait, PaginatorTrait, QueryFilter, QuerySelect, Set, TransactionTrait,
+};
 use serde::Deserialize;
+
+const MAX_TEAM_SIZE: u64 = 8;
 
 #[derive(Deserialize)]
 pub struct Request {
@@ -26,15 +30,22 @@ pub async fn join_team<S: StateTrait>(
     let txn = state.db().begin().await?;
 
     let team = teams::Entity::find_by_join_code(&request.code)
-        // NOTE: maybe not neccessary because locking the team (in the application and not in the database)
-        //       while this handler is running shouldn't make invalid state in the database
-        .lock_shared()
+        .lock_exclusive()
         .one(&txn)
         .await?;
 
     if let Some(team) = team {
         if team.locked {
             return Err(error::LOCKED_TEAM);
+        }
+
+        let member_count = team_members::Entity::find()
+            .filter(team_members::Column::TeamId.eq(team.id))
+            .count(&txn)
+            .await?;
+
+        if member_count >= MAX_TEAM_SIZE {
+            return Err(error::TEAM_FULL);
         }
 
         let user = users::Entity::find_by_id(*user_id)
