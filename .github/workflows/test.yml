@@ -16,7 +16,7 @@ jobs:
     name: ubuntu
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - name: Generate iam signing key
         run: openssl ecparam -name prime256v1 -genkey -noout | openssl pkcs8 -topk8 -nocrypt -outform DER -out iam-signing.der
       - name: Install stable
