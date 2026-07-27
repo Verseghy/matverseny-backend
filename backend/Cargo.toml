@@ -30,7 +30,7 @@ serde_with = "3.15.1"
 tokio-tungstenite.workspace = true
 sqlx = { version = "0.8.6", default-features = false, features = ["postgres"] }
 uuid.workspace = true
-bytes = "1.11.0"
+bytes = "1.11.1"
 mime = "0.3.17"
 macros.workspace = true
 smallvec = "1.15.1"
